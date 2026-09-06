@@ -1,0 +1,49 @@
+name: iOS QA
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+      - name: Core tests and 100k benchmark
+        env:
+          LERN_LARGE_TEST: '1'
+        run: swift test 2>&1 | tee core-tests.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: core-test-log
+          path: core-tests.log
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer || sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+          xcrun simctl list devices available
+      - name: Build iPhone and extensions
+        run: xcodebuild -project LERN.xcodeproj -scheme LERN -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ios-build.log
+      - name: Simulator tests
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for k,v in d["devices"].items() if "iOS" in k for x in v if "iPhone" in x["name"]))')
+          xcodebuild -project LERN.xcodeproj -scheme LERN -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath DerivedData -resultBundlePath QA.xcresult CODE_SIGNING_ALLOWED=NO test 2>&1 | tee ios-test.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-qa
+          path: |
+            ios-build.log
+            ios-test.log
+            QA.xcresult

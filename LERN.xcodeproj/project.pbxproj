@@ -1,0 +1,1049 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03A94FB8B5307C05D0B27C49 /* StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E2F795B69E810FB69FBC39 /* StorageTests.swift */; };
+		05B85584DDB6EBDD8A72EFEF /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */; };
+		066DAD01CCFA9534D14E7A45 /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */; };
+		1035926BEC1FC85791686C94 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B656B70FD606492F6A017F /* SharedStore.swift */; };
+		21E0F9B27DDAAEB76EE9DF9D /* LERNApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7AA883BB74035BBD595B28 /* LERNApp.swift */; };
+		25D0192203EE0CFCAC1DFEE1 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F608B96B483B6163764D84B /* WidgetIntents.swift */; };
+		264EFEB22C22854A748B56AF /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 98AF9565391916BDFB1EA637 /* LERNCore */; };
+		2FAED6A0D9498396222FB5E3 /* SurfaceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */; };
+		319A2ED713B64429B2165CAF /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0810DB6196ED2EBC83CB14C /* LibraryView.swift */; };
+		356D8068D0A41CD886B58798 /* LERNWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3F6A86791949E046F691F8BB /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = FE4F13C40361523142FD82F7 /* LERNCore */; };
+		4F38C450B0D38252CFC0E0B4 /* LERNUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */; };
+		54A671194F9CA19DE366862E /* LERNWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5886E0B5AA3204F0656B04B1 /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5549451C3E07A7E9375BCC12 /* LERNCore */; };
+		5C45D48ADFB8789DE68F8392 /* LERNWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */; };
+		63F8C78FD8475FE75945BEA3 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B656B70FD606492F6A017F /* SharedStore.swift */; };
+		6825415B111D626375AFF8D0 /* LERNWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DBDBB190D8A4B3D1ACD80B /* LERNWidgets.swift */; };
+		72B905FAB898DC8537B94647 /* LERNWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6AEEBCFEF7B77469D794325F /* LERNWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80B4A96B624C144E043F3208 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1E7447FE604499B60699AC9A /* Assets.xcassets */; };
+		81576D30733F3CE2CF44D382 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A76C205EF1A68C0649EB402 /* ImportView.swift */; };
+		89DEBA703E9F42FEE93A3570 /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B291CF7D26A3C534776B0975 /* FeedView.swift */; };
+		8A94BA55A29DCBDFBDB6ADA2 /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 64EE82142537D973FA626F2C /* LERNCore */; };
+		8EC4723117FF5A9B06FD4AD1 /* ShareImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A2AB020715848539BC1B81 /* ShareImageView.swift */; };
+		9BB4BB855644E78C5D0AE995 /* WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45DADF3801F26B1E7CBA38 /* WatchBridge.swift */; };
+		9FCD371A5257271F03634B4B /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = E2476E305F737B84A53AFD37 /* LERNCore */; };
+		A7B78B500BD809A987F84242 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998072FA7C41E141FFB533D /* ThemeView.swift */; };
+		AADF7ED52A67BC2F8CBEFA87 /* ThemesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18716ECA482B00F50461C6B /* ThemesView.swift */; };
+		ADDFAF96AF92420728903F37 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998072FA7C41E141FFB533D /* ThemeView.swift */; };
+		CC9C52148486A752C796614B /* ResourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57A0440524F67678D82A46D /* ResourcesView.swift */; };
+		D2353ECF50DA99904B72A4BB /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F608B96B483B6163764D84B /* WidgetIntents.swift */; };
+		DCE319C1D5E66C2D28A5AF6F /* LERNWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A9FC1E20A3E47B9DD5DA8E /* LERNWatchApp.swift */; };
+		DDA154856B420B43CAFCE260 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C795FD0C46D65F055D84F7C3 /* BackupView.swift */; };
+		FB82F1C45764E9FC4C5E178A /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB53D2665DA94499B8736B0 /* ProfileView.swift */; };
+		FF0BB17902FED542739790B0 /* CoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3F0B5F68912A85180AEBA74 /* CoreTests.swift */; };
+		FFF73B12D195403909AB9D94 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46DAB4311BA60CB1CED2BD92 /* AppState.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0EEE3564E41C50EC474CC20F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 15DC97A06D0664A6F6B89423;
+			remoteInfo = LERNWatch;
+		};
+		15192E58F8B782D8DE76DCEA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CE6662EB3E91CE945C7012E8;
+			remoteInfo = LERN;
+		};
+		424A27C96C8C321FC9982BD9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F27DBE255A5578A49096D40F;
+			remoteInfo = LERNWidgets;
+		};
+		CBF97B0A1A35099BDFB832C4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 39992E3DB29CD09719E33372;
+			remoteInfo = LERNWatchWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		58614B60259D9437343142DE /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				54A671194F9CA19DE366862E /* LERNWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		831550DE5A9AA5025B38AB65 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				72B905FAB898DC8537B94647 /* LERNWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4B3A70BB3B84001B9778827 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				356D8068D0A41CD886B58798 /* LERNWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0A6A86DB1AEC80FE44B5D333 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0F608B96B483B6163764D84B /* WidgetIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetIntents.swift; sourceTree = "<group>"; };
+		11B656B70FD606492F6A017F /* SharedStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStore.swift; sourceTree = "<group>"; };
+		144DC62411F8D14F343FBA0E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1E7447FE604499B60699AC9A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		346D9D29F7CD168665314823 /* LERNUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D7AA883BB74035BBD595B28 /* LERNApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNApp.swift; sourceTree = "<group>"; };
+		46DAB4311BA60CB1CED2BD92 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		48DBDBB190D8A4B3D1ACD80B /* LERNWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWidgets.swift; sourceTree = "<group>"; };
+		4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
+		559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceSettings.swift; sourceTree = "<group>"; };
+		560F45AF945FFBE589A3EC67 /* LERNWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWidgets.entitlements; sourceTree = "<group>"; };
+		65A9FC1E20A3E47B9DD5DA8E /* LERNWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWatchApp.swift; sourceTree = "<group>"; };
+		6AEEBCFEF7B77469D794325F /* LERNWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LERNWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7E45DADF3801F26B1E7CBA38 /* WatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchBridge.swift; sourceTree = "<group>"; };
+		9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LERNWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A76C205EF1A68C0649EB402 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		9E97FB00977594597FB5E71A /* LERN - Daily quotes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "LERN - Daily quotes"; path = .; sourceTree = SOURCE_ROOT; };
+		A3F0B5F68912A85180AEBA74 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
+		A5C3EC3473DCC8C574F5E315 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A8A2AB020715848539BC1B81 /* ShareImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageView.swift; sourceTree = "<group>"; };
+		A9806844B5F7FF544E284355 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LERNWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA1B10425498D1E7496C2D9F /* LERNWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWatch.entitlements; sourceTree = "<group>"; };
+		B0810DB6196ED2EBC83CB14C /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		B291CF7D26A3C534776B0975 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
+		B2E2F795B69E810FB69FBC39 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
+		B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C795FD0C46D65F055D84F7C3 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
+		CF26DB68D7EBF459572057E4 /* LERNWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWatchWidgets.entitlements; sourceTree = "<group>"; };
+		D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWatchWidgets.swift; sourceTree = "<group>"; };
+		D57A0440524F67678D82A46D /* ResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourcesView.swift; sourceTree = "<group>"; };
+		D72F8E675687DB0BBC0BBC33 /* LERN.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERN.entitlements; sourceTree = "<group>"; };
+		D9A1B5FBF096687B585BF811 /* LERN.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LERN.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E18716ECA482B00F50461C6B /* ThemesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemesView.swift; sourceTree = "<group>"; };
+		F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNUITests.swift; sourceTree = "<group>"; };
+		F998072FA7C41E141FFB533D /* ThemeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeView.swift; sourceTree = "<group>"; };
+		FAB53D2665DA94499B8736B0 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4E825D6135964F43358E0927 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5886E0B5AA3204F0656B04B1 /* LERNCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		50D345C4E8A8B67930895FAC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F6A86791949E046F691F8BB /* LERNCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B4B2B4F7B8DD23840E596F58 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A94BA55A29DCBDFBDB6ADA2 /* LERNCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D6B9A9A09816EEF626CA5687 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				264EFEB22C22854A748B56AF /* LERNCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DC56AE43BD5276D4CF1A611C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9FCD371A5257271F03634B4B /* LERNCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2476E69F2FC821BCB7DF693F /* Widgets */ = {
+			isa = PBXGroup;
+			children = (
+				144DC62411F8D14F343FBA0E /* Info.plist */,
+				560F45AF945FFBE589A3EC67 /* LERNWidgets.entitlements */,
+				48DBDBB190D8A4B3D1ACD80B /* LERNWidgets.swift */,
+			);
+			path = Widgets;
+			sourceTree = "<group>";
+		};
+		26562216204C7E427274E711 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				46DAB4311BA60CB1CED2BD92 /* AppState.swift */,
+				C795FD0C46D65F055D84F7C3 /* BackupView.swift */,
+				B291CF7D26A3C534776B0975 /* FeedView.swift */,
+				9A76C205EF1A68C0649EB402 /* ImportView.swift */,
+				A5C3EC3473DCC8C574F5E315 /* Info.plist */,
+				D72F8E675687DB0BBC0BBC33 /* LERN.entitlements */,
+				3D7AA883BB74035BBD595B28 /* LERNApp.swift */,
+				B0810DB6196ED2EBC83CB14C /* LibraryView.swift */,
+				CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */,
+				FAB53D2665DA94499B8736B0 /* ProfileView.swift */,
+				4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */,
+				D57A0440524F67678D82A46D /* ResourcesView.swift */,
+				A8A2AB020715848539BC1B81 /* ShareImageView.swift */,
+				559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */,
+				E18716ECA482B00F50461C6B /* ThemesView.swift */,
+				7E45DADF3801F26B1E7CBA38 /* WatchBridge.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3868F641C0A92E3D0352E23E /* Watch */ = {
+			isa = PBXGroup;
+			children = (
+				1E7447FE604499B60699AC9A /* Assets.xcassets */,
+				0A6A86DB1AEC80FE44B5D333 /* Info.plist */,
+				AA1B10425498D1E7496C2D9F /* LERNWatch.entitlements */,
+				65A9FC1E20A3E47B9DD5DA8E /* LERNWatchApp.swift */,
+			);
+			path = Watch;
+			sourceTree = "<group>";
+		};
+		428A275AE446D913F2F8FD6D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D9A1B5FBF096687B585BF811 /* LERN.app */,
+				B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */,
+				346D9D29F7CD168665314823 /* LERNUITests.xctest */,
+				9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */,
+				A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */,
+				6AEEBCFEF7B77469D794325F /* LERNWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4428E0970B8178C5E26DC510 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				11B656B70FD606492F6A017F /* SharedStore.swift */,
+				F998072FA7C41E141FFB533D /* ThemeView.swift */,
+				0F608B96B483B6163764D84B /* WidgetIntents.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		483E07A29A22BC8B233837D9 /* LERNUITests */ = {
+			isa = PBXGroup;
+			children = (
+				F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */,
+			);
+			path = LERNUITests;
+			sourceTree = "<group>";
+		};
+		A30A5EB4EF4AB9D85B0D9FB0 /* LERNCoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				A3F0B5F68912A85180AEBA74 /* CoreTests.swift */,
+				B2E2F795B69E810FB69FBC39 /* StorageTests.swift */,
+			);
+			path = LERNCoreTests;
+			sourceTree = "<group>";
+		};
+		A72359A73961A32BCF7B710D /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A30A5EB4EF4AB9D85B0D9FB0 /* LERNCoreTests */,
+				483E07A29A22BC8B233837D9 /* LERNUITests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		ACAAFBE91D25C033333D9070 /* WatchWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				A9806844B5F7FF544E284355 /* Info.plist */,
+				CF26DB68D7EBF459572057E4 /* LERNWatchWidgets.entitlements */,
+				D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */,
+			);
+			path = WatchWidgets;
+			sourceTree = "<group>";
+		};
+		DB57207114FDB21BD994C7B7 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				9E97FB00977594597FB5E71A /* LERN - Daily quotes */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		EE6424B66E2C6D4B33452135 = {
+			isa = PBXGroup;
+			children = (
+				26562216204C7E427274E711 /* App */,
+				DB57207114FDB21BD994C7B7 /* Packages */,
+				4428E0970B8178C5E26DC510 /* Shared */,
+				A72359A73961A32BCF7B710D /* Tests */,
+				3868F641C0A92E3D0352E23E /* Watch */,
+				ACAAFBE91D25C033333D9070 /* WatchWidgets */,
+				2476E69F2FC821BCB7DF693F /* Widgets */,
+				428A275AE446D913F2F8FD6D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		15DC97A06D0664A6F6B89423 /* LERNWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 640CA88CB731C9E2B9195A45 /* Build configuration list for PBXNativeTarget "LERNWatch" */;
+			buildPhases = (
+				19A765F3E20D9D37C5A267A4 /* Sources */,
+				02DB67C527400DBB73ACDDBC /* Resources */,
+				4E825D6135964F43358E0927 /* Frameworks */,
+				58614B60259D9437343142DE /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9FC0A9FD879DE0FEA36F71E6 /* PBXTargetDependency */,
+			);
+			name = LERNWatch;
+			packageProductDependencies = (
+				5549451C3E07A7E9375BCC12 /* LERNCore */,
+			);
+			productName = LERNWatch;
+			productReference = 9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		39992E3DB29CD09719E33372 /* LERNWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F0C48324C0D297C1B3FD038 /* Build configuration list for PBXNativeTarget "LERNWatchWidgets" */;
+			buildPhases = (
+				AABA4D9DF0EEA95703E8C3EC /* Sources */,
+				D6B9A9A09816EEF626CA5687 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LERNWatchWidgets;
+			packageProductDependencies = (
+				98AF9565391916BDFB1EA637 /* LERNCore */,
+			);
+			productName = LERNWatchWidgets;
+			productReference = A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		46923DADF22CD3A46A4AC048 /* LERNTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 26A0B250FC57ABD64BC1DDF9 /* Build configuration list for PBXNativeTarget "LERNTests" */;
+			buildPhases = (
+				FAA0F8D881110B8629919367 /* Sources */,
+				B4B2B4F7B8DD23840E596F58 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LERNTests;
+			packageProductDependencies = (
+				64EE82142537D973FA626F2C /* LERNCore */,
+			);
+			productName = LERNTests;
+			productReference = B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CE6662EB3E91CE945C7012E8 /* LERN */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8339B3551B2445DB257B3187 /* Build configuration list for PBXNativeTarget "LERN" */;
+			buildPhases = (
+				A226E0C381055F0323600E9D /* Sources */,
+				DC56AE43BD5276D4CF1A611C /* Frameworks */,
+				831550DE5A9AA5025B38AB65 /* Embed Foundation Extensions */,
+				C4B3A70BB3B84001B9778827 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				558A7227C2F0A8A620552CB4 /* PBXTargetDependency */,
+				893354705588588069E1E8E7 /* PBXTargetDependency */,
+			);
+			name = LERN;
+			packageProductDependencies = (
+				E2476E305F737B84A53AFD37 /* LERNCore */,
+			);
+			productName = LERN;
+			productReference = D9A1B5FBF096687B585BF811 /* LERN.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F063FE330D10CE096A9C4448 /* LERNUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ADF004C2919BF7EDA07A6FBB /* Build configuration list for PBXNativeTarget "LERNUITests" */;
+			buildPhases = (
+				473C09F834272551C2EC8F83 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6E6FC6EAD72ADC3992A369A2 /* PBXTargetDependency */,
+			);
+			name = LERNUITests;
+			packageProductDependencies = (
+			);
+			productName = LERNUITests;
+			productReference = 346D9D29F7CD168665314823 /* LERNUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		F27DBE255A5578A49096D40F /* LERNWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0893D7C8F3A6A9E4045D4407 /* Build configuration list for PBXNativeTarget "LERNWidgets" */;
+			buildPhases = (
+				C1433F0B6335B33C40E23BCC /* Sources */,
+				50D345C4E8A8B67930895FAC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LERNWidgets;
+			packageProductDependencies = (
+				FE4F13C40361523142FD82F7 /* LERNCore */,
+			);
+			productName = LERNWidgets;
+			productReference = 6AEEBCFEF7B77469D794325F /* LERNWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		8A7A14813A47AD6FF65DA0C6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					15DC97A06D0664A6F6B89423 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					39992E3DB29CD09719E33372 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					46923DADF22CD3A46A4AC048 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					CE6662EB3E91CE945C7012E8 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					F063FE330D10CE096A9C4448 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+						TestTargetID = CE6662EB3E91CE945C7012E8;
+					};
+					F27DBE255A5578A49096D40F = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D0A0B1D37B5F1458462C0542 /* Build configuration list for PBXProject "LERN" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = EE6424B66E2C6D4B33452135;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C0759B6022CC652CACF57596 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 428A275AE446D913F2F8FD6D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CE6662EB3E91CE945C7012E8 /* LERN */,
+				F27DBE255A5578A49096D40F /* LERNWidgets */,
+				15DC97A06D0664A6F6B89423 /* LERNWatch */,
+				39992E3DB29CD09719E33372 /* LERNWatchWidgets */,
+				46923DADF22CD3A46A4AC048 /* LERNTests */,
+				F063FE330D10CE096A9C4448 /* LERNUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		02DB67C527400DBB73ACDDBC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				80B4A96B624C144E043F3208 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		19A765F3E20D9D37C5A267A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DCE319C1D5E66C2D28A5AF6F /* LERNWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		473C09F834272551C2EC8F83 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F38C450B0D38252CFC0E0B4 /* LERNUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A226E0C381055F0323600E9D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FFF73B12D195403909AB9D94 /* AppState.swift in Sources */,
+				DDA154856B420B43CAFCE260 /* BackupView.swift in Sources */,
+				89DEBA703E9F42FEE93A3570 /* FeedView.swift in Sources */,
+				81576D30733F3CE2CF44D382 /* ImportView.swift in Sources */,
+				21E0F9B27DDAAEB76EE9DF9D /* LERNApp.swift in Sources */,
+				319A2ED713B64429B2165CAF /* LibraryView.swift in Sources */,
+				05B85584DDB6EBDD8A72EFEF /* NotificationScheduler.swift in Sources */,
+				FB82F1C45764E9FC4C5E178A /* ProfileView.swift in Sources */,
+				066DAD01CCFA9534D14E7A45 /* RemindersView.swift in Sources */,
+				CC9C52148486A752C796614B /* ResourcesView.swift in Sources */,
+				8EC4723117FF5A9B06FD4AD1 /* ShareImageView.swift in Sources */,
+				63F8C78FD8475FE75945BEA3 /* SharedStore.swift in Sources */,
+				2FAED6A0D9498396222FB5E3 /* SurfaceSettings.swift in Sources */,
+				A7B78B500BD809A987F84242 /* ThemeView.swift in Sources */,
+				AADF7ED52A67BC2F8CBEFA87 /* ThemesView.swift in Sources */,
+				9BB4BB855644E78C5D0AE995 /* WatchBridge.swift in Sources */,
+				D2353ECF50DA99904B72A4BB /* WidgetIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AABA4D9DF0EEA95703E8C3EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5C45D48ADFB8789DE68F8392 /* LERNWatchWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C1433F0B6335B33C40E23BCC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6825415B111D626375AFF8D0 /* LERNWidgets.swift in Sources */,
+				1035926BEC1FC85791686C94 /* SharedStore.swift in Sources */,
+				ADDFAF96AF92420728903F37 /* ThemeView.swift in Sources */,
+				25D0192203EE0CFCAC1DFEE1 /* WidgetIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FAA0F8D881110B8629919367 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF0BB17902FED542739790B0 /* CoreTests.swift in Sources */,
+				03A94FB8B5307C05D0B27C49 /* StorageTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		558A7227C2F0A8A620552CB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F27DBE255A5578A49096D40F /* LERNWidgets */;
+			targetProxy = 424A27C96C8C321FC9982BD9 /* PBXContainerItemProxy */;
+		};
+		6E6FC6EAD72ADC3992A369A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CE6662EB3E91CE945C7012E8 /* LERN */;
+			targetProxy = 15192E58F8B782D8DE76DCEA /* PBXContainerItemProxy */;
+		};
+		893354705588588069E1E8E7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 15DC97A06D0664A6F6B89423 /* LERNWatch */;
+			targetProxy = 0EEE3564E41C50EC474CC20F /* PBXContainerItemProxy */;
+		};
+		9FC0A9FD879DE0FEA36F71E6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 39992E3DB29CD09719E33372 /* LERNWatchWidgets */;
+			targetProxy = CBF97B0A1A35099BDFB832C4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0462ACF71450AF82E2953448 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/LERNWidgets.entitlements;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.widgets;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		12C661D0C3CE687712F2CD9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "MinimalBlack MinimalWhite Gradient QuoteMark Warm Cool";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = App/LERN.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1B344A3B6BA075F2327BAC96 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = WatchWidgets/LERNWatchWidgets.entitlements;
+				INFOPLIST_FILE = WatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.watch.widgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		3B6E1FCDBD4CCC5177FAAA05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		448513A7607C4E6300A94CA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Watch/LERNWatch.entitlements;
+				INFOPLIST_FILE = Watch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.watch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		53FB8856B12F8DE6DCF76043 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Watch/LERNWatch.entitlements;
+				INFOPLIST_FILE = Watch/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.watch;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		7744538F57A46AAF0103ECB6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "MinimalBlack MinimalWhite Gradient QuoteMark Warm Cool";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = App/LERN.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		83B601D1C376C62F767E9428 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = WatchWidgets/LERNWatchWidgets.entitlements;
+				INFOPLIST_FILE = WatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.watch.widgets;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		AF3A74F0E34ECB70455AEE57 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		B284C4E623F62E4231542C48 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		B42FD4665D7968AF23B3D007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets/LERNWidgets.entitlements;
+				INFOPLIST_FILE = Widgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.widgets;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) WIDGET_EXTENSION";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C3517CF7140376664F1F6B28 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LERN;
+			};
+			name = Release;
+		};
+		D28EAB48E735B420733258CB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E3D4467B2C15D37FBC06D4D2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.lern.local.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = LERN;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0893D7C8F3A6A9E4045D4407 /* Build configuration list for PBXNativeTarget "LERNWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0462ACF71450AF82E2953448 /* Debug */,
+				B42FD4665D7968AF23B3D007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		26A0B250FC57ABD64BC1DDF9 /* Build configuration list for PBXNativeTarget "LERNTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D28EAB48E735B420733258CB /* Debug */,
+				3B6E1FCDBD4CCC5177FAAA05 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4F0C48324C0D297C1B3FD038 /* Build configuration list for PBXNativeTarget "LERNWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				83B601D1C376C62F767E9428 /* Debug */,
+				1B344A3B6BA075F2327BAC96 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		640CA88CB731C9E2B9195A45 /* Build configuration list for PBXNativeTarget "LERNWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				448513A7607C4E6300A94CA5 /* Debug */,
+				53FB8856B12F8DE6DCF76043 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8339B3551B2445DB257B3187 /* Build configuration list for PBXNativeTarget "LERN" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				12C661D0C3CE687712F2CD9A /* Debug */,
+				7744538F57A46AAF0103ECB6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ADF004C2919BF7EDA07A6FBB /* Build configuration list for PBXNativeTarget "LERNUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E3D4467B2C15D37FBC06D4D2 /* Debug */,
+				C3517CF7140376664F1F6B28 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D0A0B1D37B5F1458462C0542 /* Build configuration list for PBXProject "LERN" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AF3A74F0E34ECB70455AEE57 /* Debug */,
+				B284C4E623F62E4231542C48 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C0759B6022CC652CACF57596 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5549451C3E07A7E9375BCC12 /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+		64EE82142537D973FA626F2C /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+		98AF9565391916BDFB1EA637 /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+		E2476E305F737B84A53AFD37 /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+		FE4F13C40361523142FD82F7 /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+}

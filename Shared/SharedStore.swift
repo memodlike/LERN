@@ -1,0 +1,22 @@
+import Foundation
+import SwiftData
+import LERNCore
+
+public enum SharedStore {
+    public static var directory: URL {
+        #if os(iOS) || os(watchOS)
+        if let shared = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Product.appGroup) { return shared }
+        #endif
+        return URL.applicationSupportDirectory.appendingPathComponent("LERN", isDirectory: true)
+    }
+    public static func open() throws -> LibraryStore {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("library.store")
+        return LibraryStore(modelContainer: try StorageFactory.container(url: url))
+    }
+    public static var photosDirectory: URL { directory.appendingPathComponent("photos", isDirectory: true) }
+    public static func photoURL(_ name: String) -> URL? {
+        guard LibraryBackup.safeAssetName(name) else { return nil }
+        return photosDirectory.appendingPathComponent(name)
+    }
+}

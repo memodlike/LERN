@@ -1,0 +1,151 @@
+name: LERN
+options:
+  bundleIdPrefix: app.lern
+  deploymentTarget:
+    iOS: '18.0'
+    watchOS: '11.0'
+  xcodeVersion: '26.0'
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    MARKETING_VERSION: '1.0'
+    CURRENT_PROJECT_VERSION: '1'
+    DEVELOPMENT_TEAM: ''
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+packages:
+  LERNCore:
+    path: .
+targets:
+  LERN:
+    type: application
+    platform: iOS
+    sources: [App, Shared]
+    resources: [Resources]
+    dependencies:
+      - package: LERNCore
+      - target: LERNWidgets
+      - target: LERNWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local
+        TARGETED_DEVICE_FAMILY: '1,2'
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: 'MinimalBlack MinimalWhite Gradient QuoteMark Warm Cool'
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
+        CODE_SIGN_ENTITLEMENTS: App/LERN.entitlements
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: LERN
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        CFBundleURLTypes:
+          - CFBundleURLName: app.lern.local
+            CFBundleURLSchemes: [lern]
+        NSPhotoLibraryAddUsageDescription: Save quote images you create to your photo library.
+        UIApplicationSupportsIndirectInputEvents: true
+    entitlements:
+      path: App/LERN.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.lern.local]
+  LERNWidgets:
+    type: app-extension
+    platform: iOS
+    sources: [Widgets, Shared]
+    dependencies:
+      - package: LERNCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.widgets
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) WIDGET_EXTENSION"
+        CODE_SIGN_ENTITLEMENTS: Widgets/LERNWidgets.entitlements
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: LERN Widgets
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Widgets/LERNWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.lern.local]
+  LERNWatch:
+    type: application
+    platform: watchOS
+    sources: [Watch]
+    dependencies:
+      - package: LERNCore
+      - target: LERNWatchWidgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.watch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: Watch/LERNWatch.entitlements
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: LERN
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: app.lern.local
+    entitlements:
+      path: Watch/LERNWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.lern.local]
+  LERNWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources: [WatchWidgets]
+    dependencies:
+      - package: LERNCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.watch.widgets
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: WatchWidgets/LERNWatchWidgets.entitlements
+    info:
+      path: WatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: LERN
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WatchWidgets/LERNWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.app.lern.local]
+  LERNTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/LERNCoreTests]
+    dependencies:
+      - package: LERNCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.tests
+  LERNUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/LERNUITests]
+    dependencies:
+      - target: LERN
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.uitests
+schemes:
+  LERN:
+    build:
+      targets:
+        LERN: all
+        LERNTests: [test]
+        LERNUITests: [test]
+    test:
+      targets: [LERNTests, LERNUITests]
+  LERNWatch:
+    build:
+      targets:
+        LERNWatch: all
