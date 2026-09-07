@@ -4,7 +4,7 @@ import LERNCore
 import Observation
 
 @MainActor @Observable final class NotificationScheduler {
-    let store: LibraryStore
+    private(set) var store: LibraryStore
     var pendingCount = 0
     var scheduledThrough: Date?
     var authorization: UNAuthorizationStatus = .notDetermined
@@ -12,6 +12,10 @@ import Observation
     private var running = false
     private var rerun = false
     init(store: LibraryStore) { self.store = store }
+    func useStore(_ store: LibraryStore) {
+        self.store = store
+        if running { rerun = true }
+    }
     func requestPermission() async {
         do { _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]); await replenish() }
         catch { lastError = error.localizedDescription }
@@ -23,6 +27,7 @@ import Observation
         running = false
     }
     private func reconcile() async {
+        let store = self.store
         let center = UNUserNotificationCenter.current()
         authorization = await center.notificationSettings().authorizationStatus
         guard authorization == .authorized || authorization == .provisional || authorization == .ephemeral else {
@@ -84,6 +89,7 @@ import Observation
         } catch { lastError = error.localizedDescription }
     }
     func opened(_ planID: String) async {
+        let store = self.store
         do {
             var plans: [DeliveryPlan] = try await store.get("plans", default: [])
             if let index = plans.firstIndex(where: { $0.id == planID }) { plans[index].state = "opened"; plans[index].openedAt = Date(); try await store.put("plans", plans) }

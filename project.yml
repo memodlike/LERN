@@ -21,8 +21,7 @@ targets:
   LERN:
     type: application
     platform: iOS
-    sources: [App, Shared]
-    resources: [Resources]
+    sources: [App, Shared, Resources]
     dependencies:
       - package: LERNCore
       - target: LERNWidgets
@@ -53,8 +52,7 @@ targets:
   LERNWidgets:
     type: app-extension
     platform: iOS
-    sources: [Widgets, Shared]
-    resources: [Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
+    sources: [Widgets, Shared, Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
     dependencies:
       - package: LERNCore
     settings:
@@ -76,8 +74,7 @@ targets:
   LERNWatch:
     type: application
     platform: watchOS
-    sources: [Watch]
-    resources: [Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
+    sources: [Watch, Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
     dependencies:
       - package: LERNCore
       - target: LERNWatchWidgets
@@ -99,8 +96,7 @@ targets:
   LERNWatchWidgets:
     type: app-extension
     platform: watchOS
-    sources: [WatchWidgets]
-    resources: [Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
+    sources: [WatchWidgets, Resources/Localizable.xcstrings, Resources/PrivacyInfo.xcprivacy]
     dependencies:
       - package: LERNCore
     settings:

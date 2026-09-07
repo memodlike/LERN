@@ -37,29 +37,43 @@ struct WidgetPresetEditor: View {
 struct SurfaceSettings: View {
     @Environment(AppState.self) private var state
     let surface: String
-    @State private var source = ContentSource()
+    private var source: Binding<ContentSource> {
+        Binding(get: { surface == "watch" ? state.preferences.watchSource : state.preferences.lockSource }, set: { value in
+            if surface == "watch" { state.preferences.watchSource = value } else { state.preferences.lockSource = value }
+            Task { await state.savePreferences() }
+        })
+    }
     var body: some View {
         Form {
-            NavigationLink("Type of Content") { SourcePicker(source: $source) }
+            NavigationLink("Type of Content") { SourcePicker(source: source) }
             if surface == "watch" {
                 Text("The Watch receives a local selection of up to 100 entries from this source. Open LERN on your iPhone after changing it. No internet is required.")
-                Button("Sync to Watch") { Task { await save(); await WatchBridge.shared.update(store: state.store, source: source) } }
+                Button("Sync to Watch") { Task { await state.savePreferences(); await WatchBridge.shared.update(store: state.store, source: source.wrappedValue) } }
                 Text("Notifications follow Apple's normal iPhone and Watch mirroring rules.").font(.footnote)
             } else {
                 Text("Add LERN to your Lock Screen from the wallpaper editor. This source is independent of Home Screen presets.")
             }
         }.navigationTitle(surface == "watch" ? "Apple Watch" : "Lock Screen Widgets")
-            .task { source = surface == "watch" ? state.preferences.watchSource : state.preferences.lockSource }
-            .onDisappear { Task { await save() } }
     }
-    private func save() async { if surface == "watch" { state.preferences.watchSource = source } else { state.preferences.lockSource = source }; await state.savePreferences(); WidgetCenter.shared.reloadAllTimelines() }
 }
 struct WallpaperView: View {
     @Environment(AppState.self) private var state
-    @State private var source = ContentSource()
+    @State private var preview: EntryValue?
+    @State private var preparing = false
+    private var source: Binding<ContentSource> {
+        Binding(get: { state.preferences.wallpaperSource }, set: { value in
+            state.preferences.wallpaperSource = value
+            Task { await state.savePreferences() }
+        })
+    }
     var body: some View {
         Form {
-            Section { NavigationLink("Type of Content") { SourcePicker(source: $source) }; NavigationLink("Theme") { ThemesView() }; if let entry = state.current { NavigationLink("Preview and save wallpaper") { ShareImageView(entry: entry) } } }
+            Section {
+                NavigationLink("Type of Content") { SourcePicker(source: source) }
+                NavigationLink("Theme") { ThemesView() }
+                Button("Preview and save wallpaper") { Task { await preparePreview() } }.disabled(preparing)
+                if preparing { ProgressView() }
+            }
             Section("Set up in Shortcuts") {
                 Label("Create a personal Time of Day automation in Shortcuts.", systemImage: "clock")
                 Label("Add LERN's Get Wallpaper action.", systemImage: "photo")
@@ -67,7 +81,17 @@ struct WallpaperView: View {
                 Label("Choose your Lock Screen and the automation's run behavior.", systemImage: "checkmark.circle")
                 Text("LERN creates the image locally. Only your Shortcuts automation changes the wallpaper. iOS may require confirmation for your chosen automation settings.").font(.footnote)
             }
-        }.navigationTitle("Wallpapers").task { source = state.preferences.wallpaperSource }.onDisappear { state.preferences.wallpaperSource = source; Task { await state.savePreferences() } }
+        }.navigationTitle("Wallpapers")
+            .navigationDestination(item: $preview) { entry in ShareImageView(entry: entry, initialFormat: "wallpaper") }
+    }
+    private func preparePreview() async {
+        preparing = true; defer { preparing = false }
+        do {
+            guard let entry = try await state.store.next(source: state.preferences.wallpaperSource, surface: "wallpaper", mode: .shuffle) else {
+                state.error = String(localized: "No entries match your wallpaper source. Choose another source or import content."); return
+            }
+            preview = entry
+        } catch { state.error = error.localizedDescription }
     }
 }
 struct AppIconsView: View {

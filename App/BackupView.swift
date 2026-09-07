@@ -60,6 +60,9 @@ struct BackupView: View {
             let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= 500_000_000 else { throw ImportFailure.tooLarge }
             let data = try Data(contentsOf: url, options: .mappedIfSafe)
+            guard data.count <= 500_000_000, let text = String(data: data, encoding: .utf8) else { throw ImportFailure.tooLarge }
+            var budget = JSONResourceBudget(maxTokens: 8_000_000, maxContainerItems: 1_000_000, maxNestedContainerItems: 1_000_000, maxStringBytes: 28_000_000)
+            try budget.validate(text)
             return try JSONDecoder().decode(LibraryBackup.self, from: data).validated()
         }.value } catch { state.error = error.localizedDescription }
     }

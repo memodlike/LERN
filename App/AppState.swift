@@ -5,7 +5,7 @@ import WidgetKit
 import UserNotifications
 
 @MainActor @Observable final class AppState {
-    let store: LibraryStore
+    private(set) var store: LibraryStore
     let scheduler: NotificationScheduler
     var preferences = Preferences()
     var themes = ThemeValue.starters
@@ -21,6 +21,9 @@ import UserNotifications
     var busy = false
     var loaded = false
     var sheet: AppSheet?
+    private var refreshing = false
+    private var foregroundRefreshPending = false
+    private var selectedFeedSource = ContentSource()
     var activeTheme: ThemeValue { themes.first { $0.id == preferences.themeID } ?? ThemeValue.starters[0] }
     init(store: LibraryStore) { self.store = store; self.scheduler = NotificationScheduler(store: store) }
     func load() async {
@@ -29,23 +32,70 @@ import UserNotifications
             themes = try await store.get("themes", default: ThemeValue.starters)
             presets = try await store.get("presets", default: [WidgetPreset()])
             reminders = try await store.get("reminders", default: [])
+            selectedFeedSource = preferences.feedSource
             try await refreshLibrary()
             if current == nil { await next() }
             loaded = true
             await scheduler.replenish()
+            await WatchBridge.shared.update(store: store, source: preferences.watchSource)
         } catch { self.error = error.localizedDescription }
+    }
+    func refreshOnForeground() async {
+        guard loaded, !refreshing else { return }
+        guard !busy else { foregroundRefreshPending = true; return }
+        refreshing = true; busy = true
+        defer { refreshing = false; finishSelection() }
+        do {
+            // A new context also discards cached models changed by widget intents.
+            let freshStore = try SharedStore.open()
+            store = freshStore
+            scheduler.useStore(freshStore)
+            let eligible = Set(try await freshStore.eligibleIDs(source: preferences.feedSource))
+            let currentID = current?.id
+            var refreshed: [EntryValue] = []
+            for entry in feedPast where eligible.contains(entry.id) {
+                if let value = try await freshStore.entry(entry.id) { refreshed.append(value) }
+            }
+            feedPast = refreshed
+            if let currentID, let position = refreshed.lastIndex(where: { $0.id == currentID }) {
+                feedPosition = position; current = refreshed[position]
+            } else {
+                current = nil; feedPosition = -1
+                busy = false
+                await next()
+                busy = true
+            }
+            try await refreshLibrary()
+            await scheduler.replenish()
+            await WatchBridge.shared.update(store: freshStore, source: preferences.watchSource)
+        } catch { self.error = error.localizedDescription }
+    }
+    private func finishSelection() {
+        busy = false
+        if foregroundRefreshPending {
+            foregroundRefreshPending = false
+            Task { await refreshOnForeground() }
+        }
     }
     func refreshLibrary() async throws { topics = try await store.topics(); total = try await store.totalCount() }
     func savePreferences() async {
+        let sourceChanged = selectedFeedSource != preferences.feedSource
+        if sourceChanged {
+            selectedFeedSource = preferences.feedSource; current = nil; feedPast = []; feedPosition = -1
+        }
         do { try await store.put("preferences", preferences); WidgetCenter.shared.reloadAllTimelines() }
         catch { self.error = error.localizedDescription }
+        if sourceChanged { await next() }
     }
     func contentChanged() async {
-        do { try await refreshLibrary(); await scheduler.replenish(); WidgetCenter.shared.reloadAllTimelines(); await WatchBridge.shared.update(store: store, source: preferences.watchSource) }
+        do { try await refreshLibrary(); if selectedFeedSource != preferences.feedSource { await next() }; await scheduler.replenish(); WidgetCenter.shared.reloadAllTimelines(); await WatchBridge.shared.update(store: store, source: preferences.watchSource) }
         catch { self.error = error.localizedDescription }
     }
     func next() async {
-        guard !busy else { return }; busy = true; defer { busy = false }
+        guard !busy else { return }; busy = true; defer { finishSelection() }
+        if selectedFeedSource != preferences.feedSource {
+            selectedFeedSource = preferences.feedSource; current = nil; feedPast = []; feedPosition = -1
+        }
         do {
             if feedPosition + 1 < feedPast.count { feedPosition += 1; current = feedPast[feedPosition] }
             else if let item = try await store.next(source: preferences.feedSource, surface: "feed", mode: preferences.feedMode) {
@@ -64,7 +114,7 @@ import UserNotifications
         guard feedPosition > 0 else { return }; feedPosition -= 1; current = feedPast[feedPosition]
     }
     func changeFeedSource(_ source: ContentSource) async {
-        preferences.feedSource = source; feedPast = []; feedPosition = -1; current = nil
+        preferences.feedSource = source; selectedFeedSource = source; feedPast = []; feedPosition = -1; current = nil
         await savePreferences(); await next()
     }
     func open(_ id: String, kind: String = "opened") async {

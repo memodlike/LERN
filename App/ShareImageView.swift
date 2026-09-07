@@ -9,6 +9,10 @@ struct ShareImageView: View {
     @State private var image: UIImage?
     @State private var activity = false
     @State private var saving = false
+    init(entry: EntryValue, initialFormat: String = "square") {
+        self.entry = entry
+        _format = State(initialValue: initialFormat)
+    }
     var size: CGSize { switch format { case "story": CGSize(width: 432, height: 768); case "portrait": CGSize(width: 432, height: 540); case "wallpaper": CGSize(width: 430, height: 932); default: CGSize(width: 540, height: 540) } }
     var body: some View {
         @Bindable var state = state

@@ -42,7 +42,7 @@ final class LERNUITests: XCTestCase {
         app.buttons["reminders.add"].tap()
         XCTAssertTrue(app.navigationBars["Reminder group"].waitForExistence(timeout: 5))
         app.buttons["Save"].tap()
-        XCTAssertTrue(app.staticTexts["60 / 60"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "60 / 60")).firstMatch.waitForExistence(timeout: 20))
         capture(app, "Scheduled reminders")
     }
     @MainActor func testRussianAndLargeText() throws {

@@ -292,5 +292,19 @@ Your reading history will appear here.|Здесь появится истори�
 iOS keeps a limited queue. Open LERN to replenish it. At 10 reminders a day, 60 reminders cover about 6 days.|Очередь iOS ограничена. Открывайте LERN для её пополнения. При 10 напоминаниях в день очередь из 60 запросов рассчитана примерно на 6 дней.'''
 translations=dict(line.split('|',1) for line in (pairs+'\n'+long_pairs).splitlines() if '|' in line)
 translations.update({'A little room\nto think.':'Немного места\nдля мысли.','Give your thoughts\na place to breathe.':'Дайте мыслям\nсвободное пространство.','Soft chime %lld':'Мягкий звон %lld','%lld reminders a day':'Напоминаний в день: %lld','%lld days':'Дней: %lld','Imported %lld entries. Reused %lld duplicates.':'Добавлено записей: %lld. Повторов: %lld.','Streak: %lld days':'Серия чтения: %lld дн.'})
+translations.update({
+'Choose cover photo':'Выбрать обложку',
+'No entries match your wallpaper source. Choose another source or import content.':'В выбранном источнике нет записей для обоев. Выберите другой источник или импортируйте записи.',
+'Opening your library':'Открываем библиотеку',
+'Something needs attention':'Не удалось выполнить действие',
+'A moment to read':'Минута для чтения',
+'Daily reminder':'Ежедневное напоминание',
+'Daily thought':'Мысль дня',
+'Daylight':'Дневной свет',
+'Midnight':'Полночь',
+'Forest':'Лес',
+'Plum':'Слива',
+'Paper':'Бумага'
+})
 strings={key:{'localizations':{'en':{'stringUnit':{'state':'translated','value':key}},'ru':{'stringUnit':{'state':'translated','value':value}}}} for key,value in translations.items()}
 (root/'Resources/Localizable.xcstrings').write_text(json.dumps({'sourceLanguage':'en','version':'1.0','strings':strings},ensure_ascii=False,indent=2)+'\n')

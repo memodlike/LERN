@@ -30,10 +30,17 @@ struct QuoteProvider: AppIntentTimelineProvider {
             if lock { preset.source = prefs.lockSource; preset.id = "lock" }
             var value: EntryValue?
             if preset.kind == "fortune" {
-                let id = try await store.get("fortune.current." + preset.id, default: "")
-                value = try await store.entry(id)
+                let key = "fortune.current." + preset.id
+                let id = try await store.get(key, default: "")
+                let eligible = try await store.eligibleIDs(source: preset.source)
+                if eligible.contains(id) { value = try await store.entry(id) }
+                if value == nil {
+                    value = try await store.next(source: preset.source, surface: "fortune." + preset.id, mode: .random)
+                    try await store.put(key, value?.id ?? "")
+                }
+            } else {
+                value = try await store.next(source: preset.source, surface: "widget." + preset.id, mode: preset.mode)
             }
-            if value == nil { value = try await store.next(source: preset.source, surface: "widget." + preset.id, mode: preset.mode) }
             return Entry(date: Date(), entry: value, theme: themes.first { $0.id == preset.themeID } ?? themes.first ?? ThemeValue.starters[0], preset: preset, streak: prefs.streak)
         } catch { return Entry(date: Date()) }
     }
