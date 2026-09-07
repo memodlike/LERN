@@ -14,6 +14,10 @@ import LERNCore
         let delegate = AppDelegate(); delegate.state = state
         await delegate.receive(entryID: target.id, planID: "lern.test.plan")
         XCTAssertNil(state.current)
+        await state.open(first.id)
+        XCTAssertEqual(state.preferences.streak.current, 1)
+        let initialHistory = try await store.history()
+        XCTAssertTrue(initialHistory.contains { $0.entryID == first.id && $0.kind == "viewed" })
         await state.load()
         await state.open(first.id)
         await delegate.deliverPendingResponses()

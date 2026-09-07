@@ -30,7 +30,7 @@ import UserNotifications
     }
     private func route(_ url: URL, state: AppState) async {
         guard url.scheme == Product.scheme else { return }
-        if url.host == "entry", let id = url.pathComponents.last, id.count == 64 { await state.open(id); if URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains(where: { $0.name == "share" }) == true { state.sheet = .share } }
+        if url.host == "entry", let id = url.pathComponents.last, id.count == 64 { await state.open(id, kind: "opened"); if URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains(where: { $0.name == "share" }) == true { state.sheet = .share } }
         else if url.host == "library" { state.sheet = .library }
         await state.scheduler.replenish()
     }
@@ -60,7 +60,7 @@ import UserNotifications
         while !pendingResponses.isEmpty {
             let response = pendingResponses.removeFirst()
             await state.scheduler.opened(response.planID)
-            await state.open(response.entryID)
+            await state.open(response.entryID, kind: "opened")
         }
         await state.scheduler.replenish()
     }

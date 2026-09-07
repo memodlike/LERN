@@ -22,7 +22,7 @@ struct ShareImageView: View {
                 if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 380).clipShape(RoundedRectangle(cornerRadius: 16)).accessibilityIdentifier("share.preview").accessibilityLabel("Quote image") }
                 Picker("Format", selection: $format) { Text("Square").tag("square"); Text("4:5").tag("portrait"); Text("Story").tag("story"); Text("Wallpaper").tag("wallpaper") }.pickerStyle(.segmented)
                 Toggle("Show LERN watermark", isOn: $state.preferences.watermark)
-                Button("Share image", systemImage: "square.and.arrow.up") { activity = true }.buttonStyle(.borderedProminent).controlSize(.large).disabled(image == nil)
+                Button("Share image", systemImage: "square.and.arrow.up") { activity = true }.buttonStyle(.borderedProminent).foregroundStyle(.white).controlSize(.large).disabled(image == nil)
                 Button("Save image", systemImage: "square.and.arrow.down") { Task { await save() } }.disabled(image == nil || saving).frame(minHeight: 44)
                 if saved { Label("Image saved", systemImage: "checkmark.circle") }
                 ShareLink(item: entry.draft.text + (entry.draft.author.isEmpty ? "" : "\n— " + entry.draft.author)) { Label("Share text", systemImage: "text.quote") }.frame(minHeight: 44)

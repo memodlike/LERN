@@ -129,11 +129,16 @@ import UserNotifications
         preferences.feedSource = source; selectedFeedSource = source; feedPast = []; feedPosition = -1; current = nil
         await savePreferences(); await next()
     }
-    func open(_ id: String, kind: String = "opened") async {
+    func open(_ id: String, kind: String = "viewed") async {
         do {
             guard let value = try await store.entry(id) else { notice = String(localized: "This entry is no longer in your library."); return }
-            current = value; feedPast.append(value); feedPosition = feedPast.count - 1
+            current = value; feedPast.append(value)
+            if feedPast.count > 100 { feedPast.removeFirst() }
+            feedPosition = feedPast.count - 1
+            preferences.streak.read(on: Date())
+            try await store.put("preferences", preferences)
             try await store.record(id, kind: kind); sheet = nil
+            WidgetCenter.shared.reloadAllTimelines()
         } catch { self.error = error.localizedDescription }
     }
     func flag(_ item: EntryValue, _ flag: String, _ value: Bool) async {
