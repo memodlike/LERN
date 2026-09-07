@@ -2,7 +2,13 @@
 
 Нативная личная библиотека для iPhone и iPad: ваши записи, темы, напоминания и виджеты. SwiftUI, SwiftData, WidgetKit, App Intents и WatchConnectivity. iOS 18+, watchOS 11+. Без аккаунта, рекламы, платных функций, аналитики и серверной части.
 
-[Проверки и сборки](https://github.com/memodlike/LERN/actions/workflows/qa.yml) · [QA и ограничения](docs/QA.md) · [Источники](docs/SOURCES.md)
+[Скачать сборку](https://github.com/memodlike/LERN/releases) · [Проверки](https://github.com/memodlike/LERN/actions/workflows/qa.yml) · [QA и ограничения](docs/QA.md) · [Безопасность](docs/security/README.md) · [Источники](docs/SOURCES.md)
+
+<p>
+  <img src="docs/screenshots/reading-feed.png" width="245" alt="Лента чтения LERN">
+  <img src="docs/screenshots/themes.png" width="245" alt="Выбор оформления">
+  <img src="docs/screenshots/share-image.png" width="245" alt="Отправка изображения с записью">
+</p>
 
 ## Возможности
 
@@ -23,6 +29,8 @@
 
 Полный Xcode обязателен: Command Line Tools не содержат плагин макросов SwiftData. После первого запуска Xcode завершите системную установку компонентов и принятие лицензии с учётной записью администратора. Установите iOS и watchOS Simulator той версии, которую предлагает выбранный Xcode.
 
+Готовая сборка в Releases предназначена для iOS Simulator на Mac с Apple Silicon. Распакуйте `LERN-Simulator.zip` и запустите её через приведённый ниже скрипт. Это не установочный файл для физического iPhone; для него нужна сборка с вашей подписью в Xcode.
+
 Для физического устройства выберите свою Team в Signing & Capabilities у **LERN**, **LERNWidgets**, **LERNWatch** и **LERNWatchWidgets**. При необходимости замените bundle identifiers и зарегистрируйте общий App Group `group.app.lern.local` (либо измените его согласованно в `Product.appGroup` и четырёх entitlement-файлах). Учётные данные Apple Developer в репозитории отсутствуют.
 
 ## Воспроизводимые проверки
@@ -39,6 +47,8 @@ xcodebuild -project LERN.xcodeproj -scheme LERN \
 ```
 
 Не передавайте глобальный `-sdk iphonesimulator`: схема содержит Watch, которому нужен собственный watchOS SDK. CI выбирает совместимый Xcode и конкретный установленный симулятор автоматически. Артефакт `ios-qa` содержит сборку для симулятора, логи, `.xcresult` и снимки экранов. Это не подписанный IPA для iPhone.
+
+После завершения первоначальной настройки Xcode можно запустить `scripts/run-simulator.sh`: он соберёт и откроет LERN в установленном симуляторе. Для готового распакованного приложения передайте путь: `scripts/run-simulator.sh /path/to/LERN.app`.
 
 ## Форматы и пределы
 
