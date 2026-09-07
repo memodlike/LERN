@@ -64,6 +64,18 @@ jobs:
             QA.xcresult
             qa-screenshots
             LERN-Simulator.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: |
+            qa-screenshots/*.png
+            qa-screenshots/manifest.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator-app
+          path: LERN-Simulator.zip
   watch:
     runs-on: macos-15
     timeout-minutes: 30

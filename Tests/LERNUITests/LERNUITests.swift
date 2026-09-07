@@ -89,7 +89,8 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Profile"].waitForExistence(timeout: 15)); app.buttons["Profile"].tap()
         for _ in 0..<5 { if app.buttons["Wallpapers"].isHittable { break }; app.swipeUp() }
         app.buttons["Wallpapers"].tap(); app.buttons["Type of Content"].tap()
-        let own = app.switches["My Content"]; XCTAssertTrue(own.waitForExistence(timeout: 5)); own.tap()
+        let own = app.switches["My Content"]; XCTAssertTrue(own.waitForExistence(timeout: 5)); own.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        XCTAssertEqual(own.value as? String, "1")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Type of Content"].tap()
         XCTAssertEqual(app.switches["My Content"].value as? String, "1")
