@@ -50,7 +50,7 @@ import UserNotifications
         let planID = response.notification.request.identifier
         await receive(entryID: id, planID: planID)
     }
-    private func receive(entryID: String, planID: String) async {
+    func receive(entryID: String, planID: String) async {
         pendingResponses.append((entryID, planID))
         await deliverPendingResponses()
     }

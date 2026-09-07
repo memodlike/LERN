@@ -88,8 +88,20 @@ import UserNotifications
         if sourceChanged { await next() }
     }
     func contentChanged() async {
-        do { try await refreshLibrary(); if selectedFeedSource != preferences.feedSource { await next() }; await scheduler.replenish(); WidgetCenter.shared.reloadAllTimelines(); await WatchBridge.shared.update(store: store, source: preferences.watchSource) }
-        catch { self.error = error.localizedDescription }
+        do {
+            try await refreshLibrary()
+            let eligible = Set(try await store.eligibleIDs(source: preferences.feedSource))
+            if selectedFeedSource != preferences.feedSource || (current != nil && !eligible.contains(current!.id)) {
+                current = nil; feedPast = []; feedPosition = -1; await next()
+            } else {
+                let currentID = current?.id
+                feedPast = feedPast.filter { eligible.contains($0.id) }
+                feedPosition = feedPast.lastIndex(where: { $0.id == currentID }) ?? -1
+                if let currentID { current = try await store.entry(currentID) }
+            }
+            await scheduler.replenish(); WidgetCenter.shared.reloadAllTimelines()
+            await WatchBridge.shared.update(store: store, source: preferences.watchSource)
+        } catch { self.error = error.localizedDescription }
     }
     func next() async {
         guard !busy else { return }; busy = true; defer { finishSelection() }

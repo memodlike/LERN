@@ -9,6 +9,7 @@ struct ShareImageView: View {
     @State private var image: UIImage?
     @State private var activity = false
     @State private var saving = false
+    @State private var saved = false
     init(entry: EntryValue, initialFormat: String = "square") {
         self.entry = entry
         _format = State(initialValue: initialFormat)
@@ -18,11 +19,12 @@ struct ShareImageView: View {
         @Bindable var state = state
         ScrollView {
             VStack(spacing: 24) {
-                if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 380).clipShape(RoundedRectangle(cornerRadius: 16)) }
+                if let image { Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 380).clipShape(RoundedRectangle(cornerRadius: 16)).accessibilityIdentifier("share.preview").accessibilityLabel("Quote image") }
                 Picker("Format", selection: $format) { Text("Square").tag("square"); Text("4:5").tag("portrait"); Text("Story").tag("story"); Text("Wallpaper").tag("wallpaper") }.pickerStyle(.segmented)
                 Toggle("Show LERN watermark", isOn: $state.preferences.watermark)
                 Button("Share image", systemImage: "square.and.arrow.up") { activity = true }.buttonStyle(.borderedProminent).controlSize(.large).disabled(image == nil)
                 Button("Save image", systemImage: "square.and.arrow.down") { Task { await save() } }.disabled(image == nil || saving).frame(minHeight: 44)
+                if saved { Label("Image saved", systemImage: "checkmark.circle") }
                 ShareLink(item: entry.draft.text + (entry.draft.author.isEmpty ? "" : "\n— " + entry.draft.author)) { Label("Share text", systemImage: "text.quote") }.frame(minHeight: 44)
                 Text("Available apps appear in the iOS share sheet.").font(.caption).foregroundStyle(.secondary)
             }.padding(24)
@@ -39,7 +41,7 @@ struct ShareImageView: View {
         guard let image else { return }; saving = true; defer { saving = false }
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else { state.error = String(localized: "Allow photo access in Settings to save images. You can also use Share image and Save to Files."); return }
-        do { try await PHPhotoLibrary.shared().performChanges { PHAssetChangeRequest.creationRequestForAsset(from: image) }; state.notice = String(localized: "Image saved") }
+        do { try await PHPhotoLibrary.shared().performChanges { PHAssetChangeRequest.creationRequestForAsset(from: image) }; saved = true; state.notice = String(localized: "Image saved") }
         catch { state.error = error.localizedDescription }
     }
 }

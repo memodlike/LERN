@@ -29,6 +29,20 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6A335701813C4E26CC1286E3"
+               BuildableName = "LERNAppTests.xctest"
+               BlueprintName = "LERNAppTests"
+               ReferencedContainer = "container:LERN.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "46923DADF22CD3A46A4AC048"
                BuildableName = "LERNTests.xctest"
                BlueprintName = "LERNTests"
@@ -75,6 +89,17 @@
                BlueprintIdentifier = "46923DADF22CD3A46A4AC048"
                BuildableName = "LERNTests.xctest"
                BlueprintName = "LERNTests"
+               ReferencedContainer = "container:LERN.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "6A335701813C4E26CC1286E3"
+               BuildableName = "LERNAppTests.xctest"
+               BlueprintName = "LERNAppTests"
                ReferencedContainer = "container:LERN.xcodeproj">
             </BuildableReference>
          </TestableReference>

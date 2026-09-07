@@ -25,6 +25,7 @@ targets:
     dependencies:
       - package: LERNCore
       - target: LERNWidgets
+      - target: LERNWatch
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.lern.local
@@ -124,6 +125,19 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.tests
+  LERNAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/LERNAppTests]
+    dependencies:
+      - target: LERN
+      - package: LERNCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/LERN.app/LERN"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.apptests
   LERNUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -140,9 +154,10 @@ schemes:
       targets:
         LERN: all
         LERNTests: [test]
+        LERNAppTests: [test]
         LERNUITests: [test]
     test:
-      targets: [LERNTests, LERNUITests]
+      targets: [LERNTests, LERNAppTests, LERNUITests]
   LERNWatch:
     build:
       targets:

@@ -53,4 +53,40 @@ final class LERNUITests: XCTestCase {
         capture(app, "Russian landscape")
         XCUIDevice.shared.orientation = .portrait
     }
+    @MainActor func testCollectionSharingAndPersistence() throws {
+        let app = application()
+        XCTAssertTrue(app.buttons["Write a thought"].waitForExistence(timeout: 20)); app.buttons["Write a thought"].tap()
+        let editor = app.textViews["editor.text"]; XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap(); editor.typeText("Keep this thought after restarting LERN.")
+        app.buttons["editor.save"].tap()
+        XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 10))
+        app.buttons["More actions"].tap(); app.buttons["Add to collection"].tap()
+        let name = app.textFields["New collection name"]; XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap(); name.typeText("QA collection"); app.buttons["Create and add"].tap()
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 10)); app.buttons["Share"].tap()
+        XCTAssertTrue(app.images["share.preview"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Share image"].isEnabled)
+        capture(app, "Share image preview")
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 20))
+        XCTAssertEqual(app.staticTexts["feed.quote"].label, "Keep this thought after restarting LERN.")
+        app.buttons["feed.library"].tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Keep this thought")
+        XCTAssertTrue(app.staticTexts["Keep this thought after restarting LERN."].waitForExistence(timeout: 10))
+        capture(app, "Library search")
+    }
+    @MainActor func testIndependentWallpaperSourcePersists() throws {
+        let app = application()
+        XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20)); app.buttons["Try original sample thoughts"].tap()
+        XCTAssertTrue(app.buttons["Profile"].waitForExistence(timeout: 15)); app.buttons["Profile"].tap()
+        for _ in 0..<5 { if app.buttons["Wallpapers"].isHittable { break }; app.swipeUp() }
+        app.buttons["Wallpapers"].tap(); app.buttons["Type of Content"].tap()
+        let own = app.switches["My Content"]; XCTAssertTrue(own.waitForExistence(timeout: 5)); own.tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["Type of Content"].tap()
+        XCTAssertEqual(app.switches["My Content"].value as? String, "1")
+        capture(app, "Independent wallpaper source")
+    }
+
 }

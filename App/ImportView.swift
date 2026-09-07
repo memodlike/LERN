@@ -20,7 +20,7 @@ struct ImportView: View {
     var body: some View {
         Form {
             Section {
-                Label("Your files stay on this device", systemImage: "lock.shield")
+                Label("Your files are processed locally", systemImage: "lock.shield")
                 Text("Import Markdown, TXT, CSV, TSV, JSON or JSONL. Each file becomes a topic. Up to 100 MB and 100,000 entries per file.").font(.subheadline).foregroundStyle(.secondary)
                 Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading)
                 Button("Choose files", systemImage: "folder") { picker = true }.disabled(loading).accessibilityIdentifier("import.choose")

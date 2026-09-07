@@ -1,6 +1,8 @@
 import SwiftUI
 import LERNCore
 
+private struct LibraryQuery: Hashable { let source: ContentSource; let search: String }
+
 struct LibraryView: View {
     @Environment(AppState.self) private var state
     @Environment(\.dismiss) private var dismiss
@@ -55,8 +57,7 @@ struct LibraryView: View {
         .navigationTitle("Your library")
         .searchable(text: $search, prompt: "Text, author, source or tag")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
-        .task(id: search) { do { try await Task.sleep(for: .milliseconds(250)); await reload() } catch {} }
-        .task(id: source) { await reload() }
+        .task(id: LibraryQuery(source: source, search: search)) { do { try await Task.sleep(for: .milliseconds(250)); try Task.checkCancellation(); await reload() } catch {} }
         .onAppear { Task { try? await state.refreshLibrary() } }
     }
     private func sourceRow(_ title: LocalizedStringKey, symbol: String, value: ContentSource) -> some View {
@@ -109,7 +110,7 @@ struct EntryEditor: View {
         }.navigationTitle(existing == nil ? "Write a thought" : "Edit thought")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Save") { Task { await save() } }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.count > 20_000 || saving).accessibilityIdentifier("editor.save") }
+                ToolbarItem(placement: .confirmationAction) { Button("Save") { Task { await save() } }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.count > 20_000 || author.count > 2_000 || source.count > 2_000 || tags.split(separator: ",").count > 64 || tags.split(separator: ",").contains(where: { $0.count > 256 }) || saving).accessibilityIdentifier("editor.save") }
             }
             .task { if let entry = existing { text = entry.draft.text; author = entry.draft.author; source = entry.draft.source; tags = entry.draft.tags.joined(separator: ", ") } }
     }

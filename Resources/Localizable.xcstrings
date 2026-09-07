@@ -4722,6 +4722,22 @@
         }
       }
     },
+    "Your files are processed locally": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your files are processed locally"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Файлы обрабатываются на устройстве"
+          }
+        }
+      }
+    },
     "No entries match your wallpaper source. Choose another source or import content.": {
       "localizations": {
         "en": {

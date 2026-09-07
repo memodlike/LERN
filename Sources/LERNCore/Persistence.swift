@@ -202,7 +202,11 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     public func reorder(topicID: String, ids: [String]) throws {
         invalidateSelection()
         let links = try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }))
-        let order = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($0.element, $0.offset) })
+        let selected = Set(ids)
+        guard selected.count == ids.count else { throw ImportFailure.malformed("Duplicate entries in collection order.") }
+        let positions = links.filter { selected.contains($0.entryID) }.map(\.ordinal).sorted()
+        guard positions.count == ids.count else { throw ImportFailure.malformed("An entry no longer belongs to this collection.") }
+        let order = Dictionary(uniqueKeysWithValues: zip(ids, positions))
         for link in links { if let index = order[link.entryID] { link.ordinal = index } }
         try modelContext.save()
     }
