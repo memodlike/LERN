@@ -37,7 +37,7 @@ jobs:
           xcodebuild -version
           xcrun simctl list devices available
       - name: Build iPhone and extensions
-        run: xcodebuild -project LERN.xcodeproj -scheme LERN -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ios-build.log
+        run: xcodebuild -project LERN.xcodeproj -scheme LERN -destination 'generic/platform=iOS Simulator' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO build 2>&1 | tee ios-build.log
       - name: Verify bundled resources
         run: |
           APP=DerivedData/Build/Products/Debug-iphonesimulator/LERN.app

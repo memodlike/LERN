@@ -193,7 +193,7 @@ public struct DelimitedImporter: ContentImporter {
             guard rowCount <= ImportService.entryLimit + 1 else { throw ImportFailure.tooLarge }
             if headers == nil {
                 headers = row.map { field in
-                    let key = field.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "\u{FEFF}")).lowercased()
+                    let key = field.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\u{FEFF}"))).lowercased()
                     return headerAliases[key] ?? key
                 }
                 hasHeader = headers!.contains(where: aliases.contains)
