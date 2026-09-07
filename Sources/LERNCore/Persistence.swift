@@ -247,7 +247,8 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     }
     public func next(source: ContentSource, surface: String, mode: SelectionMode) throws -> EntryValue? {
         let ids = try eligibleIDs(source: source)
-        let encoded = try JSONEncoder().encode(source)
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let encoded = try encoder.encode(source)
         let key = "cursor." + surface + "." + encoded.base64EncodedString()
         var cursor = try get(key, default: SelectionCursor())
         guard let id = SelectionEngine.next(ids: ids, mode: mode, cursor: &cursor) else { return nil }

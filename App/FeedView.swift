@@ -6,6 +6,7 @@ struct FeedView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var mutePhrase = ""
     @State private var showMute = false
+    @State private var editingEntry: EntryValue?
     @ScaledMetric(relativeTo: .largeTitle) private var quoteSize = 34
     var body: some View {
         @Bindable var state = state
@@ -43,6 +44,7 @@ struct FeedView: View {
             }.environment(state).tint(Color(hex: "276A99")).foregroundStyle(.primary)
                 .presentationDragIndicator(.visible)
         }
+        .sheet(item: $editingEntry) { entry in NavigationStack { EntryEditor(existing: entry) }.environment(state) }
         .alert("Mute a word or phrase", isPresented: $showMute) {
             TextField("Word or phrase", text: $mutePhrase)
             Button("Cancel", role: .cancel) {}
@@ -121,7 +123,7 @@ struct FeedView: View {
         Button("Add to collection", systemImage: "folder.badge.plus") { state.sheet = .collections }
         Button("Save or share image", systemImage: "photo") { state.sheet = .share }
         Button("Copy text", systemImage: "doc.on.doc") { UIPasteboard.general.string = entry.draft.text; state.notice = String(localized: "Copied") }
-        Button("Edit", systemImage: "pencil") { state.sheet = .compose }
+        Button("Edit", systemImage: "pencil") { editingEntry = entry }
         Button("Dislike", systemImage: "hand.thumbsdown") { Task { await state.flag(entry, "disliked", true) } }
         Button("Mute this entry", systemImage: "speaker.slash") { Task { await state.flag(entry, "muted", true) } }
         Button("Mute a word or phrase", systemImage: "text.badge.minus") { showMute = true }

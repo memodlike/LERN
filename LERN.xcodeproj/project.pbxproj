@@ -16,7 +16,6 @@
 		264EFEB22C22854A748B56AF /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 98AF9565391916BDFB1EA637 /* LERNCore */; };
 		2FAED6A0D9498396222FB5E3 /* SurfaceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */; };
 		319A2ED713B64429B2165CAF /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0810DB6196ED2EBC83CB14C /* LibraryView.swift */; };
-		356D8068D0A41CD886B58798 /* LERNWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3F6A86791949E046F691F8BB /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = FE4F13C40361523142FD82F7 /* LERNCore */; };
 		4F38C450B0D38252CFC0E0B4 /* LERNUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */; };
 		54A671194F9CA19DE366862E /* LERNWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -45,13 +44,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		0EEE3564E41C50EC474CC20F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 15DC97A06D0664A6F6B89423;
-			remoteInfo = LERNWatch;
-		};
 		15192E58F8B782D8DE76DCEA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
@@ -96,17 +88,6 @@
 				72B905FAB898DC8537B94647 /* LERNWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		C4B3A70BB3B84001B9778827 /* Embed Watch Content */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
-			files = (
-				356D8068D0A41CD886B58798 /* LERNWatch.app in Embed Watch Content */,
-			);
-			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -392,13 +373,11 @@
 				A226E0C381055F0323600E9D /* Sources */,
 				DC56AE43BD5276D4CF1A611C /* Frameworks */,
 				831550DE5A9AA5025B38AB65 /* Embed Foundation Extensions */,
-				C4B3A70BB3B84001B9778827 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				558A7227C2F0A8A620552CB4 /* PBXTargetDependency */,
-				893354705588588069E1E8E7 /* PBXTargetDependency */,
 			);
 			name = LERN;
 			packageProductDependencies = (
@@ -600,11 +579,6 @@
 			isa = PBXTargetDependency;
 			target = CE6662EB3E91CE945C7012E8 /* LERN */;
 			targetProxy = 15192E58F8B782D8DE76DCEA /* PBXContainerItemProxy */;
-		};
-		893354705588588069E1E8E7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 15DC97A06D0664A6F6B89423 /* LERNWatch */;
-			targetProxy = 0EEE3564E41C50EC474CC20F /* PBXContainerItemProxy */;
 		};
 		9FC0A9FD879DE0FEA36F71E6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
