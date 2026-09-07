@@ -4,6 +4,11 @@ import LERNCore
 
 public enum SharedStore {
     public static var directory: URL {
+        #if DEBUG
+        if let session = ProcessInfo.processInfo.environment["LERN_UI_TEST_SESSION"], UUID(uuidString: session) != nil {
+            return URL.applicationSupportDirectory.appendingPathComponent("LERN-QA-" + session, isDirectory: true)
+        }
+        #endif
         #if os(iOS) || os(watchOS)
         if let shared = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Product.appGroup) { return shared }
         #endif
