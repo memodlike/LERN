@@ -171,12 +171,14 @@ public struct StreakState: Codable, Equatable, Sendable {
     public init() {}
     public mutating func read(on date: Date, calendar: Calendar = .autoupdatingCurrent) {
         guard enabled else { return }
+        current = min(1_000_000, max(0, current)); longest = min(1_000_000, max(current, longest))
+        freezes = min(3, max(0, freezes)); readingDaysSinceFreeze = min(6, max(0, readingDaysSinceFreeze))
         let day = calendar.startOfDay(for: date)
         if let last = lastDay {
             let gap = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: day).day ?? 0
             guard gap > 0 else { return }
             let missed = gap - 1
-            if missed <= freezes { freezes -= missed; current += 1 } else { current = 1 }
+            if missed <= freezes { freezes -= missed; current = min(1_000_000, current + 1) } else { current = 1 }
         } else { current = 1 }
         readingDaysSinceFreeze += 1
         if readingDaysSinceFreeze >= 7 { freezes = min(3, freezes + 1); readingDaysSinceFreeze = 0 }

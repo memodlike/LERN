@@ -7,6 +7,7 @@ public enum SelectionEngine {
         let fingerprint = SHA256.hash(data: Data(ids.joined(separator: ",").utf8)).prefix(8).map { String(format: "%02x", $0) }.joined()
         if cursor.fingerprint != fingerprint { cursor.fingerprint = fingerprint; cursor.position = 0; cursor.cycle = 0 }
         let count = ids.count
+        if cursor.position < 0 { cursor.position = 0 }
         if cursor.position >= count { cursor.position = 0; cursor.cycle &+= 1 }
         let index: Int
         switch mode {
@@ -88,6 +89,22 @@ public struct LibraryBackup: Codable, Sendable {
         guard Set(entries.map(\.id)).count == entries.count, Set(topics.map(\.id)).count == topics.count else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
         let ids = Set(entries.map(\.id)), topicIDs = Set(topics.map(\.id))
         guard entries.allSatisfy({ $0.id == $0.draft.id && !$0.draft.text.isEmpty && $0.draft.text.count <= ImportService.textLimit }), memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) }), photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= 20_000_000 }) else { throw ImportFailure.malformed("Invalid entries, links or photo names.") }
+        let streak = preferences.streak
+        guard (0...1_000_000).contains(streak.current), (0...1_000_000).contains(streak.longest),
+              streak.longest >= streak.current, (0...3).contains(streak.freezes), (0...6).contains(streak.readingDaysSinceFreeze),
+              themes.count > 0, themes.count <= 200, presets.count <= 100, resources.count <= 10_000,
+              history.count <= 1_000_000, cursors.count <= 10_000,
+              preferences.mutedWords.count <= 1_000, preferences.mutedWords.allSatisfy({ $0.count <= 500 }),
+              memberships.allSatisfy({ (0...1_000_000).contains($0.ordinal) }),
+              cursors.allSatisfy({ $0.key.hasPrefix("cursor.") && $0.key.count < 20_000 && (0...200_000).contains($0.value.position) }),
+              Set(themes.map(\.id)).count == themes.count, Set(presets.map(\.id)).count == presets.count,
+              Set(reminders.map(\.id)).count == reminders.count,
+              themes.allSatisfy({ $0.overlay.isFinite && (0...0.85).contains($0.overlay) && ($0.photoName == nil || Self.safeAssetName($0.photoName!)) }),
+              reminders.allSatisfy({ (1...60).contains($0.frequency) && (0..<1440).contains($0.startMinute) && (0..<1440).contains($0.endMinute) && $0.explicitMinutes.count <= 60 && $0.explicitMinutes.allSatisfy({ (0..<1440).contains($0) }) && $0.weekdays.count <= 7 && $0.weekdays.allSatisfy({ (1...7).contains($0) }) }),
+              presets.allSatisfy({ (30...1440).contains($0.refreshMinutes) }),
+              photos.values.reduce(Int64(0), { $0 + Int64($1.count) }) <= 250_000_000
+        else { throw ImportFailure.malformed("Backup settings contain invalid counters, dates or limits.") }
+        if let lastDay = streak.lastDay, !lastDay.timeIntervalSince1970.isFinite { throw ImportFailure.malformed("Invalid streak date.") }
         return self
     }
     public static func safeAssetName(_ value: String) -> Bool {

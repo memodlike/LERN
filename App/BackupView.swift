@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import LERNCore
+import ImageIO
 
 struct BackupDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
@@ -64,14 +65,32 @@ struct BackupView: View {
     }
     private func restore(merge: Bool) async {
         guard let preview else { return }; busy = true; defer { busy = false }
+        var written: [URL] = []
         do {
-            // Validate and stage all photos before committing database changes.
-            try await Task.detached {
+            var restored = try preview.validated()
+            let prepared = try await Task.detached { () throws -> (LibraryBackup, [URL]) in
+                var restored = preview
                 try FileManager.default.createDirectory(at: SharedStore.photosDirectory, withIntermediateDirectories: true)
-                for (name, bytes) in preview.photos { guard let url = SharedStore.photoURL(name) else { throw ImportFailure.malformed("Invalid photo name.") }; if merge && FileManager.default.fileExists(atPath: url.path) { continue }; try bytes.write(to: url, options: .atomic) }
+                var names: [String: String] = [:], files: [URL] = []
+                do {
+                    for (name, bytes) in preview.photos {
+                        guard let source = CGImageSourceCreateWithData(bytes as CFData, nil), let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 2048, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary), let jpeg = UIImage(cgImage: image).jpegData(compressionQuality: 0.9) else { throw ImportFailure.malformed("A backup photo is invalid.") }
+                        let newName = UUID().uuidString + ".jpg"
+                        let url = SharedStore.photosDirectory.appendingPathComponent(newName)
+                        try jpeg.write(to: url, options: .atomic); files.append(url); names[name] = newName
+                    }
+                    for index in restored.themes.indices { if let name = restored.themes[index].photoName { restored.themes[index].photoName = names[name] } }
+                    for index in restored.resources.indices { if let name = restored.resources[index].coverName { restored.resources[index].coverName = names[name] } }
+                    restored.photos = [:]
+                    return (restored, files)
+                } catch { for file in files { try? FileManager.default.removeItem(at: file) }; throw error }
             }.value
-            try await state.store.restore(preview, merge: merge)
+            restored = prepared.0; written = prepared.1
+            try await state.store.restore(restored, merge: merge)
             state.current = nil; state.feedPast = []; state.feedPosition = -1; await state.load(); self.preview = nil; message = String(localized: "Backup restored")
-        } catch { state.error = error.localizedDescription }
+        } catch {
+            for file in written { try? FileManager.default.removeItem(at: file) }
+            state.error = error.localizedDescription
+        }
     }
 }

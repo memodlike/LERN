@@ -34,7 +34,7 @@ struct QuoteProvider: AppIntentTimelineProvider {
                 value = try await store.entry(id)
             }
             if value == nil { value = try await store.next(source: preset.source, surface: "widget." + preset.id, mode: preset.mode) }
-            return Entry(date: Date(), entry: value, theme: themes.first { $0.id == preset.themeID } ?? themes[0], preset: preset, streak: prefs.streak)
+            return Entry(date: Date(), entry: value, theme: themes.first { $0.id == preset.themeID } ?? themes.first ?? ThemeValue.starters[0], preset: preset, streak: prefs.streak)
         } catch { return Entry(date: Date()) }
     }
 }

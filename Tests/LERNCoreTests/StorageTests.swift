@@ -57,3 +57,32 @@ import Foundation
         print("BENCHMARK storage_100k_seconds=\(Date().timeIntervalSince(start)) search_seconds=\(Date().timeIntervalSince(searchStart))")
     }
 }
+
+struct BackupSafetyTests {
+    @Test func rejectsDangerousState() async throws {
+        let store = LibraryStore(modelContainer: try StorageFactory.container(inMemory: true))
+        _ = try await store.addOwn(EntryDraft(text: "valid"))
+        let backup = try await store.backup()
+        var bad = backup; bad.preferences.streak.readingDaysSinceFreeze = Int.max
+        #expect(throws: (any Error).self) { try bad.validated() }
+        bad = backup; var cursor = SelectionCursor(); cursor.position = -1; bad.cursors["cursor.feed"] = cursor
+        #expect(throws: (any Error).self) { try bad.validated() }
+        bad = backup; bad.themes = []
+        #expect(throws: (any Error).self) { try bad.validated() }
+        bad = backup; bad.memberships[0].ordinal = Int.max
+        #expect(throws: (any Error).self) { try bad.validated() }
+    }
+    @Test func useSitesRecoverInvalidCounters() {
+        var streak = StreakState(); streak.readingDaysSinceFreeze = Int.max; streak.current = Int.max; streak.freezes = Int.max
+        streak.read(on: Date()); #expect(streak.readingDaysSinceFreeze == 0); #expect(streak.freezes == 3)
+        var cursor = SelectionCursor(); cursor.position = -1
+        #expect(SelectionEngine.next(ids: ["one"], mode: .sequential, cursor: &cursor) == "one")
+    }
+    @Test func parsersRejectOverLimit() {
+        let lines = String(repeating: "x\n", count: 100_001)
+        #expect(throws: (any Error).self) { try PlainTextImporter().parse(lines, mode: .lines) }
+        #expect(throws: (any Error).self) { try DelimitedImporter().parse(lines, mode: .lines) }
+        let nested = String(repeating: "[", count: 40) + "0" + String(repeating: "]", count: 40)
+        #expect(throws: (any Error).self) { try JSONImporter().parse(nested, mode: .automatic) }
+    }
+}

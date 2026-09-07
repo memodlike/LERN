@@ -58,13 +58,41 @@ public struct ImportService: Sendable {
     }
 }
 
+private struct TextLines: Sequence {
+    let text: String
+    func makeIterator() -> AnyIterator<Substring> {
+        var position = text.startIndex
+        return AnyIterator {
+            guard position < text.endIndex else { return nil }
+            let end = text[position...].firstIndex(of: "\n") ?? text.endIndex
+            let line = text[position..<end]
+            position = end == text.endIndex ? end : text.index(after: end)
+            return line
+        }
+    }
+}
 public struct PlainTextImporter: ContentImporter {
     public let extensions = ["txt"]
     public init() {}
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
         let paragraphs = mode == .paragraphs || (mode == .automatic && text.contains("\n\n"))
-        let parts = paragraphs ? text.components(separatedBy: "\n\n") : text.components(separatedBy: "\n")
-        return (parts.map { EntryDraft(text: $0) }.filter { !$0.text.isEmpty }, [])
+        var entries: [EntryDraft] = [], buffer = "", lineNumber = 0
+        func append(_ value: String) throws {
+            let clean = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !clean.isEmpty else { return }
+            guard entries.count < ImportService.entryLimit else { throw ImportFailure.tooLarge }
+            guard clean.count <= ImportService.textLimit else { throw ImportFailure.malformed("An entry exceeds 20,000 characters.") }
+            entries.append(EntryDraft(text: clean))
+        }
+        for line in TextLines(text: text) {
+            lineNumber += 1; if lineNumber % 256 == 0 { try Task.checkCancellation() }
+            if paragraphs {
+                if line.trimmingCharacters(in: .whitespaces).isEmpty { try append(buffer); buffer = "" }
+                else { guard buffer.utf8.count + line.utf8.count < 100_000 else { throw ImportFailure.tooLarge }; buffer += (buffer.isEmpty ? "" : "\n") + line }
+            } else { try append(String(line)) }
+        }
+        if paragraphs { try append(buffer) }
+        return (entries, [])
     }
 }
 
@@ -72,6 +100,7 @@ public struct MarkdownImporter: ContentImporter {
     public let extensions = ["md", "markdown"]
     public init() {}
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
+        guard text.utf8.reduce(0, { $0 + ($1 == 10 ? 1 : 0) }) <= 500_000 else { throw ImportFailure.tooLarge }
         var lines = text.components(separatedBy: "\n"), author = "", tags: [String] = [], source = ""
         if lines.first?.trimmingCharacters(in: .whitespaces) == "---", let end = lines.dropFirst().firstIndex(of: "---") {
             for line in lines[1..<end] {
@@ -95,6 +124,7 @@ public struct MarkdownImporter: ContentImporter {
         }
         for (index, raw) in lines.enumerated() {
             if index % 256 == 0 { try Task.checkCancellation() }
+            guard entries.count <= ImportService.entryLimit, raw.count <= ImportService.textLimit else { throw ImportFailure.tooLarge }
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.hasPrefix("```") { flush(); inCode.toggle(); continue }
             if inCode { continue }
@@ -116,38 +146,47 @@ public struct DelimitedImporter: ContentImporter {
     let separator: Character
     public init(separator: Character = ",") { self.separator = separator }
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
-        let chars = Array(text); var rows: [[String]] = [], row: [String] = [], cell = "", quoted = false, i = 0
-        while i < chars.count {
-            if i % 8192 == 0 { try Task.checkCancellation() }
-            let c = chars[i]
-            if c == "\"" {
-                if quoted && i + 1 < chars.count && chars[i + 1] == "\"" { cell.append("\""); i += 1 }
-                else if quoted { quoted = false }
-                else if cell.isEmpty { quoted = true }
-                else { throw ImportFailure.malformed("Unexpected quote in CSV field.") }
-            } else if c == separator && !quoted { row.append(cell); cell = "" }
-            else if c == "\n" && !quoted { row.append(cell); if row.contains(where: { !$0.isEmpty }) { rows.append(row) }; row = []; cell = "" }
-            else { cell.append(c) }
-            i += 1
+        var entries: [EntryDraft] = [], issues: [String] = [], row: [String] = [], cell = ""
+        var quoted = false, afterQuote = false, headers: [String]?, hasHeader = false, rowCount = 0, processed = 0, fieldLength = 0
+        let aliases = ["text", "quote", "body", "content"]
+        func finishCell() throws {
+            guard row.count < 64 else { throw ImportFailure.malformed("A row has more than 64 columns.") }
+            row.append(cell); cell = ""; fieldLength = 0; afterQuote = false
+        }
+        func finishRow() throws {
+            try finishCell()
+            defer { row = [] }
+            guard row.contains(where: { !$0.isEmpty }) else { return }
+            rowCount += 1
+            guard rowCount <= ImportService.entryLimit + 1 else { throw ImportFailure.tooLarge }
+            if headers == nil {
+                headers = row.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+                hasHeader = headers!.contains(where: aliases.contains)
+                if hasHeader { return }
+            }
+            let textIndex = hasHeader ? headers!.firstIndex(where: aliases.contains)! : 0
+            func value(_ key: String) -> String { guard hasHeader, let i = headers!.firstIndex(of: key), i < row.count else { return "" }; return row[i] }
+            guard textIndex < row.count, !row[textIndex].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { issues.append("Row \(rowCount): missing text."); return }
+            guard entries.count < ImportService.entryLimit else { throw ImportFailure.tooLarge }
+            entries.append(EntryDraft(text: row[textIndex], author: value("author"), source: value("source"), tags: value("tags").split(whereSeparator: { $0 == ";" || $0 == "|" }).map(String.init), section: value("category")))
+        }
+        for c in text {
+            processed += 1; if processed % 8192 == 0 { try Task.checkCancellation() }
+            if quoted {
+                if c == "\"" { quoted = false; afterQuote = true }
+                else { cell.append(c); fieldLength += 1 }
+            } else if afterQuote && c == "\"" { cell.append(c); fieldLength += 1; quoted = true; afterQuote = false }
+            else if c == separator { try finishCell() }
+            else if c == "\n" { try finishRow() }
+            else if c == "\"" && cell.isEmpty { quoted = true }
+            else if afterQuote { if !c.isWhitespace { throw ImportFailure.malformed("Unexpected character after a quoted field.") } }
+            else if c == "\"" { throw ImportFailure.malformed("Unexpected quote in CSV field.") }
+            else { cell.append(c); fieldLength += 1 }
+            guard fieldLength <= ImportService.textLimit else { throw ImportFailure.malformed("A field exceeds 20,000 characters.") }
         }
         guard !quoted else { throw ImportFailure.malformed("Unclosed CSV quote.") }
-        row.append(cell); if row.contains(where: { !$0.isEmpty }) { rows.append(row) }
-        guard let first = rows.first else { return ([], []) }
-        let headers = first.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-        let aliases = ["text", "quote", "body", "content"]
-        let textIndex = headers.firstIndex(where: aliases.contains)
-        let hasHeader = textIndex != nil
-        func value(_ row: [String], _ key: String) -> String {
-            guard hasHeader, let index = headers.firstIndex(of: key), index < row.count else { return "" }
-            return row[index]
-        }
-        var result: [EntryDraft] = [], issues: [String] = []
-        for (index, row) in rows.dropFirst(hasHeader ? 1 : 0).enumerated() {
-            let position = textIndex ?? 0
-            guard position < row.count, !row[position].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { issues.append("Row \(index + 1): missing text."); continue }
-            result.append(EntryDraft(text: row[position], author: value(row, "author"), source: value(row, "source"), tags: value(row, "tags").split(whereSeparator: { $0 == ";" || $0 == "|" }).map(String.init), section: value(row, "category")))
-        }
-        return (result, issues)
+        if !row.isEmpty || !cell.isEmpty { try finishRow() }
+        return (entries, issues)
     }
 }
 
@@ -158,12 +197,15 @@ public struct JSONImporter: ContentImporter {
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
         var values: [Any] = [], issues: [String] = []
         if lines {
-            for (index, line) in text.split(separator: "\n").enumerated() {
+            for (index, line) in TextLines(text: text).enumerated() {
+                guard index < ImportService.entryLimit else { throw ImportFailure.tooLarge }; try Task.checkCancellation()
+                try validateJSONBudget(String(line))
                 do { values.append(try JSONSerialization.jsonObject(with: Data(line.utf8), options: [.fragmentsAllowed])) }
                 catch { issues.append("Line \(index + 1): invalid JSON.") }
             }
         } else {
             do {
+                try validateJSONBudget(text)
                 let object = try JSONSerialization.jsonObject(with: Data(text.utf8))
                 guard let array = object as? [Any] else { throw ImportFailure.malformed("Expected a JSON array.") }
                 values = array
@@ -178,5 +220,20 @@ public struct JSONImporter: ContentImporter {
             entries.append(EntryDraft(text: text, author: object["author"] as? String ?? "", source: object["source"] as? String ?? "", tags: tags, section: object["category"] as? String ?? ""))
         }
         return (entries, issues)
+    }
+}
+
+private func validateJSONBudget(_ text: String) throws {
+    var depth = 0, topItems = 0, inString = false, escaped = false, characters = 0
+    for byte in text.utf8 {
+        characters += 1; if characters % 8192 == 0 { try Task.checkCancellation() }
+        if inString {
+            if escaped { escaped = false } else if byte == 92 { escaped = true } else if byte == 34 { inString = false }
+            continue
+        }
+        if byte == 34 { inString = true }
+        else if byte == 91 || byte == 123 { depth += 1; if depth > 32 { throw ImportFailure.malformed("JSON nesting exceeds 32 levels.") } }
+        else if byte == 93 || byte == 125 { depth -= 1 }
+        else if byte == 44 && depth == 1 { topItems += 1; if topItems >= ImportService.entryLimit { throw ImportFailure.tooLarge } }
     }
 }
