@@ -52,10 +52,10 @@ struct QuoteArtwork: View {
             ThemeBackground(theme: theme)
             VStack(spacing: 28) {
                 Spacer(minLength: 0)
-                Text(entry.draft.text).font(.system(size: entry.draft.text.count > 400 ? 26 : 38, weight: theme.fontWeight, design: theme.design))
+                Text(String(entry.draft.text.prefix(600)) + (entry.draft.text.count > 600 ? "…" : "")).font(.system(size: entry.draft.text.count > 400 ? 26 : 38, weight: theme.fontWeight, design: theme.design))
                     .multilineTextAlignment(theme.textAlignment).minimumScaleFactor(0.3)
-                if !entry.draft.author.isEmpty { Text(entry.draft.author).font(.system(size: 17)).opacity(0.85) }
-                if !entry.draft.source.isEmpty { Text(entry.draft.source).font(.system(size: 13)).opacity(0.8) }
+                if !entry.draft.author.isEmpty { Text(String(entry.draft.author.prefix(120))).font(.system(size: 17)).opacity(0.85) }
+                if !entry.draft.source.isEmpty { Text(String(entry.draft.source.prefix(160))).font(.system(size: 13)).opacity(0.8) }
                 Spacer(minLength: 0)
                 if watermark { Text(Product.name).font(.system(size: 14, weight: .semibold)).tracking(4) }
             }.foregroundStyle(theme.textColor).padding(48)

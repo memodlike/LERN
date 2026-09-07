@@ -38,6 +38,18 @@ import Foundation
         invalid = backup; invalid.photos = ["../../escape": Data()]
         #expect(throws: (any Error).self) { try invalid.validated() }
     }
+    @Test func partialCollectionReorderPreservesOtherPositions() async throws {
+        let store = try store()
+        let imported = try await store.importEntries(preview(["zero", "one", "two", "three"]))
+        let topic = imported.topic.id
+        let ids = ["zero", "one", "two", "three"].map { EntryDraft(text: $0).id }
+        try await store.reorder(topicID: topic, ids: [ids[3], ids[1]])
+        #expect(try await store.eligibleIDs(source: ContentSource(topicIDs: [topic])) == [ids[0], ids[3], ids[2], ids[1]])
+        try await store.removeFromCollection(entryID: ids[2], topicID: topic)
+        let extra = try await store.addOwn(EntryDraft(text: "extra"))
+        try await store.addToCollection(entryID: extra.id, topicID: topic)
+        #expect(try await store.eligibleIDs(source: ContentSource(topicIDs: [topic])).last == extra.id)
+    }
     @Test func largeLibraryBenchmark() async throws {
         guard ProcessInfo.processInfo.environment["LERN_LARGE_TEST"] == "1" else { return }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

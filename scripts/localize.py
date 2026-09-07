@@ -294,6 +294,8 @@ translations=dict(line.split('|',1) for line in (pairs+'\n'+long_pairs).splitlin
 translations.update({'A little room\nto think.':'Немного места\nдля мысли.','Give your thoughts\na place to breathe.':'Дайте мыслям\nсвободное пространство.','Soft chime %lld':'Мягкий звон %lld','%lld reminders a day':'Напоминаний в день: %lld','%lld days':'Дней: %lld','Imported %lld entries. Reused %lld duplicates.':'Добавлено записей: %lld. Повторов: %lld.','Streak: %lld days':'Серия чтения: %lld дн.'})
 translations.update({
 'Choose cover photo':'Выбрать обложку',
+'Long entries use an excerpt in images. Share text includes the complete entry.':'В изображениях используется отрывок длинной записи. Команда «Поделиться текстом» отправляет запись целиком.',
+'Quote image':'Изображение с записью',
 'Your files are processed locally':'Файлы обрабатываются на устройстве',
 'No entries match your wallpaper source. Choose another source or import content.':'В выбранном источнике нет записей для обоев. Выберите другой источник или импортируйте записи.',
 'Opening your library':'Открываем библиотеку',

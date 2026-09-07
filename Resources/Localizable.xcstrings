@@ -4722,6 +4722,38 @@
         }
       }
     },
+    "Long entries use an excerpt in images. Share text includes the complete entry.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long entries use an excerpt in images. Share text includes the complete entry."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В изображениях используется отрывок длинной записи. Команда «Поделиться текстом» отправляет запись целиком."
+          }
+        }
+      }
+    },
+    "Quote image": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quote image"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Изображение с записью"
+          }
+        }
+      }
+    },
     "Your files are processed locally": {
       "localizations": {
         "en": {

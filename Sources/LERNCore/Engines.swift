@@ -88,7 +88,7 @@ public struct LibraryBackup: Codable, Sendable {
         guard entries.count <= 200_000, topics.count <= 10_000, memberships.count <= 1_000_000, reminders.count <= 100, photos.count <= 200 else { throw ImportFailure.tooLarge }
         guard Set(entries.map(\.id)).count == entries.count, Set(topics.map(\.id)).count == topics.count else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
         let ids = Set(entries.map(\.id)), topicIDs = Set(topics.map(\.id))
-        guard entries.allSatisfy({ $0.id == $0.draft.id && !$0.draft.text.isEmpty && $0.draft.text.count <= ImportService.textLimit }), memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) }), photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= 20_000_000 }) else { throw ImportFailure.malformed("Invalid entries, links or photo names.") }
+        guard entries.allSatisfy({ !$0.draft.text.isEmpty && $0.draft.text.count <= ImportService.textLimit && $0.draft.author.count <= 2_000 && $0.draft.source.count <= 2_000 && $0.draft.section.count <= 2_000 && $0.draft.tags.count <= 64 && $0.draft.tags.allSatisfy({ $0.count <= 256 }) && $0.id == $0.draft.id }), memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) }), photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= 20_000_000 }) else { throw ImportFailure.malformed("Invalid entries, links or photo names.") }
         let streak = preferences.streak
         guard (0...1_000_000).contains(streak.current), (0...1_000_000).contains(streak.longest),
               streak.longest >= streak.current, (0...3).contains(streak.freezes), (0...6).contains(streak.readingDaysSinceFreeze),

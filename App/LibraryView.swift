@@ -105,7 +105,7 @@ struct EntryEditor: View {
     @State private var saving = false
     var body: some View {
         Form {
-            Section("Your words") { TextEditor(text: $text).frame(minHeight: 180).accessibilityLabel("Entry text").accessibilityIdentifier("editor.text"); Text("\(text.count) / 20,000").font(.caption).foregroundStyle(.secondary) }
+            Section("Your words") { TextEditor(text: $text).autocorrectionDisabled().frame(minHeight: 180).accessibilityLabel("Entry text").accessibilityIdentifier("editor.text"); Text("\(text.count) / 20,000").font(.caption).foregroundStyle(.secondary) }
             Section("Details") { TextField("Author (optional)", text: $author); TextField("Source (optional)", text: $source); TextField("Tags, separated by commas", text: $tags) }
         }.navigationTitle(existing == nil ? "Write a thought" : "Edit thought")
             .toolbar {

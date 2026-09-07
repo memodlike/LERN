@@ -26,6 +26,7 @@ struct ShareImageView: View {
                 Button("Save image", systemImage: "square.and.arrow.down") { Task { await save() } }.disabled(image == nil || saving).frame(minHeight: 44)
                 if saved { Label("Image saved", systemImage: "checkmark.circle") }
                 ShareLink(item: entry.draft.text + (entry.draft.author.isEmpty ? "" : "\n— " + entry.draft.author)) { Label("Share text", systemImage: "text.quote") }.frame(minHeight: 44)
+                if entry.draft.text.count > 600 { Text("Long entries use an excerpt in images. Share text includes the complete entry.").font(.footnote).foregroundStyle(.secondary) }
                 Text("Available apps appear in the iOS share sheet.").font(.caption).foregroundStyle(.secondary)
             }.padding(24)
         }.navigationTitle("Share your thought")

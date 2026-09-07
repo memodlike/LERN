@@ -191,7 +191,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         invalidateSelection()
         let key = topicID + ":" + entryID
         guard try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.id == key })).isEmpty else { return }
-        let ordinal = try modelContext.fetchCount(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }))
+        var last = FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }, sortBy: [SortDescriptor(\.ordinal, order: .reverse)])
+        last.fetchLimit = 1
+        let ordinal = (try modelContext.fetch(last).first?.ordinal ?? -1) + 1
         modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: topicID, ordinal: ordinal))); try modelContext.save()
     }
     public func removeFromCollection(entryID: String, topicID: String) throws {

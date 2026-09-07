@@ -11,13 +11,20 @@ final class LERNUITests: XCTestCase {
     @MainActor func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
+    @MainActor func enter(_ value: String, into field: XCUIElement, app: XCUIApplication) {
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let words = value.split(separator: " ", omittingEmptySubsequences: false)
+        for (index, word) in words.enumerated() { field.typeText((index == 0 ? "" : " ") + word) }
+        XCTAssertEqual(field.value as? String, value)
+    }
     @MainActor func testCreateReadFavoriteAndSettings() throws {
         let app = application()
         XCTAssertTrue(app.buttons["Write a thought"].waitForExistence(timeout: 20))
         capture(app, "First launch")
         app.buttons["Write a thought"].tap()
         let text = app.textViews["editor.text"]
-        XCTAssertTrue(text.waitForExistence(timeout: 5)); text.tap(); text.typeText("A local thought for the QA journey.")
+        XCTAssertTrue(text.waitForExistence(timeout: 5)); enter("A local thought for the QA journey.", into: text, app: app)
         app.buttons["editor.save"].tap()
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["feed.quote"].label, "A local thought for the QA journey.")
@@ -57,7 +64,7 @@ final class LERNUITests: XCTestCase {
         let app = application()
         XCTAssertTrue(app.buttons["Write a thought"].waitForExistence(timeout: 20)); app.buttons["Write a thought"].tap()
         let editor = app.textViews["editor.text"]; XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.tap(); editor.typeText("Keep this thought after restarting LERN.")
+        enter("Keep this thought after restarting LERN.", into: editor, app: app)
         app.buttons["editor.save"].tap()
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 10))
         app.buttons["More actions"].tap(); app.buttons["Add to collection"].tap()
