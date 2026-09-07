@@ -9,7 +9,7 @@ final class LERNUITests: XCTestCase {
         app.launch(); return app
     }
     @MainActor func capture(_ app: XCUIApplication, _ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
     @MainActor func enter(_ value: String, into field: XCUIElement, app: XCUIApplication) {
         field.tap()
@@ -57,8 +57,16 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Импорт файлов"].waitForExistence(timeout: 20))
         capture(app, "Russian large text")
         XCUIDevice.shared.orientation = .landscapeLeft
+        defer { XCUIDevice.shared.orientation = .portrait }
+        let landscape = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            app.frame.width > app.frame.height
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [landscape], timeout: 10), .completed)
+        app.buttons["feed.library"].tap()
+        XCTAssertTrue(app.navigationBars["Ваша библиотека"].waitForExistence(timeout: 5))
+        app.buttons["Готово"].tap()
+        XCTAssertTrue(app.buttons["feed.library"].waitForExistence(timeout: 5))
         capture(app, "Russian landscape")
-        XCUIDevice.shared.orientation = .portrait
     }
     @MainActor func testCollectionSharingAndPersistence() throws {
         let app = application()
