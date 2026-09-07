@@ -130,6 +130,7 @@ struct CollectionPicker: View {
         Form {
             Section { TextField("New collection name", text: $name); Button("Create and add") { Task { do { let topic = try await state.store.createTopic(name: name); try await state.store.addToCollection(entryID: entry.id, topicID: topic.id); await state.contentChanged(); dismiss() } catch { state.error = error.localizedDescription } } }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty) }
             Section("Your collections") { ForEach(state.topics.filter { $0.kind == "collection" }) { topic in Button(topic.name) { Task { do { try await state.store.addToCollection(entryID: entry.id, topicID: topic.id); await state.contentChanged(); dismiss() } catch { state.error = error.localizedDescription } } } } }
+        }
         .navigationTitle("Add to collection").toolbar { Button("Done") { dismiss() } }
     }
 }

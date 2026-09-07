@@ -66,12 +66,18 @@ public enum ImportAction: String, CaseIterable, Sendable { case new, merge, repl
 public struct ImportResult: Sendable { public var topic: TopicValue; public var inserted: Int; public var duplicates: Int }
 
 @ModelActor public actor LibraryStore {
+    private var eligibilityCache: [ContentSource: [String]] = [:]
+    private func invalidateSelection() { eligibilityCache.removeAll(keepingCapacity: true) }
     public func get<T: Decodable>(_ key: String, default fallback: T) throws -> T {
         let descriptor = FetchDescriptor<StoredSetting>(predicate: #Predicate { $0.key == key })
         guard let item = try modelContext.fetch(descriptor).first else { return fallback }
         return try JSONDecoder().decode(T.self, from: item.data)
     }
     public func put<T: Encodable>(_ key: String, _ value: T) throws {
+        if key == "preferences", let prefs = value as? Preferences {
+            let old = try get(key, default: Preferences())
+            if prefs.mutedWords != old.mutedWords { invalidateSelection() }
+        }
         let data = try JSONEncoder().encode(value)
         let descriptor = FetchDescriptor<StoredSetting>(predicate: #Predicate { $0.key == key })
         if let existing = try modelContext.fetch(descriptor).first { existing.data = data }
@@ -105,11 +111,13 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         try modelContext.save()
     }
     public func deleteTopic(_ id: String) throws {
+        invalidateSelection()
         try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == id })
         try modelContext.delete(model: StoredTopic.self, where: #Predicate { $0.id == id })
         try modelContext.save()
     }
     public func importEntries(_ preview: ImportPreview, action: ImportAction = .new, topicID: String? = nil, splitSections: Bool = false) throws -> ImportResult {
+        invalidateSelection()
         modelContext.autosaveEnabled = false
         do {
             var topic: TopicValue
@@ -148,6 +156,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         } catch { modelContext.rollback(); throw error }
     }
     public func addOwn(_ draft: EntryDraft, replacing oldID: String? = nil) throws -> EntryValue {
+        invalidateSelection()
         guard !draft.text.isEmpty, draft.text.count <= ImportService.textLimit else { throw ImportFailure.empty }
         let own = try topics().first(where: { $0.kind == "own" }) ?? createTopic(name: "My Content", kind: "own")
         if let oldID, oldID != draft.id, let old = try storedEntry(oldID) {
@@ -167,26 +176,31 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         return try entry(draft.id) ?? EntryValue(draft: draft)
     }
     public func setFlag(_ id: String, flag: String, value: Bool) throws {
+        invalidateSelection()
         guard let item = try storedEntry(id) else { return }
         switch flag { case "favorite": item.favorite = value; case "disliked": item.disliked = value; case "muted": item.muted = value; default: return }
         try modelContext.save()
     }
     public func deleteEntry(_ id: String) throws {
+        invalidateSelection()
         try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.entryID == id })
         try modelContext.delete(model: StoredHistory.self, where: #Predicate { $0.entryID == id })
         try modelContext.delete(model: StoredEntry.self, where: #Predicate { $0.id == id }); try modelContext.save()
     }
     public func addToCollection(entryID: String, topicID: String) throws {
+        invalidateSelection()
         let key = topicID + ":" + entryID
         guard try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.id == key })).isEmpty else { return }
         let ordinal = try modelContext.fetchCount(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }))
         modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: topicID, ordinal: ordinal))); try modelContext.save()
     }
     public func removeFromCollection(entryID: String, topicID: String) throws {
+        invalidateSelection()
         let id = topicID + ":" + entryID
         try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.id == id }); try modelContext.save()
     }
     public func reorder(topicID: String, ids: [String]) throws {
+        invalidateSelection()
         let links = try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }))
         let order = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($0.element, $0.offset) })
         for link in links { if let index = order[link.entryID] { link.ordinal = index } }
@@ -225,6 +239,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         return result
     }
     public func eligibleIDs(source: ContentSource) throws -> [String] {
+        if let cached = eligibilityCache[source] { return cached }
         let orderedIDs = try sourceIDs(source), membership = orderedIDs.map(Set.init)
         let prefs = try get("preferences", default: Preferences())
         var descriptor = FetchDescriptor<StoredEntry>(predicate: #Predicate { !$0.disliked && !$0.muted }, sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)])
@@ -242,7 +257,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             }
             if rows.count < 1000 { break }; offset += 1000
         }
-        if let orderedIDs { let eligible = Set(result); var seen = Set<String>(); return orderedIDs.filter { eligible.contains($0) && seen.insert($0).inserted } }
+        if let orderedIDs { let eligible = Set(result); var seen = Set<String>(); result = orderedIDs.filter { eligible.contains($0) && seen.insert($0).inserted } }
+        if eligibilityCache.count >= 8 { eligibilityCache.removeAll() }
+        eligibilityCache[source] = result
         return result
     }
     public func next(source: ContentSource, surface: String, mode: SelectionMode) throws -> EntryValue? {
@@ -271,6 +288,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         return try LibraryBackup(entries: entries, topics: topics(), memberships: memberships, preferences: get("preferences", default: Preferences()), reminders: get("reminders", default: []), themes: get("themes", default: ThemeValue.starters), presets: get("presets", default: []), history: history, resources: get("resources", default: []), cursors: cursors, photos: photos)
     }
     public func restore(_ backup: LibraryBackup, merge: Bool) throws {
+        invalidateSelection()
         let data = try backup.validated()
         do {
             if !merge {
