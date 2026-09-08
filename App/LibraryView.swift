@@ -28,7 +28,12 @@ struct LibraryView: View {
                     sourceRow("All entries", symbol: "square.stack", value: ContentSource())
                     sourceRow("Favorites", symbol: "heart", value: ContentSource(favoritesOnly: true))
                     sourceRow("My Content", symbol: "pencil.line", value: ContentSource(myContentOnly: true))
-                    ForEach(visibleTopics) { topic in topicRow(topic) }
+                    ForEach(visibleTopics) { topic in
+                        topicRow(topic)
+                        if topic.kind == "import" {
+                            ForEach(state.topics.filter { $0.parentTopicID == topic.id }) { section in sectionRow(section) }
+                        }
+                    }
                     NavigationLink { SourcePicker(source: Binding(get: { source }, set: { source = $0 })) } label: { Label("Mix topics or choose a tag", systemImage: "line.3.horizontal.decrease") }
                 }
                 Section {
@@ -91,6 +96,15 @@ struct LibraryView: View {
             }
         }
     }
+    private func sectionRow(_ section: TopicValue) -> some View {
+        Button { source = ContentSource(topicIDs: [section.id]); Task { await reload() } } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.turn.down.right").foregroundStyle(.secondary)
+                Label { HStack { Text(section.name); Spacer(); Text(section.count.formatted()).foregroundStyle(.secondary) } } icon: { Image(systemName: "text.book.closed") }
+                if source.topicIDs.contains(section.id) { Image(systemName: "checkmark").foregroundStyle(.tint) }
+            }.padding(.leading, 22)
+        }.foregroundStyle(.primary).accessibilityLabel("Section: \(section.name), \(section.count) entries")
+    }
 }
 
 struct LibraryDetailsView: View {
@@ -126,17 +140,24 @@ struct EntryRow: View {
 struct SourcePicker: View {
     @Environment(AppState.self) private var state
     @Binding var source: ContentSource
+    @State private var customMode = false
     var body: some View {
         Form {
-            Section { Button("All entries") { source = ContentSource() }; Toggle("Favorites only", isOn: $source.favoritesOnly); Toggle("My Content", isOn: $source.myContentOnly) }
-            Section("Topics and collections") {
-                ForEach(state.topics.filter { $0.parentTopicID == nil && !$0.isPaused }) { topic in
+            Section("Source") {
+                Picker("Read from", selection: Binding(get: { customMode }, set: { custom in customMode = custom; if !custom { source = ContentSource() } })) { Text("All entries").tag(false); Text("Custom").tag(true) }.pickerStyle(.segmented)
+            }
+            if customMode {
+                Section("Custom filters") { Toggle("Favorites only", isOn: $source.favoritesOnly); Toggle("My Content", isOn: $source.myContentOnly) }
+                Section("Topics and collections") {
+                ForEach(state.topics.filter { !$0.isPaused }) { topic in
                     Toggle(topic.name, isOn: Binding(get: { source.topicIDs.contains(topic.id) }, set: { selected in if selected { source.topicIDs.append(topic.id) } else { source.topicIDs.removeAll { $0 == topic.id } } }))
                 }
+                }
+                Section { TextField("Tag or section (optional)", text: $source.tag).autocorrectionDisabled() } footer: { Text("Custom filters are combined. Sources for feed, reminders, widgets, Watch, and wallpaper stay independent.") }
             }
-            Section { TextField("Tag or section (optional)", text: $source.tag).autocorrectionDisabled() } footer: { Text("This source applies only to the screen you are editing. Other sources stay independent.") }
-        }.navigationTitle("Type of Content")
+        }.navigationTitle("Type of Content").onAppear { customMode = isCustom }
     }
+    private var isCustom: Bool { source.favoritesOnly || source.myContentOnly || !source.topicIDs.isEmpty || !source.tag.isEmpty }
 }
 struct EntryEditor: View {
     @Environment(AppState.self) private var state

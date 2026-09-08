@@ -8,6 +8,9 @@ import WidgetKit
     private var store: LibraryStore?
     private var source: ContentSource?
     private var revision = 0
+    private(set) var lastSuccessfulSync: Date?
+    private(set) var syncedCount = 0
+    private(set) var lastSyncError: String?
     var onFavoriteMutation: (@MainActor () async -> Void)?
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -18,7 +21,9 @@ import WidgetKit
         self.source = source
         revision += 1
         let requestedRevision = revision
-        guard WCSession.isSupported(), WCSession.default.activationState == .activated, WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else { return }
+        guard WCSession.isSupported() else { lastSyncError = "Apple Watch is not supported on this device."; return }
+        guard WCSession.default.activationState == .activated else { lastSyncError = "Apple Watch is connecting."; return }
+        guard WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else { lastSyncError = "Pair and install LERN on Apple Watch to sync."; return }
         do {
             let entries = try await store.page(source: source, limit: 100)
             guard requestedRevision == revision else { return }
@@ -36,7 +41,8 @@ import WidgetKit
                 snapshot.append(entry); data = candidate
             }
             try WCSession.default.updateApplicationContext(["entries": data])
-        } catch { /* Retried on the next foreground/content event; no background polling. */ }
+            syncedCount = snapshot.count; lastSuccessfulSync = Date(); lastSyncError = nil
+        } catch { lastSyncError = error.localizedDescription }
     }
     private func excerpt(_ text: String, bytes: Int) -> String {
         guard text.utf8.count > bytes else { return text }
@@ -53,7 +59,7 @@ import WidgetKit
                 selected = source ?? preferences.watchSource
             }
             await update(store: library, source: selected)
-        } catch { /* Retried after activation or the next content event. */ }
+        } catch { lastSyncError = error.localizedDescription }
     }
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         guard activationState == .activated else { return }

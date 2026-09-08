@@ -53,6 +53,8 @@ struct ThemeEditor: View {
                 Toggle("Horizon light", isOn: $theme.gradient)
                 if theme.gradient { ColorPicker("Light color", selection: color($theme.secondary), supportsOpacity: false) }
                 LabeledContent("Dark overlay") { Slider(value: $theme.overlay, in: 0...0.85).frame(maxWidth: 180).accessibilityLabel("Dark overlay") }
+                LabeledContent("Readability", value: theme.hasLowContrast ? "Low contrast" : "Good")
+                if theme.hasLowContrast { Button("Improve contrast") { theme.improveContrast() } }
             }
             Section {
                 PhotosPicker(selection: $photo, matching: .images) { Label("Choose background photo", systemImage: "photo") }

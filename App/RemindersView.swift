@@ -21,16 +21,18 @@ struct RemindersView: View {
                     Text("Coverage: about \(max(0, Int(coverage / 3600))) hours.").font(.caption).foregroundStyle(.secondary)
                     if coverage < 3 * 24 * 60 * 60 { Label("This queue covers less than three days. Open LERN periodically so iOS can replenish personalized reminders.", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange) }
                 }
-                Text("iOS accepts up to 60 local pending requests. Acceptance does not guarantee visible delivery: Focus, Silent Mode and Scheduled Summary still apply.").font(.caption).foregroundStyle(.secondary)
+                Text("LERN keeps up to 60 upcoming reminders scheduled at a time. Acceptance does not guarantee visible delivery: Focus, Silent Mode and Scheduled Summary still apply.").font(.caption).foregroundStyle(.secondary)
                 if let error = state.scheduler.lastError { Text(error).foregroundStyle(.red) }
             }
-            Section("iOS delivery diagnostics") {
-                LabeledContent("Alerts", value: state.scheduler.settings.alerts)
-                LabeledContent("Sound", value: state.scheduler.settings.sounds)
-                LabeledContent("Notification Center", value: state.scheduler.settings.notificationCenter)
-                LabeledContent("Lock Screen", value: state.scheduler.settings.lockScreen)
-                LabeledContent("Scheduled Summary", value: state.scheduler.settings.scheduledDelivery)
-                LabeledContent("Time Sensitive", value: state.scheduler.settings.timeSensitive)
+            Section("Delivery diagnostics") {
+                DisclosureGroup("iOS delivery details") {
+                    LabeledContent("Alerts", value: presentation(state.scheduler.settings.alerts))
+                    LabeledContent("Sound", value: presentation(state.scheduler.settings.sounds))
+                    LabeledContent("Notification Center", value: presentation(state.scheduler.settings.notificationCenter))
+                    LabeledContent("Lock Screen", value: presentation(state.scheduler.settings.lockScreen))
+                    LabeledContent("Scheduled Summary", value: presentation(state.scheduler.settings.scheduledDelivery))
+                    LabeledContent("Time Sensitive", value: presentation(state.scheduler.settings.timeSensitive))
+                }
             }
             Section("Reminder groups") {
                 ForEach(state.reminders) { rule in
@@ -49,6 +51,14 @@ struct RemindersView: View {
     private func summary(_ rule: ReminderRule) -> String {
         let times = rule.minutes.map { String(format: "%02d:%02d", $0 / 60, $0 % 60) }.joined(separator: ", ")
         return "\(rule.minutes.count)× · \(rule.weekdays.count)/7 · \(times)"
+    }
+    private func presentation(_ raw: String) -> String {
+        switch raw {
+        case "enabled": return String(localized: "Enabled")
+        case "disabled": return String(localized: "Disabled")
+        case "notSupported": return String(localized: "Not supported")
+        default: return String(localized: "Unknown")
+        }
     }
 }
 struct ReminderEditor: View {

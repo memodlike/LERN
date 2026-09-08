@@ -47,6 +47,42 @@ import Foundation
         let backup = try await store.backup()
         #expect(backup.memberships.contains { $0.section == "Part one" })
     }
+    @Test func replaceRemovesOrphansAndHistoryButKeepsSharedAndFavorites() async throws {
+        let store = try store()
+        let original = try await store.importEntries(preview(["remove", "shared", "favorite"]))
+        _ = try await store.importEntries(preview(["shared"]))
+        let removedID = EntryDraft(text: "remove").id
+        let favoriteID = EntryDraft(text: "favorite").id
+        try await store.record(removedID, kind: "viewed")
+        try await store.setFlag(favoriteID, flag: "favorite", value: true)
+        _ = try await store.importEntries(preview(["replacement", "shared"]), action: .replace, topicID: original.topic.id)
+        #expect(try await store.entry(removedID) == nil)
+        #expect(try await store.history().contains(where: { $0.entryID == removedID }) == false)
+        #expect(try await store.entry(EntryDraft(text: "shared").id) != nil)
+        #expect(try await store.eligibleIDs(source: ContentSource(myContentOnly: true)).contains(favoriteID))
+        #expect(try await store.page().contains(where: { $0.id == removedID }) == false)
+    }
+    @Test func mergingMovedSectionRemovesStaleChildMembership() async throws {
+        let store = try store()
+        let first = ImportPreview(name: "Book", format: "MD", entries: [EntryDraft(text: "same", section: "A")], duplicates: 0, malformed: 0, issues: [])
+        let topic = try await store.importEntries(first, splitSections: true).topic
+        let second = ImportPreview(name: "Book", format: "MD", entries: [EntryDraft(text: "same", section: "B")], duplicates: 0, malformed: 0, issues: [])
+        _ = try await store.importEntries(second, action: .merge, topicID: topic.id, splitSections: true)
+        let sections = try await store.topics().filter { $0.parentTopicID == topic.id }
+        let memberships = try await store.backup().memberships.filter { $0.entryID == EntryDraft(text: "same").id }
+        #expect(memberships.contains { $0.topicID == topic.id && $0.section == "B" })
+        #expect(memberships.contains { $0.section == "A" } == false)
+        #expect(sections.contains(where: { $0.name == "B" }))
+    }
+    @Test func editingImportedEntryCreatesMyCopyWithoutChangingLibrary() async throws {
+        let store = try store()
+        let imported = try await store.importEntries(preview(["source text"]))
+        let originalID = EntryDraft(text: "source text").id
+        let copy = try await store.addOwn(EntryDraft(text: "my edit"), replacing: originalID)
+        #expect(try await store.page(source: ContentSource(topicIDs: [imported.topic.id])).map(\.id) == [originalID])
+        #expect(try await store.eligibleIDs(source: ContentSource(myContentOnly: true)).contains(copy.id))
+        #expect(try await store.entry(originalID) != nil)
+    }
     @Test func exclusionSearchCollectionsAndBackup() async throws {
         let store = try store(); _ = try await store.importEntries(preview(["keep me", "mute this word", "dislike me"]))
         try await store.setFlag(EntryDraft(text: "dislike me").id, flag: "disliked", value: true)

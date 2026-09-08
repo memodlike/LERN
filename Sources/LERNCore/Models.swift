@@ -7,6 +7,29 @@ public enum Product {
     public static let scheme = "lern"
 }
 
+/// Product limits shared by import, persistence, backup validation, and UI guards.
+public enum DataLimits {
+    public static let importBytes = 100 * 1024 * 1024
+    public static let entriesPerImport = 100_000
+    public static let entriesInLibrary = 200_000
+    public static let entryCharacters = 20_000
+    public static let metadataCharacters = 2_000
+    public static let tagsPerEntry = 64
+    public static let tagCharacters = 256
+    public static let topics = 10_000
+    public static let memberships = 1_000_000
+    public static let history = 1_000_000
+    public static let reminders = 100
+    public static let themes = 200
+    public static let presets = 100
+    public static let resources = 10_000
+    public static let cursors = 10_000
+    public static let mutedWords = 1_000
+    public static let photos = 200
+    public static let photoBytes = 20_000_000
+    public static let totalPhotoBytes = 250_000_000
+}
+
 public struct EntryDraft: Codable, Hashable, Sendable {
     public var text: String
     public var author: String

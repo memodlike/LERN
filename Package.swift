@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.macOS(.v14), .iOS(.v18), .watchOS(.v11)],
     products: [.library(name: "LERNCore", targets: ["LERNCore"])],
     targets: [
-        .target(name: "LERNCore"),
+        .target(name: "LERNCore", exclude: ["LERN-Info.plist"]),
         .testTarget(name: "LERNCoreTests", dependencies: ["LERNCore"])
     ],
     swiftLanguageModes: [.v5]

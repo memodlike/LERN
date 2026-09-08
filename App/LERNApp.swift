@@ -58,9 +58,14 @@ import BackgroundTasks
     }
     private nonisolated func runBackgroundRefresh(_ task: BGAppRefreshTask) {
         let work = Task { @MainActor [weak self] in
-            guard let state = self?.state else { task.setTaskCompleted(success: false); return }
-            let success = await state.scheduler.replenish()
-            if success { SharedStore.clearNotificationScheduleDirty(); Self.scheduleBackgroundRefresh() }
+            // Submit first: a transient failure must not permanently stop future refresh attempts.
+            Self.scheduleBackgroundRefresh()
+            let scheduler: NotificationScheduler
+            if let state = self?.state { scheduler = state.scheduler }
+            else if let store = try? SharedStore.open() { scheduler = NotificationScheduler(store: store) }
+            else { task.setTaskCompleted(success: false); return }
+            let success = await scheduler.replenish()
+            if success { SharedStore.clearNotificationScheduleDirty() }
             task.setTaskCompleted(success: success && !Task.isCancelled)
         }
         task.expirationHandler = { work.cancel() }

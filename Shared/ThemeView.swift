@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import LERNCore
 
@@ -22,6 +23,23 @@ extension ThemeValue {
     var design: Font.Design { font == "serif" ? .serif : font == "rounded" ? .rounded : font == "monospaced" ? .monospaced : .default }
     var fontWeight: Font.Weight { weight == "bold" ? .bold : weight == "medium" ? .medium : .regular }
     var textAlignment: TextAlignment { alignment == "leading" ? .leading : alignment == "trailing" ? .trailing : .center }
+    private func luminance(_ hex: String) -> Double {
+        let value = UInt64(hex.trimmingCharacters(in: CharacterSet(charactersIn: "#")), radix: 16) ?? 0
+        let channels = [Double((value >> 16) & 255), Double((value >> 8) & 255), Double(value & 255)].map { component -> Double in
+            let unit = component / 255
+            return unit <= 0.04045 ? unit / 12.92 : pow((unit + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+    }
+    var contrastRatio: Double {
+        let foreground = luminance(foreground), background = luminance(background)
+        return (max(foreground, background) + 0.05) / (min(foreground, background) + 0.05)
+    }
+    var hasLowContrast: Bool { contrastRatio < 4.5 || (photoName != nil && overlay < 0.45) }
+    mutating func improveContrast() {
+        foreground = luminance(background) > 0.45 ? "142C46" : "FFFFFF"
+        if photoName != nil { overlay = max(overlay, 0.45) }
+    }
 }
 struct ThemeBackground: View {
     var theme: ThemeValue

@@ -42,9 +42,9 @@ public protocol ContentImporter: Sendable {
     func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String])
 }
 public struct ImportService: Sendable {
-    public static let byteLimit = 100 * 1024 * 1024
-    public static let entryLimit = 100_000
-    public static let textLimit = 20_000
+    public static let byteLimit = DataLimits.importBytes
+    public static let entryLimit = DataLimits.entriesPerImport
+    public static let textLimit = DataLimits.entryCharacters
     private let importers: [any ContentImporter] = [MarkdownImporter(), PlainTextImporter(), DelimitedImporter(), JSONImporter()]
     public init() {}
     public func preview(data: Data, filename: String, mode: TextImportMode = .automatic, delimiter: CSVDelimiter = .automatic) throws -> ImportPreview {
@@ -93,9 +93,9 @@ private struct DraftBudget {
 }
 
 private func validateMetadata(author: String = "", source: String = "", tags: [String] = [], section: String = "") throws {
-    guard author.count <= 2_000, source.count <= 2_000, section.count <= 2_000,
-          tags.count <= 64, tags.allSatisfy({ $0.count <= 256 }) else {
-        throw ImportFailure.malformed("Metadata exceeds 2,000 characters, 64 tags, or 256 characters per tag.")
+    guard author.count <= DataLimits.metadataCharacters, source.count <= DataLimits.metadataCharacters, section.count <= DataLimits.metadataCharacters,
+          tags.count <= DataLimits.tagsPerEntry, tags.allSatisfy({ $0.count <= DataLimits.tagCharacters }) else {
+        throw ImportFailure.malformed("Metadata exceeds the supported character or tag limit.")
     }
 }
 
@@ -285,7 +285,8 @@ public struct JSONImporter: ContentImporter {
                 issues.append("Entry \(index + 1): missing text."); return
             }
             let tags = object["tags"] as? [String] ?? (object["tags"] as? String)?.split(separator: ",", maxSplits: 64).map(String.init) ?? []
-            entries.append(try draftBudget.make(text: text, author: object["author"] as? String ?? "", source: object["source"] as? String ?? "", tags: tags, section: object["category"] as? String ?? ""))
+            let section = object["section"] as? String ?? object["category"] as? String ?? ""
+            entries.append(try draftBudget.make(text: text, author: object["author"] as? String ?? "", source: object["source"] as? String ?? "", tags: tags, section: section))
         }
         if lines {
             for (index, line) in TextLines(text: text).enumerated() {

@@ -1,7 +1,12 @@
 name: iOS QA
 on:
+  pull_request:
   push:
+    branches: [main]
   workflow_dispatch:
+concurrency:
+  group: qa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 defaults:
   run:
     shell: bash

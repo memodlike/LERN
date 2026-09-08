@@ -39,8 +39,7 @@ struct ProfileView: View {
                 NavigationLink("About") { Form { Text(Product.name).font(.largeTitle.bold()); Text("Your own words, always close. A private, local reading library."); Label("No account, ads or subscriptions", systemImage: "checkmark.shield"); Text("Version 1.0 · iOS 18+"); Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote) }.navigationTitle("About") }
             }
         }.navigationTitle("Your space")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(); await state.contentChanged(); dismiss() } } } }
-            .onDisappear { Task { await state.savePreferences() } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(notificationImpact: false, reloadWidgets: false); await state.contentChanged(); dismiss() } } } }
     }
 }
 struct EntryListScreen: View {
@@ -52,6 +51,7 @@ struct EntryListScreen: View {
     @State private var search = ""
     @State private var editing: EntryValue?
     @State private var delete: EntryValue?
+    @State private var hasMore = true
     var body: some View {
         List {
             ForEach(entries) { entry in
@@ -64,7 +64,7 @@ struct EntryListScreen: View {
                     }
             }
             if entries.isEmpty { ContentUnavailableView("No entries found", systemImage: "text.page") }
-            if entries.count >= 50 { Button("Load more") { Task { do { entries += try await state.store.page(source: source, search: search, offset: entries.count, review: review) } catch { state.error = error.localizedDescription } } } }
+            if hasMore { Button("Load more") { Task { await loadMore() } } }
         }.navigationTitle(title).searchable(text: $search)
             .task(id: search) { await reload() }
             .sheet(item: $editing) { entry in NavigationStack { EntryEditor(existing: entry) }.environment(state) }
@@ -72,7 +72,14 @@ struct EntryListScreen: View {
                 Button("Delete entry", role: .destructive) { if let delete { Task { do { try await state.store.deleteEntry(delete.id); await state.contentChanged(); await reload() } catch { state.error = error.localizedDescription } } } }
             }
     }
-    private func reload() async { do { entries = try await state.store.page(source: source, search: search, review: review) } catch { state.error = error.localizedDescription } }
+    private func reload() async {
+        do { let page = try await state.store.page(source: source, search: search, review: review); entries = page; hasMore = page.count == 50 }
+        catch { state.error = error.localizedDescription }
+    }
+    private func loadMore() async {
+        do { let page = try await state.store.page(source: source, search: search, offset: entries.count, review: review); guard !Task.isCancelled else { return }; entries += page.filter { next in !entries.contains(where: { $0.id == next.id }) }; hasMore = page.count == 50 }
+        catch { state.error = error.localizedDescription }
+    }
 }
 struct MutedWordsView: View {
     @Environment(AppState.self) private var state
@@ -101,6 +108,7 @@ struct HistoryView: View {
     @State private var items: [HistoryValue] = []
     @State private var entries: [String: EntryValue] = [:]
     @State private var clear = false
+    @State private var hasMore = true
     var body: some View {
         List {
             ForEach(items) { item in
@@ -109,13 +117,20 @@ struct HistoryView: View {
                 }
             }
             if items.isEmpty { Text("Your reading history will appear here.").foregroundStyle(.secondary) }
-            if !items.isEmpty { Button("Load more") { Task { await load(more: true) } } }
+            if hasMore { Button("Load more") { Task { await load(more: true) } } }
         }.navigationTitle("Past Content").task { await load() }
             .toolbar { Button("Clear") { clear = true }.disabled(items.isEmpty) }
             .confirmationDialog("Clear reading history?", isPresented: $clear) { Button("Clear history", role: .destructive) { Task { do { try await state.store.clearHistory(); items = []; entries = [:] } catch { state.error = error.localizedDescription } } } }
     }
     private func load(more: Bool = false) async {
-        do { let values = try await state.store.history(offset: more ? items.count : 0); if !more { items = [] }; items += values; for item in values { if entries[item.entryID] == nil { entries[item.entryID] = try await state.store.entry(item.entryID) } } } catch { state.error = error.localizedDescription }
+        do {
+            let values = try await state.store.history(offset: more ? items.count : 0)
+            if !more { items = []; entries = [:] }
+            let newItems = values.filter { value in !items.contains(where: { $0.id == value.id }) }
+            items += newItems
+            entries.merge(try await state.store.entries(ids: newItems.map(\.entryID)), uniquingKeysWith: { _, latest in latest })
+            hasMore = values.count == 100
+        } catch { state.error = error.localizedDescription }
     }
 }
 struct CollectionsView: View {

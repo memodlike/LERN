@@ -23,6 +23,7 @@ struct BackupView: View {
         Form {
             Section {
                 Text("Save a complete local copy of your library, themes, photos, favorites, collections and settings. Choose where it goes in Files.")
+                Text("This backup contains readable copies of your LERN content and photos. Store it somewhere you trust.").font(.footnote).foregroundStyle(.secondary)
                 Button("Export App Backup", systemImage: "square.and.arrow.up") { Task { await export() } }.disabled(busy)
                 Button("Choose backup to restore", systemImage: "square.and.arrow.down") { importing = true }.disabled(busy)
             }

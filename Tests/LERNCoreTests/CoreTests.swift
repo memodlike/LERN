@@ -64,6 +64,12 @@ struct ImporterTests {
         #expect(csv.entries[0].tags == ["a", "b", "b"])
         #expect(csv.entries[0].section == "Ideas")
     }
+    @Test func jsonSectionTakesPriorityOverCategory() throws {
+        let json = try parse("[{\"text\":\"One\",\"section\":\"Strategy\",\"category\":\"Legacy\"}]", "json")
+        let jsonl = try parse("{\"text\":\"Two\",\"section\":\"Focus\"}", "jsonl")
+        #expect(json.entries[0].section == "Strategy")
+        #expect(jsonl.entries[0].section == "Focus")
+    }
     @Test func fiftyThousandParse() throws {
         let text = (0..<50_000).map { "Thought number \($0) — привет" }.joined(separator: "\n")
         let start = Date(); let preview = try parse(text, "txt", mode: .lines)

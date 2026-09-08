@@ -72,6 +72,7 @@ struct ImportView: View {
             .sheet(isPresented: $showHelp) { ImportFormatHelpView() }
             .sheet(isPresented: $showAIHelper) { ImportAIHelperView() }
             .onChange(of: delimiter) { _, _ in if !selectedURLs.isEmpty { read(selectedURLs) } }
+            .onChange(of: mode) { _, _ in if !selectedURLs.isEmpty { read(selectedURLs) } }
             .onDisappear { task?.cancel() }
     }
     private func read(_ urls: [URL]) {

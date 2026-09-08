@@ -4,6 +4,8 @@ import LERNCore
 struct FeedView: View {
     @Environment(AppState.self) private var state
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var mutePhrase = ""
     @State private var showMute = false
     @State private var editingEntry: EntryValue?
@@ -40,6 +42,7 @@ struct FeedView: View {
                 case .compose: EntryEditor()
                 case .share: if let entry = state.current { ShareImageView(entry: entry) }
                 case .collections: if let entry = state.current { CollectionPicker(entry: entry) }
+                case .streak: StreakView()
                 }
             }.environment(state).tint(Color(hex: "276A99")).foregroundStyle(.primary)
                 .presentationDragIndicator(.visible)
@@ -55,12 +58,12 @@ struct FeedView: View {
         HStack {
             Text(Product.name).font(.system(size: 20, weight: .semibold, design: .rounded)).tracking(5).accessibilityLabel(Product.name)
             Spacer()
-            Button { state.sheet = .profile } label: { Label("\(state.preferences.streak.current)", systemImage: "flame").font(.system(size: 16)).padding(.horizontal, 12).frame(minHeight: 44) }.accessibilityLabel("Streak: \(state.preferences.streak.current) days")
+            Button { state.sheet = .streak } label: { Label("\(state.preferences.streak.current)", systemImage: "flame").font(.system(size: 16)).padding(.horizontal, 12).frame(minHeight: 44) }.accessibilityLabel("Streak: \(state.preferences.streak.current) days")
             icon("Profile", "person.crop.circle") { state.sheet = .profile }
         }
     }
     private func quote(_ entry: EntryValue) -> some View {
-        GeometryReader { geometry in
+        return GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 24) {
                     Text(entry.draft.text)
@@ -107,21 +110,22 @@ struct FeedView: View {
         return String(localized: "Your library")
     }
     private var empty: some View {
-        GeometryReader { geometry in
+        let compact = verticalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize
+        return GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 24) {
-                    Spacer(minLength: 12)
-                    Image(systemName: "text.book.closed").font(.system(size: 48, weight: .ultraLight))
+                VStack(spacing: compact ? 14 : 24) {
+                    Spacer(minLength: compact ? 0 : 12)
+                    if !compact { Image(systemName: "text.book.closed").font(.system(size: 48, weight: .ultraLight)) }
                     Text(state.total == 0 ? "Keep your own words close." : "No matching entries")
                         .font(.system(.largeTitle, design: .rounded)).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                    Text(state.total == 0 ? "Bring a text file, a collection of ideas, or a thought you want to return to." : "Choose another topic or review muted content in your profile.")
+                    Text(state.total == 0 ? (compact ? "Import a file or write a thought to begin." : "Bring a text file, a collection of ideas, or a thought you want to return to.") : "Choose another topic or review muted content in your profile.")
                         .font(.body).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).opacity(0.85)
                     Button("Import files") { state.sheet = .importFiles }.buttonStyle(.borderedProminent).tint(state.activeTheme.textColor).foregroundStyle(Color(hex: state.activeTheme.background)).controlSize(.large).fixedSize(horizontal: false, vertical: true)
                     Button("Write a thought") { state.sheet = .compose }.frame(minHeight: 44).fixedSize(horizontal: false, vertical: true)
                     if state.total == 0 { Button("Try original sample thoughts") { Task { await samples() } }.font(.footnote).frame(minHeight: 44).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
                     Spacer(minLength: 12)
                     Text("Private. Offline. Yours.").font(.footnote).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).opacity(0.8)
-                }.frame(maxWidth: 420, minHeight: geometry.size.height).frame(maxWidth: .infinity)
+                }.frame(maxWidth: 420, minHeight: compact ? 0 : geometry.size.height).frame(maxWidth: .infinity)
             }.scrollIndicators(.hidden)
         }
     }

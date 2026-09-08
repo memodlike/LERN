@@ -49,6 +49,9 @@ struct SurfaceSettings: View {
             if surface == "watch" {
                 Text("The Watch receives a local selection of up to 100 entries from this source. Open LERN on your iPhone after changing it. No internet is required.")
                 Button("Sync to Watch") { Task { await state.savePreferences(); await WatchBridge.shared.update(store: state.store, source: source.wrappedValue) } }
+                if let date = WatchBridge.shared.lastSuccessfulSync { LabeledContent("Last sync") { Text(date, format: .dateTime.month(.abbreviated).day().hour().minute()) } }
+                LabeledContent("Thoughts synced", value: WatchBridge.shared.syncedCount.formatted())
+                if let error = WatchBridge.shared.lastSyncError { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
                 Text("Notifications follow Apple's normal iPhone and Watch mirroring rules.").font(.footnote)
             } else {
                 Text("Add LERN to your Lock Screen from the wallpaper editor. This source is independent of Home Screen presets.")
@@ -118,7 +121,8 @@ struct DiagnosticsView: View {
             LabeledContent("Pending notifications", value: "\(state.scheduler.pendingCount) / 60")
             LabeledContent("Network dependency", value: String(localized: "None for core operation"))
             LabeledContent("Database", value: "SwiftData · local")
-            LabeledContent("Background polling", value: String(localized: "None"))
+            LabeledContent("Network polling", value: String(localized: "None"))
+            LabeledContent("Background refresh", value: String(localized: "Best effort"))
             Text("Scheduled means iOS accepted a request, not proof that it was shown. Opened is recorded only after a notification or deep link is opened.").font(.footnote)
             Button("Refresh diagnostics") { Task { await state.scheduler.replenish(); await measure() } }
         }.navigationTitle("Diagnostics").task { await measure() }
