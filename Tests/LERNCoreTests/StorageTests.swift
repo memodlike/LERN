@@ -17,6 +17,36 @@ import Foundation
         #expect(try await store.entry(EntryDraft(text: "one").id)?.favorite == true)
         #expect(try await store.eligibleIDs(source: source).count == 2)
     }
+    @Test func libraryLifecycleKeepsSharedAndFavoriteEntries() async throws {
+        let store = try store()
+        let first = try await store.importEntries(preview(["shared", "first only"]))
+        let second = try await store.importEntries(preview(["shared", "second only"]))
+        let sharedID = EntryDraft(text: "shared").id
+        try await store.setTopicPaused(first.topic.id, paused: true)
+        #expect(try await store.eligibleIDs(source: ContentSource(topicIDs: [first.topic.id])).isEmpty)
+        try await store.setTopicPaused(first.topic.id, paused: false)
+        #expect(try await store.eligibleIDs(source: ContentSource(topicIDs: [first.topic.id])).contains(sharedID))
+        try await store.deleteImportedLibrary(first.topic.id)
+        #expect(try await store.entry(sharedID) != nil)
+        try await store.setFlag(sharedID, flag: "favorite", value: true)
+        try await store.deleteImportedLibrary(second.topic.id)
+        #expect(try await store.entry(sharedID)?.favorite == true)
+        #expect(try await store.eligibleIDs(source: ContentSource(myContentOnly: true)).contains(sharedID))
+    }
+    @Test func sectionTopicsRemainStableAndReplaceCleansUp() async throws {
+        let store = try store()
+        let first = ImportPreview(name: "Book", filename: "book.md", format: "MD", entries: [EntryDraft(text: "one", section: "Part one"), EntryDraft(text: "two", section: "Part two")], duplicates: 0, malformed: 0, issues: [])
+        let imported = try await store.importEntries(first, splitSections: true)
+        let firstSections = try await store.topics().filter { $0.parentTopicID == imported.topic.id }
+        #expect(firstSections.count == 2)
+        let update = ImportPreview(name: "Book", filename: "book.md", format: "MD", entries: [EntryDraft(text: "three", section: "Part one")], duplicates: 0, malformed: 0, issues: [])
+        _ = try await store.importEntries(update, action: .replace, topicID: imported.topic.id, splitSections: true)
+        let sections = try await store.topics().filter { $0.parentTopicID == imported.topic.id }
+        #expect(sections.count == 1)
+        #expect(sections[0].name == "Part one")
+        let backup = try await store.backup()
+        #expect(backup.memberships.contains { $0.section == "Part one" })
+    }
     @Test func exclusionSearchCollectionsAndBackup() async throws {
         let store = try store(); _ = try await store.importEntries(preview(["keep me", "mute this word", "dislike me"]))
         try await store.setFlag(EntryDraft(text: "dislike me").id, flag: "disliked", value: true)

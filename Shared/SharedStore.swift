@@ -3,6 +3,7 @@ import SwiftData
 import LERNCore
 
 public enum SharedStore {
+    private static let notificationScheduleDirtyKey = "notificationScheduleDirty"
     public static var directory: URL {
         #if DEBUG
         if let session = ProcessInfo.processInfo.environment["LERN_UI_TEST_SESSION"], UUID(uuidString: session) != nil {
@@ -23,5 +24,14 @@ public enum SharedStore {
     public static func photoURL(_ name: String) -> URL? {
         guard LibraryBackup.safeAssetName(name) else { return nil }
         return photosDirectory.appendingPathComponent(name)
+    }
+    public static func markNotificationScheduleDirty() {
+        UserDefaults(suiteName: Product.appGroup)?.set(true, forKey: notificationScheduleDirtyKey)
+    }
+    public static func notificationScheduleIsDirty() -> Bool {
+        UserDefaults(suiteName: Product.appGroup)?.bool(forKey: notificationScheduleDirtyKey) ?? false
+    }
+    public static func clearNotificationScheduleDirty() {
+        UserDefaults(suiteName: Product.appGroup)?.removeObject(forKey: notificationScheduleDirtyKey)
     }
 }

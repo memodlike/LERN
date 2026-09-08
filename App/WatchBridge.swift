@@ -8,6 +8,7 @@ import WidgetKit
     private var store: LibraryStore?
     private var source: ContentSource?
     private var revision = 0
+    var onFavoriteMutation: (@MainActor () async -> Void)?
     func activate() {
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self; WCSession.default.activate()
@@ -73,6 +74,8 @@ import WidgetKit
                 if let store = self.store { library = store } else { library = try SharedStore.open() }
                 try await library.setFlag(id, flag: "favorite", value: favorite)
                 WidgetCenter.shared.reloadAllTimelines()
+                if let onFavoriteMutation { await onFavoriteMutation() }
+                else { SharedStore.markNotificationScheduleDirty() }
                 await retry()
             } catch {}
         }

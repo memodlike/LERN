@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 public enum ImportFailure: LocalizedError {
     case tooLarge, encoding, malformed(String), empty, unsupported
@@ -13,16 +14,29 @@ public enum ImportFailure: LocalizedError {
     }
 }
 public enum TextImportMode: String, CaseIterable, Sendable { case automatic, lines, paragraphs }
+public enum CSVDelimiter: String, CaseIterable, Sendable { case automatic, comma, semicolon, tab
+    public var character: Character? { switch self { case .automatic: return nil; case .comma: return ","; case .semicolon: return ";"; case .tab: return "\t" } }
+    public var label: String { switch self { case .automatic: return "Automatic"; case .comma: return "Comma"; case .semicolon: return "Semicolon"; case .tab: return "Tab" } }
+}
 public struct ImportPreview: Sendable {
     public var name: String
+    public var filename: String
     public var format: String
+    public var checksum: String
     public var entries: [EntryDraft]
     public var duplicates: Int
     public var malformed: Int
     public var issues: [String]
-    public init(name: String, format: String, entries: [EntryDraft], duplicates: Int, malformed: Int, issues: [String]) { self.name = name; self.format = format; self.entries = entries; self.duplicates = duplicates; self.malformed = malformed; self.issues = issues }
+    public var detectedLayout: TextImportMode?
+    public var detectedDelimiter: CSVDelimiter?
+    public init(name: String, filename: String = "", format: String, checksum: String = "", entries: [EntryDraft], duplicates: Int, malformed: Int, issues: [String], detectedLayout: TextImportMode? = nil, detectedDelimiter: CSVDelimiter? = nil) {
+        self.name = name; self.filename = filename; self.format = format; self.checksum = checksum; self.entries = entries; self.duplicates = duplicates; self.malformed = malformed; self.issues = issues; self.detectedLayout = detectedLayout; self.detectedDelimiter = detectedDelimiter
+    }
     public var firstFive: [EntryDraft] { Array(entries.prefix(5)) }
+    public var sectionCount: Int { Set(entries.map { EntryDraft.normalized($0.section) }.filter { !$0.isEmpty }).count }
+    public var shortenedInNotifications: Int { entries.filter { $0.text.count > NotificationBodyLimit.characters }.count }
 }
+public enum NotificationBodyLimit { public static let characters = 500 }
 public protocol ContentImporter: Sendable {
     var extensions: [String] { get }
     func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String])
@@ -33,7 +47,7 @@ public struct ImportService: Sendable {
     public static let textLimit = 20_000
     private let importers: [any ContentImporter] = [MarkdownImporter(), PlainTextImporter(), DelimitedImporter(), JSONImporter()]
     public init() {}
-    public func preview(data: Data, filename: String, mode: TextImportMode = .automatic) throws -> ImportPreview {
+    public func preview(data: Data, filename: String, mode: TextImportMode = .automatic, delimiter: CSVDelimiter = .automatic) throws -> ImportPreview {
         guard data.count <= Self.byteLimit else { throw ImportFailure.tooLarge }
         guard var text = String(data: data, encoding: .utf8) else { throw ImportFailure.encoding }
         if text.first == "\u{FEFF}" { text.removeFirst() }
@@ -41,9 +55,14 @@ public struct ImportService: Sendable {
         let ext = (filename as NSString).pathExtension.lowercased()
         guard let parser = importers.first(where: { $0.extensions.contains(ext) }) else { throw ImportFailure.unsupported }
         let output: (entries: [EntryDraft], issues: [String])
-        if ext == "tsv" { output = try DelimitedImporter(separator: "\t").parse(text, mode: mode) }
+        var detectedDelimiter: CSVDelimiter? = nil
+        if ext == "tsv" { output = try DelimitedImporter(separator: "\t").parse(text, mode: mode); detectedDelimiter = .tab }
+        else if ext == "csv" {
+            let choice = delimiter == .automatic ? DelimitedImporter.detectDelimiter(in: text) : delimiter
+            output = try DelimitedImporter(separator: choice.character ?? ",").parse(text, mode: mode); detectedDelimiter = choice
+        }
         else if ext == "jsonl" { output = try JSONImporter(lines: true).parse(text, mode: mode) }
-        else { output = try parser.parse(text, mode: mode) }
+        else { output = try parser.parse(text, mode: mode); detectedDelimiter = nil }
         guard output.entries.count <= Self.entryLimit else { throw ImportFailure.tooLarge }
         var seen = Set<String>(), unique: [EntryDraft] = [], duplicates = 0, issues = output.issues
         for (index, entry) in output.entries.enumerated() {
@@ -54,7 +73,9 @@ public struct ImportService: Sendable {
             if seen.insert(entry.id).inserted { unique.append(entry) } else { duplicates += 1 }
         }
         guard !unique.isEmpty else { throw ImportFailure.empty }
-        return ImportPreview(name: (filename as NSString).deletingPathExtension, format: ext.uppercased(), entries: unique, duplicates: duplicates, malformed: issues.count, issues: Array(issues.prefix(20)))
+        let layout: TextImportMode? = ext == "txt" ? PlainTextImporter.detectedLayout(text, requested: mode) : nil
+        let checksum = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        return ImportPreview(name: (filename as NSString).deletingPathExtension, filename: filename, format: ext.uppercased(), checksum: checksum, entries: unique, duplicates: duplicates, malformed: issues.count, issues: Array(issues.prefix(20)), detectedLayout: layout, detectedDelimiter: detectedDelimiter)
     }
 }
 
@@ -63,9 +84,11 @@ private struct DraftBudget {
     mutating func make(text: String, author: String = "", source: String = "", tags: [String] = [], section: String = "") throws -> EntryDraft {
         guard text.count <= ImportService.textLimit else { throw ImportFailure.malformed("An entry exceeds 20,000 characters.") }
         try validateMetadata(author: author, source: source, tags: tags, section: section)
-        bytes += text.utf8.count + author.utf8.count + source.utf8.count + section.utf8.count + tags.reduce(0) { $0 + $1.utf8.count }
+        let normalizedTags = EntryDraft.normalizedTags(tags)
+        try validateMetadata(author: author, source: source, tags: normalizedTags, section: section)
+        bytes += text.utf8.count + author.utf8.count + source.utf8.count + section.utf8.count + normalizedTags.reduce(0) { $0 + $1.utf8.count }
         guard bytes <= ImportService.byteLimit else { throw ImportFailure.tooLarge }
-        return EntryDraft(text: text, author: author, source: source, tags: tags, section: section)
+        return EntryDraft(text: text, author: author, source: source, tags: normalizedTags, section: section)
     }
 }
 
@@ -92,8 +115,16 @@ private struct TextLines: Sequence {
 public struct PlainTextImporter: ContentImporter {
     public let extensions = ["txt"]
     public init() {}
+    public static func detectedLayout(_ text: String, requested: TextImportMode) -> TextImportMode {
+        guard requested == .automatic else { return requested }
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        let blankRuns = lines.reduce(into: 0) { count, line in if line.trimmingCharacters(in: .whitespaces).isEmpty { count += 1 } }
+        let nonEmpty = lines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        // Blank-line grouping is useful only when there is content on both sides; otherwise preserve one-line units.
+        return blankRuns > 0 && nonEmpty.count > 1 ? .paragraphs : .lines
+    }
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
-        let paragraphs = mode == .paragraphs || (mode == .automatic && text.contains("\n\n"))
+        let paragraphs = Self.detectedLayout(text, requested: mode) == .paragraphs
         var entries: [EntryDraft] = [], buffer = "", lineNumber = 0
         func append(_ value: String) throws {
             let clean = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -152,10 +183,10 @@ public struct MarkdownImporter: ContentImporter {
             if index % 256 == 0 { try Task.checkCancellation() }
             guard entries.count <= ImportService.entryLimit, raw.count <= ImportService.textLimit else { throw ImportFailure.tooLarge }
             let line = raw.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("```") { try flush(); inCode.toggle(); continue }
-            if inCode { continue }
+            if line.hasPrefix("```") { paragraph.append(raw); paragraphLength += raw.count; inCode.toggle(); continue }
+            if inCode { paragraph.append(raw); paragraphLength += raw.count + 1; guard paragraphLength <= ImportService.textLimit else { throw ImportFailure.malformed("A code block exceeds 20,000 characters.") }; continue }
             if line.isEmpty || line == "---" { try flush(); continue }
-            if line.hasPrefix("#") { try flush(); section = line.drop(while: { $0 == "#" }).trimmingCharacters(in: .whitespaces); try validateMetadata(section: section); continue }
+            if let heading = line.range(of: "^#{1,6}[ \\t]+", options: .regularExpression) { try flush(); section = line[heading.upperBound...].trimmingCharacters(in: .whitespaces); try validateMetadata(section: section); continue }
             let range = line.range(of: "^(?:[-*+] |[0-9]+[.)] |> ?)", options: .regularExpression)
             if let range {
                 try flush(); let content = String(line[range.upperBound...])
@@ -176,10 +207,23 @@ public struct DelimitedImporter: ContentImporter {
     let separator: Character
     let headerAliases: [String: String]
     public init(separator: Character = ",", headerAliases: [String: String] = [:]) { self.separator = separator; self.headerAliases = headerAliases }
+    public static func detectDelimiter(in text: String) -> CSVDelimiter {
+        let sample = text.prefix(8_192)
+        var quoted = false, counts: [Character: Int] = [",": 0, ";": 0, "\t": 0]
+        for character in sample {
+            if character == "\"" { quoted.toggle() }
+            else if !quoted, counts[character] != nil { counts[character, default: 0] += 1 }
+        }
+        switch counts.max(by: { $0.value < $1.value })?.key {
+        case ";": return .semicolon
+        case "\t": return .tab
+        default: return .comma
+        }
+    }
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
         var entries: [EntryDraft] = [], issues: [String] = [], row: [String] = [], cell = ""
         var quoted = false, afterQuote = false, headers: [String]?, hasHeader = false, rowCount = 0, processed = 0, fieldLength = 0
-        let aliases = ["text", "quote", "body", "content"]
+            let aliases = ["text", "quote", "body", "content"]
         var budget = DraftBudget()
         func finishCell() throws {
             guard row.count < 64 else { throw ImportFailure.malformed("A row has more than 64 columns.") }
@@ -203,7 +247,8 @@ public struct DelimitedImporter: ContentImporter {
             func value(_ key: String) -> String { guard hasHeader, let i = headers!.firstIndex(of: key), i < row.count else { return "" }; return row[i] }
             guard textIndex < row.count, !row[textIndex].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { issues.append("Row \(rowCount): missing text."); return }
             guard entries.count < ImportService.entryLimit else { throw ImportFailure.tooLarge }
-            entries.append(try budget.make(text: row[textIndex], author: value("author"), source: value("source"), tags: value("tags").split(maxSplits: 64, whereSeparator: { $0 == ";" || $0 == "|" }).map(String.init), section: value("category")))
+            let tags = value("tags").split(whereSeparator: { $0 == "," || $0 == ";" || $0 == "|" }).map(String.init)
+            entries.append(try budget.make(text: row[textIndex], author: value("author"), source: value("source"), tags: tags, section: value("section").isEmpty ? value("category") : value("section")))
         }
         for c in text {
             processed += 1; if processed % 8192 == 0 { try Task.checkCancellation() }

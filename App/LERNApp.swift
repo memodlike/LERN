@@ -1,6 +1,7 @@
 import SwiftUI
 import LERNCore
 import UserNotifications
+import BackgroundTasks
 
 @main struct LERNApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
@@ -37,16 +38,37 @@ import UserNotifications
 }
 
 @MainActor final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    static let backgroundRefreshIdentifier = "app.lern.local.notification-refresh"
     weak var state: AppState?
     private var pendingResponses: [(entryID: String, planID: String)] = []
     private var deliveringResponse = false
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
+            guard let refresh = task as? BGAppRefreshTask else { task.setTaskCompleted(success: false); return }
+            self?.runBackgroundRefresh(refresh)
+        }
         WatchBridge.shared.activate()
         return true
     }
+    static func scheduleBackgroundRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: backgroundRefreshIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 12 * 60 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+    private nonisolated func runBackgroundRefresh(_ task: BGAppRefreshTask) {
+        let work = Task { @MainActor [weak self] in
+            guard let state = self?.state else { task.setTaskCompleted(success: false); return }
+            let success = await state.scheduler.replenish()
+            if success { SharedStore.clearNotificationScheduleDirty(); Self.scheduleBackgroundRefresh() }
+            task.setTaskCompleted(success: success && !Task.isCancelled)
+        }
+        task.expirationHandler = { work.cancel() }
+    }
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard let id = response.notification.request.content.userInfo["entryID"] as? String else { return }
+        guard let id = response.notification.request.content.userInfo["entryID"] as? String,
+              id.utf8.count == 64, id.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
+              response.notification.request.identifier.hasPrefix("lern.") else { return }
         let planID = response.notification.request.identifier
         await receive(entryID: id, planID: planID)
     }
@@ -64,5 +86,7 @@ import UserNotifications
         }
         await state.scheduler.replenish()
     }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions { [.banner, .sound, .list] }
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        notification.request.content.categoryIdentifier == "lern.alarm" ? [.banner, .sound, .list] : [.list]
+    }
 }

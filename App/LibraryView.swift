@@ -13,6 +13,10 @@ struct LibraryView: View {
     @State private var hasMore = true
     @State private var newCollection = false
     @State private var collectionName = ""
+    @State private var topicForDetails: TopicValue?
+    @State private var topicForDeletion: TopicValue?
+    @State private var topicForRename: TopicValue?
+    @State private var renamedTopic = ""
     var body: some View {
         List {
             if search.isEmpty {
@@ -24,17 +28,7 @@ struct LibraryView: View {
                     sourceRow("All entries", symbol: "square.stack", value: ContentSource())
                     sourceRow("Favorites", symbol: "heart", value: ContentSource(favoritesOnly: true))
                     sourceRow("My Content", symbol: "pencil.line", value: ContentSource(myContentOnly: true))
-                    ForEach(state.topics) { topic in
-                        HStack {
-                            Button { source = ContentSource(topicIDs: [topic.id]); Task { await reload() } } label: {
-                                Label { HStack { Text(topic.name); Spacer(); Text(topic.count.formatted()).foregroundStyle(.secondary) } } icon: { Image(systemName: topic.kind == "collection" ? "folder" : "doc.text") }
-                            }.foregroundStyle(.primary)
-                            if source.topicIDs.contains(topic.id) { Image(systemName: "checkmark").foregroundStyle(.tint) }
-                        }
-                        .contextMenu {
-                            Button("Read this topic") { Task { await state.changeFeedSource(ContentSource(topicIDs: [topic.id])); dismiss() } }
-                        }
-                    }
+                    ForEach(visibleTopics) { topic in topicRow(topic) }
                     NavigationLink { SourcePicker(source: Binding(get: { source }, set: { source = $0 })) } label: { Label("Mix topics or choose a tag", systemImage: "line.3.horizontal.decrease") }
                 }
                 Section {
@@ -57,6 +51,16 @@ struct LibraryView: View {
         .navigationTitle("Your library")
         .searchable(text: $search, prompt: "Text, author, source or tag")
         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        .sheet(item: $topicForDetails) { LibraryDetailsView(topic: $0) }
+        .alert("Rename library", isPresented: Binding(get: { topicForRename != nil }, set: { if !$0 { topicForRename = nil } })) {
+            TextField("Library name", text: $renamedTopic)
+            Button("Save") { if let topic = topicForRename { Task { await state.renameLibrary(id: topic.id, name: renamedTopic) }; topicForRename = nil } }
+            Button("Cancel", role: .cancel) { topicForRename = nil }
+        }
+        .confirmationDialog("Delete this imported library?", isPresented: Binding(get: { topicForDeletion != nil }, set: { if !$0 { topicForDeletion = nil } }), titleVisibility: .visible) {
+            Button("Delete library", role: .destructive) { if let topic = topicForDeletion { Task { await state.deleteImportedLibrary(id: topic.id) }; topicForDeletion = nil } }
+            Button("Cancel", role: .cancel) { topicForDeletion = nil }
+        } message: { Text("Entries shared with other libraries stay there. Favorite entries that would otherwise be orphaned move to My Content.") }
         .task(id: LibraryQuery(source: source, search: search)) { do { try await Task.sleep(for: .milliseconds(250)); try Task.checkCancellation(); await reload() } catch {} }
         .onAppear { Task { try? await state.refreshLibrary() } }
     }
@@ -68,6 +72,46 @@ struct LibraryView: View {
         loading = true; defer { loading = false }
         do { let page = try await state.store.page(source: source, search: search, offset: entries.count); if Task.isCancelled { return }; entries += page; hasMore = page.count == 50 }
         catch { if !Task.isCancelled { state.error = error.localizedDescription } }
+    }
+    private var visibleTopics: [TopicValue] { state.topics.filter { $0.parentTopicID == nil } }
+    @ViewBuilder private func topicRow(_ topic: TopicValue) -> some View {
+        HStack {
+            Button { source = ContentSource(topicIDs: [topic.id]); Task { await reload() } } label: {
+                Label { HStack { Text(topic.name); Spacer(); if topic.isPaused { Text("Paused").font(.caption).foregroundStyle(.orange) }; Text(topic.count.formatted()).foregroundStyle(.secondary) } } icon: { Image(systemName: topic.kind == "collection" ? "folder" : (topic.isPaused ? "pause.circle" : "doc.text")) }
+            }.foregroundStyle(.primary)
+            if source.topicIDs.contains(topic.id) { Image(systemName: "checkmark").foregroundStyle(.tint) }
+        }
+        .contextMenu {
+            Button("Read this topic") { Task { await state.changeFeedSource(ContentSource(topicIDs: [topic.id])); dismiss() } }
+            if topic.kind == "import" {
+                Button(topic.isPaused ? "Reactivate library" : "Pause library") { Task { await state.setLibraryPaused(id: topic.id, paused: !topic.isPaused) } }
+                Button("Rename library") { renamedTopic = topic.name; topicForRename = topic }
+                Button("Library details") { topicForDetails = topic }
+                Button("Delete library", role: .destructive) { topicForDeletion = topic }
+            }
+        }
+    }
+}
+
+struct LibraryDetailsView: View {
+    @Environment(\.dismiss) private var dismiss
+    let topic: TopicValue
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Library") {
+                    LabeledContent("Name", value: topic.name)
+                    LabeledContent("Status", value: topic.isPaused ? "Paused" : "Active")
+                    LabeledContent("Entries", value: topic.count.formatted())
+                    if let filename = topic.originalFilename, !filename.isEmpty { LabeledContent("Original file", value: filename) }
+                    if let format = topic.format, !format.isEmpty { LabeledContent("Format", value: format) }
+                    if topic.warningCount > 0 { LabeledContent("Import warnings", value: topic.warningCount.formatted()) }
+                }
+                Section("Dates") { LabeledContent("Created", value: topic.createdAt.formatted(date: .abbreviated, time: .shortened)); LabeledContent("Updated", value: topic.updatedAt.formatted(date: .abbreviated, time: .shortened)) }
+            }
+            .navigationTitle("Library details")
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }
     }
 }
 struct EntryRow: View {
@@ -86,7 +130,7 @@ struct SourcePicker: View {
         Form {
             Section { Button("All entries") { source = ContentSource() }; Toggle("Favorites only", isOn: $source.favoritesOnly); Toggle("My Content", isOn: $source.myContentOnly) }
             Section("Topics and collections") {
-                ForEach(state.topics) { topic in
+                ForEach(state.topics.filter { $0.parentTopicID == nil && !$0.isPaused }) { topic in
                     Toggle(topic.name, isOn: Binding(get: { source.topicIDs.contains(topic.id) }, set: { selected in if selected { source.topicIDs.append(topic.id) } else { source.topicIDs.removeAll { $0 == topic.id } } }))
                 }
             }

@@ -45,7 +45,10 @@ public struct ReminderSlot: Sendable, Equatable {
 public enum ScheduleEngine {
     public static let capacity = 60
     public static func slots(rules: [ReminderRule], after now: Date, calendar: Calendar = .autoupdatingCurrent, limit: Int = capacity) -> [ReminderSlot] {
-        var result: [ReminderSlot] = []
+        let maximum = max(0, min(capacity, limit))
+        guard maximum > 0 else { return [] }
+        var candidates: [String: [ReminderSlot]] = [:]
+        let activeRuleIDs = Set(rules.filter(\.enabled).map(\.id))
         let day = calendar.startOfDay(for: now)
         for offset in 0..<370 {
             guard let currentDay = calendar.date(byAdding: .day, value: offset, to: day) else { continue }
@@ -56,17 +59,45 @@ public enum ScheduleEngine {
                     var match = DateComponents(); match.hour = minute / 60; match.minute = minute % 60; match.second = 0
                     guard let date = calendar.nextDate(after: currentDay.addingTimeInterval(-1), matching: match, matchingPolicy: .nextTime, repeatedTimePolicy: .first, direction: .forward), calendar.isDate(date, inSameDayAs: currentDay), date > now else { continue }
                     let id = "lern.\(rule.id).\(Int(date.timeIntervalSince1970))"
-                    if !result.contains(where: { $0.id == id }) { result.append(ReminderSlot(id: id, ruleID: rule.id, revision: rule.revision, date: date)) }
+                    let slot = ReminderSlot(id: id, ruleID: rule.id, revision: rule.revision, date: date)
+                    if !(candidates[rule.id] ?? []).contains(where: { $0.id == id }) { candidates[rule.id, default: []].append(slot) }
                 }
             }
-            if result.count >= limit { break }
+            if candidates.count == activeRuleIDs.count && candidates.values.allSatisfy({ $0.count >= maximum }) { break }
         }
-        return Array(result.sorted { $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date }.prefix(max(0, min(capacity, limit))))
+        for id in candidates.keys { candidates[id]?.sort { $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date } }
+
+        // System slots are conditional product behavior and are never silently starved.
+        let systemIDs = candidates.keys.filter(ReminderRule.isReservedID).sorted()
+        var selected = systemIDs.compactMap { candidates[$0]?.first }
+        if selected.count > maximum { return Array(selected.sorted { $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date }.prefix(maximum)) }
+
+        // Give every active user rule a turn before any rule receives another slot. Each
+        // rule stays chronological internally, while the queue stays deterministic.
+        var indexes = Dictionary(uniqueKeysWithValues: candidates.keys.map { ($0, ReminderRule.isReservedID($0) ? 1 : 0) })
+        while selected.count < maximum {
+            let available = indexes.keys.compactMap { id -> (String, ReminderSlot)? in
+                guard let index = indexes[id], let slot = candidates[id]?[safe: index] else { return nil }
+                return (id, slot)
+            }.sorted { lhs, rhs in
+                lhs.1.date == rhs.1.date ? lhs.0 < rhs.0 : lhs.1.date < rhs.1.date
+            }
+            guard !available.isEmpty else { break }
+            for (id, slot) in available where selected.count < maximum {
+                selected.append(slot)
+                indexes[id, default: 0] += 1
+            }
+        }
+        return selected.sorted { $0.date == $1.date ? $0.id < $1.id : $0.date < $1.date }
     }
     public static func collisions(_ rules: [ReminderRule], now: Date = Date(), calendar: Calendar = .autoupdatingCurrent) -> Int {
         let slots = slots(rules: rules, after: now, calendar: calendar)
         return Dictionary(grouping: slots, by: \.date).values.reduce(0) { $0 + max(0, $1.count - 1) }
     }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }
 
 public struct LibraryBackup: Codable, Sendable {
@@ -88,7 +119,10 @@ public struct LibraryBackup: Codable, Sendable {
         guard entries.count <= 200_000, topics.count <= 10_000, memberships.count <= 1_000_000, reminders.count <= 100, photos.count <= 200 else { throw ImportFailure.tooLarge }
         guard Set(entries.map(\.id)).count == entries.count, Set(topics.map(\.id)).count == topics.count else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
         let ids = Set(entries.map(\.id)), topicIDs = Set(topics.map(\.id))
-        guard entries.allSatisfy({ !$0.draft.text.isEmpty && $0.draft.text.count <= ImportService.textLimit && $0.draft.author.count <= 2_000 && $0.draft.source.count <= 2_000 && $0.draft.section.count <= 2_000 && $0.draft.tags.count <= 64 && $0.draft.tags.allSatisfy({ $0.count <= 256 }) && $0.id == $0.draft.id }), memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) }), photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= 20_000_000 }) else { throw ImportFailure.malformed("Invalid entries, links or photo names.") }
+        guard entries.allSatisfy({ !$0.draft.text.isEmpty && $0.draft.text.count <= ImportService.textLimit && $0.draft.author.count <= 2_000 && $0.draft.source.count <= 2_000 && $0.draft.section.count <= 2_000 && $0.draft.tags.count <= 64 && $0.draft.tags.allSatisfy({ $0.count <= 256 }) && $0.id == $0.draft.id }),
+              topics.allSatisfy({ ["active", "paused"].contains($0.status) && $0.name.count <= 120 && ($0.parentTopicID == nil || ($0.parentTopicID != $0.id && topicIDs.contains($0.parentTopicID!))) }),
+              memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) && $0.section.count <= 2_000 && $0.tags.count <= 64 && $0.tags.allSatisfy({ $0.count <= 256 }) }),
+              photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= 20_000_000 }) else { throw ImportFailure.malformed("Invalid entries, libraries, links or photo names.") }
         let streak = preferences.streak
         guard (0...1_000_000).contains(streak.current), (0...1_000_000).contains(streak.longest),
               streak.longest >= streak.current, (0...3).contains(streak.freezes), (0...6).contains(streak.readingDaysSinceFreeze),
@@ -99,6 +133,7 @@ public struct LibraryBackup: Codable, Sendable {
               cursors.allSatisfy({ $0.key.hasPrefix("cursor.") && $0.key.count < 20_000 && (0...200_000).contains($0.value.position) }),
               Set(themes.map(\.id)).count == themes.count, Set(presets.map(\.id)).count == presets.count,
               Set(reminders.map(\.id)).count == reminders.count,
+              reminders.allSatisfy({ !ReminderRule.isReservedID($0.id) }),
               themes.allSatisfy({ $0.overlay.isFinite && (0...0.85).contains($0.overlay) && ($0.photoName == nil || Self.safeAssetName($0.photoName!)) }),
               reminders.allSatisfy({ (1...60).contains($0.frequency) && (0..<1440).contains($0.startMinute) && (0..<1440).contains($0.endMinute) && $0.explicitMinutes.count <= 60 && $0.explicitMinutes.allSatisfy({ (0..<1440).contains($0) }) && $0.weekdays.count <= 7 && $0.weekdays.allSatisfy({ (1...7).contains($0) }) }),
               presets.allSatisfy({ (30...1440).contains($0.refreshMinutes) }),
@@ -115,5 +150,14 @@ public struct MembershipValue: Codable, Sendable {
     public var entryID: String
     public var topicID: String
     public var ordinal: Int
-    public init(entryID: String, topicID: String, ordinal: Int) { self.entryID = entryID; self.topicID = topicID; self.ordinal = ordinal }
+    public var section = ""
+    public var tags: [String] = []
+    public init(entryID: String, topicID: String, ordinal: Int, section: String = "", tags: [String] = []) { self.entryID = entryID; self.topicID = topicID; self.ordinal = ordinal; self.section = section; self.tags = EntryDraft.normalizedTags(tags) }
+    private enum CodingKeys: String, CodingKey { case entryID, topicID, ordinal, section, tags }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        entryID = try values.decode(String.self, forKey: .entryID); topicID = try values.decode(String.self, forKey: .topicID); ordinal = try values.decode(Int.self, forKey: .ordinal)
+        section = try values.decodeIfPresent(String.self, forKey: .section) ?? ""
+        tags = EntryDraft.normalizedTags(try values.decodeIfPresent([String].self, forKey: .tags) ?? [])
+    }
 }

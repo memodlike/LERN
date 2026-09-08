@@ -10,10 +10,27 @@ struct RemindersView: View {
             Section {
                 if state.scheduler.authorization == .notDetermined { Text("Let your own words meet you during the day."); Button("Enable notifications") { Task { await state.scheduler.requestPermission() } } }
                 else if state.scheduler.authorization == .denied { Text("Notifications are turned off in iOS Settings."); Button("Open Settings") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } } }
+                else if state.scheduler.settings.alerts != "enabled" { Text("LERN may schedule reminders, but alerts are disabled in iOS Settings.") }
+                else if state.scheduler.settings.sounds != "enabled" { Text("Alerts are enabled, but notification sounds are disabled in iOS Settings.") }
+                else if state.scheduler.settings.scheduledDelivery == "enabled" { Text("Scheduled Summary may delay normal reminders.") }
+                else { Text("Notifications are enabled. Focus and silent mode can still affect delivery.") }
                 LabeledContent("Pending reminders", value: "\(state.scheduler.pendingCount) / 60")
                 if let through = state.scheduler.scheduledThrough { LabeledContent("Scheduled through") { Text(through, format: .dateTime.month(.abbreviated).day().hour().minute()) } }
-                Text("iOS keeps a limited queue. Open LERN to replenish it. At 10 reminders a day, 60 reminders cover about 6 days.").font(.caption).foregroundStyle(.secondary)
+                if let through = state.scheduler.scheduledThrough {
+                    let coverage = through.timeIntervalSinceNow
+                    Text("Coverage: about \(max(0, Int(coverage / 3600))) hours.").font(.caption).foregroundStyle(.secondary)
+                    if coverage < 3 * 24 * 60 * 60 { Label("This queue covers less than three days. Open LERN periodically so iOS can replenish personalized reminders.", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange) }
+                }
+                Text("iOS accepts up to 60 local pending requests. Acceptance does not guarantee visible delivery: Focus, Silent Mode and Scheduled Summary still apply.").font(.caption).foregroundStyle(.secondary)
                 if let error = state.scheduler.lastError { Text(error).foregroundStyle(.red) }
+            }
+            Section("iOS delivery diagnostics") {
+                LabeledContent("Alerts", value: state.scheduler.settings.alerts)
+                LabeledContent("Sound", value: state.scheduler.settings.sounds)
+                LabeledContent("Notification Center", value: state.scheduler.settings.notificationCenter)
+                LabeledContent("Lock Screen", value: state.scheduler.settings.lockScreen)
+                LabeledContent("Scheduled Summary", value: state.scheduler.settings.scheduledDelivery)
+                LabeledContent("Time Sensitive", value: state.scheduler.settings.timeSensitive)
             }
             Section("Reminder groups") {
                 ForEach(state.reminders) { rule in
@@ -27,7 +44,7 @@ struct RemindersView: View {
             if ScheduleEngine.collisions(state.reminders) > 0 { Section { Label("Some reminder groups overlap. Both will be scheduled. Edit the times if you prefer more space between them.", systemImage: "exclamationmark.bubble") } }
         }.navigationTitle("Reminders")
             .sheet(item: $edit) { rule in NavigationStack { ReminderEditor(rule: rule) }.environment(state) }
-            .task { await state.scheduler.replenish() }
+            .task { _ = await state.scheduler.replenish() }
     }
     private func summary(_ rule: ReminderRule) -> String {
         let times = rule.minutes.map { String(format: "%02d:%02d", $0 / 60, $0 % 60) }.joined(separator: ", ")

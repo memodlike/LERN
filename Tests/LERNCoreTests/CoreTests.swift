@@ -50,8 +50,19 @@ struct ImporterTests {
     }
     @Test func embeddedCodeIsInert() throws {
         let result = try parse("<script>alert('x')</script>\n\n```js\nmalicious()\n```", "md")
-        #expect(result.entries.count == 1)
+        #expect(result.entries.count == 2)
         #expect(result.entries[0].text.contains("<script>"))
+        #expect(result.entries[1].text.contains("malicious()"))
+    }
+    @Test func markdownHeadingsAndCSVMetadata() throws {
+        let markdown = try parse("# Valid section\n- First\n#hashtag\n```swift\n# not a heading\n```", "md")
+        #expect(markdown.entries[0].section == "Valid section")
+        #expect(markdown.entries[1].text.contains("#hashtag"))
+        #expect(markdown.entries[1].text.contains("# not a heading"))
+        let csv = try ImportService().preview(data: Data("quote;tags;category\nHello;a | b, b;Ideas".utf8), filename: "notes.csv")
+        #expect(csv.detectedDelimiter == .semicolon)
+        #expect(csv.entries[0].tags == ["a", "b", "b"])
+        #expect(csv.entries[0].section == "Ideas")
     }
     @Test func fiftyThousandParse() throws {
         let text = (0..<50_000).map { "Thought number \($0) — привет" }.joined(separator: "\n")
@@ -114,6 +125,30 @@ struct ScheduleTests {
         rule.explicitMinutes = [700]; rule.revision = "changed"
         #expect(ScheduleEngine.slots(rules: [rule], after: now, calendar: utc) != original)
         rule.enabled = false; #expect(ScheduleEngine.slots(rules: [rule], after: now).isEmpty)
+    }
+    @Test func fairAllocationProtectsEveryGroupAndSystemSlots() {
+        let now = date("2026-09-06T00:00:00Z")
+        var busy = ReminderRule(); busy.id = "busy"; busy.explicitMinutes = Array(stride(from: 0, to: 1440, by: 15)); busy.revision = "busy"
+        var quiet = ReminderRule(); quiet.id = "quiet"; quiet.explicitMinutes = [600]; quiet.revision = "quiet"
+        var streak = ReminderRule(); streak.id = "system.streak"; streak.explicitMinutes = [1200]; streak.revision = "streak"
+        let rules = [busy, quiet, streak]
+        let first = ScheduleEngine.slots(rules: rules, after: now, calendar: utc)
+        #expect(first.count == ScheduleEngine.capacity)
+        #expect(first.contains(where: { $0.ruleID == "quiet" }))
+        #expect(first.contains(where: { $0.ruleID == "system.streak" }))
+        #expect(first == ScheduleEngine.slots(rules: rules, after: now, calendar: utc))
+        let grouped = Dictionary(grouping: first.filter { $0.ruleID == "busy" }, by: \.ruleID)
+        #expect(grouped["busy"]?.map(\.date) == grouped["busy"]?.map(\.date).sorted())
+    }
+    @Test func backupRejectsSystemReminderIdentifiers() throws {
+        var rule = ReminderRule(); rule.id = "system.streak"
+        let backup = LibraryBackup(entries: [], topics: [], memberships: [], preferences: Preferences(), reminders: [rule], themes: ThemeValue.starters, presets: [], history: [], resources: [], cursors: [:], photos: [:])
+        #expect(throws: (any Error).self) { try backup.validated() }
+    }
+    @Test func olderPreferencesDefaultToVisibleNotificationPreviews() throws {
+        let decoded = try JSONDecoder().decode(Preferences.self, from: Data("{\"name\":\"Ada\"}".utf8))
+        #expect(decoded.name == "Ada")
+        #expect(decoded.showNotificationPreview)
     }
 }
 struct StreakTests {

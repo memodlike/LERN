@@ -31,7 +31,10 @@ struct FavoriteEntryIntent: AppIntent {
     init(entryID: String) { self.entryID = entryID }
     func perform() async throws -> some IntentResult {
         let store = try SharedStore.open()
-        if let entry = try await store.entry(entryID) { try await store.setFlag(entryID, flag: "favorite", value: !entry.favorite) }
+        if let entry = try await store.entry(entryID) {
+            try await store.setFlag(entryID, flag: "favorite", value: !entry.favorite)
+            SharedStore.markNotificationScheduleDirty()
+        }
         WidgetCenter.shared.reloadAllTimelines(); return .result()
     }
 }

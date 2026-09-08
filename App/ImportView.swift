@@ -11,12 +11,16 @@ struct ImportView: View {
     @State private var loading = false
     @State private var task: Task<Void, Never>?
     @State private var mode: TextImportMode = .automatic
+    @State private var delimiter: CSVDelimiter = .automatic
     @State private var action: ImportAction = .new
     @State private var target = ""
     @State private var mergeFiles = false
     @State private var splitSections = false
     @State private var finished = false
     @State private var summary = ""
+    @State private var showHelp = false
+    @State private var showAIHelper = false
+    @State private var selectedURLs: [URL] = []
     var body: some View {
         Form {
             Section {
@@ -24,6 +28,8 @@ struct ImportView: View {
                 Text("Import Markdown, TXT, CSV, TSV, JSON or JSONL. Each file becomes a topic. Up to 100 MB and 100,000 entries per file.").font(.subheadline).foregroundStyle(.secondary)
                 Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading)
                 Button("Choose files", systemImage: "folder") { picker = true }.disabled(loading).accessibilityIdentifier("import.choose")
+                Button("Create a library with AI", systemImage: "sparkles") { showAIHelper = true }
+                Button("Format help", systemImage: "questionmark.circle") { showHelp = true }
             }
             if loading { Section { ProgressView("Processing on this device"); Button("Cancel import", role: .cancel) { task?.cancel() } } }
             ForEach(Array(previews.enumerated()), id: \.offset) { index, preview in
@@ -32,6 +38,10 @@ struct ImportView: View {
                     LabeledContent("Valid entries", value: preview.entries.count.formatted())
                     LabeledContent("Duplicates in file", value: preview.duplicates.formatted())
                     LabeledContent("Malformed", value: preview.malformed.formatted())
+                    if let layout = preview.detectedLayout { LabeledContent("Detected TXT layout", value: layout == .paragraphs ? "Paragraphs" : "Lines") }
+                    if let delimiter = preview.detectedDelimiter { LabeledContent("Detected delimiter", value: delimiter.label) }
+                    if preview.sectionCount > 0 { LabeledContent("Sections", value: preview.sectionCount.formatted()) }
+                    if preview.shortenedInNotifications > 0 { Label("\(preview.shortenedInNotifications) entries will be shortened in notifications.", systemImage: "bell.badge").font(.caption).foregroundStyle(.secondary) }
                     ForEach(Array(preview.firstFive.enumerated()), id: \.offset) { _, entry in Text(entry.text).lineLimit(4).font(.subheadline) }
                     ForEach(preview.issues, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
                 }
@@ -40,8 +50,14 @@ struct ImportView: View {
                 Section("Import options") {
                     Toggle("Merge files into one topic", isOn: $mergeFiles)
                     Toggle("Make topics from Markdown sections", isOn: $splitSections)
+                    if previews.contains(where: { $0.format == "CSV" }) {
+                        Picker("CSV delimiter", selection: $delimiter) {
+                            ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
+                        }
+                        Text("Changing this option rereads selected CSV files.").font(.caption).foregroundStyle(.secondary)
+                    }
                     Picker("Action", selection: $action) { Text("Import as new").tag(ImportAction.new); Text("Merge into topic").tag(ImportAction.merge); Text("Replace topic entries").tag(ImportAction.replace) }
-                    if action != .new { Picker("Existing topic", selection: $target) { Text("Choose a topic").tag(""); ForEach(state.topics.filter { $0.kind != "collection" }) { Text($0.name).tag($0.id) } } }
+                    if action != .new { Picker("Existing topic", selection: $target) { Text("Choose a topic").tag(""); ForEach(state.topics.filter { $0.parentTopicID == nil && $0.kind != "collection" }) { Text($0.name).tag($0.id) } } }
                     Text("Exact duplicates already in the library reuse the original entry, keeping favorites and collections.").font(.caption).foregroundStyle(.secondary)
                     Button("Import entries") { commit() }.disabled(loading || (action != .new && target.isEmpty)).accessibilityIdentifier("import.commit")
                 }
@@ -50,14 +66,18 @@ struct ImportView: View {
             if !errors.isEmpty { Section("Needs attention") { ForEach(errors, id: \.self) { Text($0).foregroundStyle(.red) } } }
         }.navigationTitle("Import your words")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { task?.cancel(); dismiss() } } }
-            .fileImporter(isPresented: $picker, allowedContentTypes: [.plainText, .commaSeparatedText, .json, .text, .data], allowsMultipleSelection: true) { result in
+            .fileImporter(isPresented: $picker, allowedContentTypes: supportedTypes, allowsMultipleSelection: true) { result in
                 switch result { case .success(let urls): read(urls); case .failure(let error): errors = [error.localizedDescription] }
             }
+            .sheet(isPresented: $showHelp) { ImportFormatHelpView() }
+            .sheet(isPresented: $showAIHelper) { ImportAIHelperView() }
+            .onChange(of: delimiter) { _, _ in if !selectedURLs.isEmpty { read(selectedURLs) } }
             .onDisappear { task?.cancel() }
     }
     private func read(_ urls: [URL]) {
-        task?.cancel(); previews = []; errors = []; finished = false; loading = true
+        task?.cancel(); selectedURLs = urls; previews = []; errors = []; finished = false; loading = true
         let selectedMode = mode
+        let selectedDelimiter = delimiter
         task = Task {
             for url in urls {
                 if Task.isCancelled { break }
@@ -66,7 +86,7 @@ struct ImportView: View {
                     let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                     guard size <= ImportService.byteLimit else { throw ImportFailure.tooLarge }
                     let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    return try ImportService().preview(data: data, filename: url.lastPathComponent, mode: selectedMode)
+                    return try ImportService().preview(data: data, filename: url.lastPathComponent, mode: selectedMode, delimiter: selectedDelimiter)
                 }
                 do {
                     let preview = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
@@ -94,5 +114,8 @@ struct ImportView: View {
             } catch { errors.append(error is CancellationError ? String(localized: "Import cancelled. Completed files remain in your library.") : error.localizedDescription) }
             loading = false
         }
+    }
+    private var supportedTypes: [UTType] {
+        [.plainText, .commaSeparatedText, .json, .text] + ["md", "markdown", "tsv", "jsonl"].compactMap { UTType(filenameExtension: $0) }
     }
 }

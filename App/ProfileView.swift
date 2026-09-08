@@ -21,6 +21,7 @@ struct ProfileView: View {
             }
             Section("Experience") {
                 NavigationLink("Reminders") { RemindersView() }
+                Toggle("Show thought text in notifications", isOn: $state.preferences.showNotificationPreview)
                 NavigationLink("Home Screen Widgets") { WidgetPresetsView() }
                 NavigationLink("Lock Screen Widgets") { SurfaceSettings(surface: "lock") }
                 NavigationLink("Apple Watch") { SurfaceSettings(surface: "watch") }
@@ -139,7 +140,7 @@ struct CollectionDetail: View {
         List {
             Section { TextField("Name", text: $name).onSubmit { Task { do { try await state.store.renameTopic(id: topic.id, name: name); try await state.refreshLibrary() } catch { state.error = error.localizedDescription } } }; Button("Read collection") { Task { await state.changeFeedSource(ContentSource(topicIDs: [topic.id])); state.sheet = nil } } }
             ForEach(entries) { entry in Button { Task { await state.open(entry.id) } } label: { EntryRow(entry: entry) }.foregroundStyle(.primary) }
-                .onDelete { indices in let removed = indices.map { entries[$0].id }; Task { do { for id in removed { try await state.store.removeFromCollection(entryID: id, topicID: topic.id) }; await load() } catch { state.error = error.localizedDescription } } }
+                .onDelete { indices in let removed = indices.map { entries[$0].id }; Task { do { for id in removed { try await state.store.removeFromCollection(entryID: id, topicID: topic.id) }; await state.contentChanged(); await load() } catch { state.error = error.localizedDescription } } }
                 .onMove { from, to in entries.move(fromOffsets: from, toOffset: to); Task { do { try await state.store.reorder(topicID: topic.id, ids: entries.map(\.id)) } catch { state.error = error.localizedDescription } } }
             if entries.count >= 200 { Text("Showing the first 200 matching entries. Search to narrow this collection.").font(.caption) }
         }.navigationTitle(topic.name).searchable(text: $search).toolbar { EditButton() }.task(id: search) { name = topic.name; await load() }

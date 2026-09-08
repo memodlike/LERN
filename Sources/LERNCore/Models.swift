@@ -3,7 +3,7 @@ import CryptoKit
 
 public enum Product {
     public static let name = "LERN"
-    public static let appGroup = "group.app.lern.local"
+    public static let appGroup = "group.com.memodlike.lern"
     public static let scheme = "lern"
 }
 
@@ -17,10 +17,21 @@ public struct EntryDraft: Codable, Hashable, Sendable {
         self.text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         self.author = author.trimmingCharacters(in: .whitespacesAndNewlines)
         self.source = source.trimmingCharacters(in: .whitespacesAndNewlines)
-        self.tags = tags; self.section = section
+        self.tags = Self.normalizedTags(tags); self.section = section.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     public static func normalized(_ value: String) -> String {
         value.precomposedStringWithCanonicalMapping.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
+    }
+    public static func normalizedTags(_ values: [String]) -> [String] {
+        var result: [String] = []
+        for value in values {
+            for tag in value.split(whereSeparator: { $0 == "," || $0 == ";" || $0 == "|" }) {
+                let clean = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !clean.isEmpty else { continue }
+                result.append(clean)
+            }
+        }
+        return result
     }
     public var id: String {
         let pieces = [text, author, source].map(Self.normalized)
@@ -47,7 +58,31 @@ public struct TopicValue: Codable, Identifiable, Hashable, Sendable {
     public var name: String
     public var kind: String = "import"
     public var count: Int = 0
+    public var status = "active"
+    public var parentTopicID: String?
+    public var originalFilename: String?
+    public var format: String?
+    public var checksum: String?
+    public var createdAt = Date()
+    public var updatedAt = Date()
+    public var warningCount = 0
     public init(name: String, kind: String = "import") { self.name = name; self.kind = kind }
+    public var isPaused: Bool { status == "paused" }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, count, status, parentTopicID, originalFilename, format, checksum, createdAt, updatedAt, warningCount }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(name: try values.decode(String.self, forKey: .name), kind: try values.decodeIfPresent(String.self, forKey: .kind) ?? "import")
+        id = try values.decodeIfPresent(String.self, forKey: .id) ?? id
+        count = try values.decodeIfPresent(Int.self, forKey: .count) ?? count
+        status = try values.decodeIfPresent(String.self, forKey: .status) ?? status
+        parentTopicID = try values.decodeIfPresent(String.self, forKey: .parentTopicID)
+        originalFilename = try values.decodeIfPresent(String.self, forKey: .originalFilename)
+        format = try values.decodeIfPresent(String.self, forKey: .format)
+        checksum = try values.decodeIfPresent(String.self, forKey: .checksum)
+        createdAt = try values.decodeIfPresent(Date.self, forKey: .createdAt) ?? createdAt
+        updatedAt = try values.decodeIfPresent(Date.self, forKey: .updatedAt) ?? updatedAt
+        warningCount = try values.decodeIfPresent(Int.self, forKey: .warningCount) ?? warningCount
+    }
 }
 
 public struct ContentSource: Codable, Equatable, Hashable, Sendable {
@@ -86,6 +121,7 @@ public struct ReminderRule: Codable, Identifiable, Equatable, Sendable {
     public var isAlarm = false
     public var revision = UUID().uuidString
     public init() {}
+    public static func isReservedID(_ value: String) -> Bool { value.hasPrefix("system.") }
     public var minutes: [Int] {
         if !usesRange { return Array(Set(explicitMinutes.filter { (0..<1440).contains($0) })).sorted() }
         let n = min(60, max(1, frequency))
@@ -101,10 +137,9 @@ public struct DeliveryPlan: Codable, Identifiable, Sendable {
     public var revision: String
     public var date: Date
     public var entryID: String
-    public var topicID: String
     public var state = "planned"
     public var openedAt: Date?
-    public init(id: String, ruleID: String, revision: String, date: Date, entryID: String, topicID: String) { self.id = id; self.ruleID = ruleID; self.revision = revision; self.date = date; self.entryID = entryID; self.topicID = topicID }
+    public init(id: String, ruleID: String, revision: String, date: Date, entryID: String) { self.id = id; self.ruleID = ruleID; self.revision = revision; self.date = date; self.entryID = entryID }
 }
 public struct HistoryValue: Codable, Identifiable, Sendable {
     public var id = UUID().uuidString
@@ -201,8 +236,37 @@ public struct Preferences: Codable, Sendable {
     public var watermark = false
     public var haptics = true
     public var streakReminder = false
+    public var showNotificationPreview = true
     public var onboardingComplete = false
     public var mutedWords: [String] = []
     public var streak = StreakState()
     public init() {}
+    private enum CodingKeys: String, CodingKey {
+        case name, gender, language, feedSource, feedMode, watchSource, wallpaperSource, lockSource, fortuneSource
+        case themeID, themeMixIDs, themeRotation, watermark, haptics, streakReminder, showNotificationPreview
+        case onboardingComplete, mutedWords, streak
+    }
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        name = try values.decodeIfPresent(String.self, forKey: .name) ?? name
+        gender = try values.decodeIfPresent(String.self, forKey: .gender) ?? gender
+        language = try values.decodeIfPresent(String.self, forKey: .language) ?? language
+        feedSource = try values.decodeIfPresent(ContentSource.self, forKey: .feedSource) ?? feedSource
+        feedMode = try values.decodeIfPresent(SelectionMode.self, forKey: .feedMode) ?? feedMode
+        watchSource = try values.decodeIfPresent(ContentSource.self, forKey: .watchSource) ?? watchSource
+        wallpaperSource = try values.decodeIfPresent(ContentSource.self, forKey: .wallpaperSource) ?? wallpaperSource
+        lockSource = try values.decodeIfPresent(ContentSource.self, forKey: .lockSource) ?? lockSource
+        fortuneSource = try values.decodeIfPresent(ContentSource.self, forKey: .fortuneSource) ?? fortuneSource
+        themeID = try values.decodeIfPresent(String.self, forKey: .themeID) ?? themeID
+        themeMixIDs = try values.decodeIfPresent([String].self, forKey: .themeMixIDs) ?? themeMixIDs
+        themeRotation = try values.decodeIfPresent(String.self, forKey: .themeRotation) ?? themeRotation
+        watermark = try values.decodeIfPresent(Bool.self, forKey: .watermark) ?? watermark
+        haptics = try values.decodeIfPresent(Bool.self, forKey: .haptics) ?? haptics
+        streakReminder = try values.decodeIfPresent(Bool.self, forKey: .streakReminder) ?? streakReminder
+        showNotificationPreview = try values.decodeIfPresent(Bool.self, forKey: .showNotificationPreview) ?? showNotificationPreview
+        onboardingComplete = try values.decodeIfPresent(Bool.self, forKey: .onboardingComplete) ?? onboardingComplete
+        mutedWords = try values.decodeIfPresent([String].self, forKey: .mutedWords) ?? mutedWords
+        streak = try values.decodeIfPresent(StreakState.self, forKey: .streak) ?? streak
+    }
 }

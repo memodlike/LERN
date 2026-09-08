@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.app.lern.local</string>
+		<string>group.com.memodlike.lern</string>
 	</array>
 </dict>
 </plist>

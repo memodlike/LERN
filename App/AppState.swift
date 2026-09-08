@@ -25,7 +25,10 @@ import UserNotifications
     private var foregroundRefreshPending = false
     private var selectedFeedSource = ContentSource()
     var activeTheme: ThemeValue { themes.first { $0.id == preferences.themeID } ?? ThemeValue.starters[0] }
-    init(store: LibraryStore) { self.store = store; self.scheduler = NotificationScheduler(store: store) }
+    init(store: LibraryStore) {
+        self.store = store; self.scheduler = NotificationScheduler(store: store)
+        WatchBridge.shared.onFavoriteMutation = { [weak self] in await self?.contentChanged() }
+    }
     func load() async {
         do {
             preferences = try await store.get("preferences", default: Preferences())
@@ -36,7 +39,8 @@ import UserNotifications
             try await refreshLibrary()
             if current == nil { await next() }
             loaded = true
-            await scheduler.replenish()
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
             await WatchBridge.shared.update(store: store, source: preferences.watchSource)
         } catch { self.error = error.localizedDescription }
     }
@@ -66,7 +70,8 @@ import UserNotifications
                 busy = true
             }
             try await refreshLibrary()
-            await scheduler.replenish()
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
             await WatchBridge.shared.update(store: freshStore, source: preferences.watchSource)
         } catch { self.error = error.localizedDescription }
     }
@@ -83,7 +88,11 @@ import UserNotifications
         if sourceChanged {
             selectedFeedSource = preferences.feedSource; current = nil; feedPast = []; feedPosition = -1
         }
-        do { try await store.put("preferences", preferences); WidgetCenter.shared.reloadAllTimelines() }
+        do {
+            try await store.put("preferences", preferences); WidgetCenter.shared.reloadAllTimelines()
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
+        }
         catch { self.error = error.localizedDescription }
         if sourceChanged { await next() }
     }
@@ -99,9 +108,23 @@ import UserNotifications
                 feedPosition = feedPast.lastIndex(where: { $0.id == currentID }) ?? -1
                 if let currentID { current = try await store.entry(currentID) }
             }
-            await scheduler.replenish(); WidgetCenter.shared.reloadAllTimelines()
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
+            WidgetCenter.shared.reloadAllTimelines()
             await WatchBridge.shared.update(store: store, source: preferences.watchSource)
         } catch { self.error = error.localizedDescription }
+    }
+    func setLibraryPaused(id: String, paused: Bool) async {
+        do { try await store.setTopicPaused(id, paused: paused); await contentChanged() }
+        catch { self.error = error.localizedDescription }
+    }
+    func deleteImportedLibrary(id: String) async {
+        do { try await store.deleteImportedLibrary(id); await contentChanged() }
+        catch { self.error = error.localizedDescription }
+    }
+    func renameLibrary(id: String, name: String) async {
+        do { try await store.renameTopic(id: id, name: name); await contentChanged() }
+        catch { self.error = error.localizedDescription }
     }
     func next() async {
         guard !busy else { return }; busy = true; defer { finishSelection() }
@@ -139,6 +162,8 @@ import UserNotifications
             try await store.put("preferences", preferences)
             try await store.record(id, kind: kind); sheet = nil
             WidgetCenter.shared.reloadAllTimelines()
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
         } catch { self.error = error.localizedDescription }
     }
     func flag(_ item: EntryValue, _ flag: String, _ value: Bool) async {
@@ -151,7 +176,12 @@ import UserNotifications
         } catch { self.error = error.localizedDescription }
     }
     func saveReminders() async {
-        do { try await store.put("reminders", reminders); await scheduler.replenish() }
+        do {
+            reminders.removeAll { ReminderRule.isReservedID($0.id) }
+            try await store.put("reminders", reminders)
+            let reconciled = await scheduler.replenish()
+            if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
+        }
         catch { self.error = error.localizedDescription }
     }
     func saveThemes() async {

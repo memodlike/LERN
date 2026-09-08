@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00C92B1236E2F7268806009E /* ImportGuidanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C810ED5D4A639D06DB44E59F /* ImportGuidanceView.swift */; };
 		03A94FB8B5307C05D0B27C49 /* StorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E2F795B69E810FB69FBC39 /* StorageTests.swift */; };
 		05B85584DDB6EBDD8A72EFEF /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */; };
 		066DAD01CCFA9534D14E7A45 /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */; };
@@ -172,6 +173,7 @@
 		B2E2F795B69E810FB69FBC39 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
 		B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C795FD0C46D65F055D84F7C3 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		C810ED5D4A639D06DB44E59F /* ImportGuidanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportGuidanceView.swift; sourceTree = "<group>"; };
 		CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		CF26DB68D7EBF459572057E4 /* LERNWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWatchWidgets.entitlements; sourceTree = "<group>"; };
 		D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWatchWidgets.swift; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 				46DAB4311BA60CB1CED2BD92 /* AppState.swift */,
 				C795FD0C46D65F055D84F7C3 /* BackupView.swift */,
 				B291CF7D26A3C534776B0975 /* FeedView.swift */,
+				C810ED5D4A639D06DB44E59F /* ImportGuidanceView.swift */,
 				9A76C205EF1A68C0649EB402 /* ImportView.swift */,
 				A5C3EC3473DCC8C574F5E315 /* Info.plist */,
 				D72F8E675687DB0BBC0BBC33 /* LERN.entitlements */,
@@ -545,32 +548,32 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					15DC97A06D0664A6F6B89423 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 					39992E3DB29CD09719E33372 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 					46923DADF22CD3A46A4AC048 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 					6A335701813C4E26CC1286E3 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 					CE6662EB3E91CE945C7012E8 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 					F063FE330D10CE096A9C4448 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 						TestTargetID = CE6662EB3E91CE945C7012E8;
 					};
 					F27DBE255A5578A49096D40F = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -680,6 +683,7 @@
 				FFF73B12D195403909AB9D94 /* AppState.swift in Sources */,
 				DDA154856B420B43CAFCE260 /* BackupView.swift in Sources */,
 				89DEBA703E9F42FEE93A3570 /* FeedView.swift in Sources */,
+				00C92B1236E2F7268806009E /* ImportGuidanceView.swift in Sources */,
 				81576D30733F3CE2CF44D382 /* ImportView.swift in Sources */,
 				21E0F9B27DDAAEB76EE9DF9D /* LERNApp.swift in Sources */,
 				319A2ED713B64429B2165CAF /* LibraryView.swift in Sources */,
@@ -965,7 +969,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = SM4Q4TS5TK;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1033,7 +1037,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = SM4Q4TS5TK;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;

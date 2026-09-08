@@ -28,15 +28,28 @@ import SwiftData
     public var name: String
     public var kind: String
     public var createdAt: Date
-    public init(_ topic: TopicValue) { id = topic.id; name = topic.name; kind = topic.kind; createdAt = Date() }
+    public var status: String?
+    public var parentTopicID: String?
+    public var originalFilename: String?
+    public var format: String?
+    public var checksum: String?
+    public var updatedAt: Date?
+    public var warningCount: Int?
+    public init(_ topic: TopicValue) {
+        id = topic.id; name = topic.name; kind = topic.kind; createdAt = topic.createdAt
+        status = topic.status; parentTopicID = topic.parentTopicID; originalFilename = topic.originalFilename
+        format = topic.format; checksum = topic.checksum; updatedAt = topic.updatedAt; warningCount = topic.warningCount
+    }
 }
 @Model public final class StoredLink {
     @Attribute(.unique) public var id: String
     public var entryID: String
     public var topicID: String
     public var ordinal: Int
-    public init(_ value: MembershipValue) { id = value.topicID + ":" + value.entryID; entryID = value.entryID; topicID = value.topicID; ordinal = value.ordinal }
-    public var value: MembershipValue { MembershipValue(entryID: entryID, topicID: topicID, ordinal: ordinal) }
+    public var section: String?
+    public var tags: [String]?
+    public init(_ value: MembershipValue) { id = value.topicID + ":" + value.entryID; entryID = value.entryID; topicID = value.topicID; ordinal = value.ordinal; section = value.section; tags = value.tags }
+    public var value: MembershipValue { MembershipValue(entryID: entryID, topicID: topicID, ordinal: ordinal, section: section ?? "", tags: tags ?? []) }
 }
 @Model public final class StoredSetting {
     @Attribute(.unique) public var key: String
@@ -95,6 +108,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         try modelContext.fetch(FetchDescriptor<StoredTopic>(sortBy: [SortDescriptor(\.createdAt)])).map { topic in
             let id = topic.id
             var value = TopicValue(name: topic.name, kind: topic.kind); value.id = id
+            value.status = topic.status ?? "active"; value.parentTopicID = topic.parentTopicID
+            value.originalFilename = topic.originalFilename; value.format = topic.format; value.checksum = topic.checksum
+            value.createdAt = topic.createdAt; value.updatedAt = topic.updatedAt ?? topic.createdAt; value.warningCount = topic.warningCount ?? 0
             value.count = try modelContext.fetchCount(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == id }))
             return value
         }
@@ -107,14 +123,45 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     }
     public func renameTopic(id: String, name: String) throws {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first?.name = String(name.prefix(120))
+        if let topic = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first {
+            topic.name = String(name.prefix(120)); topic.updatedAt = Date()
+        }
         try modelContext.save()
+    }
+    public func setTopicPaused(_ id: String, paused: Bool) throws {
+        guard let topic = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first else { return }
+        topic.status = paused ? "paused" : "active"; topic.updatedAt = Date(); invalidateSelection(); try modelContext.save()
     }
     public func deleteTopic(_ id: String) throws {
         invalidateSelection()
         try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == id })
         try modelContext.delete(model: StoredTopic.self, where: #Predicate { $0.id == id })
         try modelContext.save()
+    }
+    /// Imported libraries own their generated section topics. Favorites without any remaining membership are retained in My Content.
+    public func deleteImportedLibrary(_ id: String) throws {
+        guard let parent = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first else { return }
+        let children = try modelContext.fetch(FetchDescriptor<StoredTopic>()).filter { $0.parentTopicID == id }
+        let topicIDs = Set(children.map(\.id) + [parent.id])
+        let affected = try modelContext.fetch(FetchDescriptor<StoredLink>()).filter { topicIDs.contains($0.topicID) }
+        let entryIDs = Set(affected.map(\.entryID))
+        for link in affected { modelContext.delete(link) }
+        for child in children { modelContext.delete(child) }
+        modelContext.delete(parent)
+        let surviving = Set(try modelContext.fetch(FetchDescriptor<StoredLink>()).map(\.entryID))
+        let orphaned = try modelContext.fetch(FetchDescriptor<StoredEntry>()).filter { entryIDs.contains($0.id) && !surviving.contains($0.id) }
+        var own = try topics().first(where: { $0.kind == "own" })
+        var ordinal = try own.map { ownTopic in
+            try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == ownTopic.id })).map(\.ordinal).max() ?? -1
+        } ?? -1
+        for entry in orphaned {
+            if entry.favorite {
+                if own == nil { own = try createTopic(name: "My Content", kind: "own") }
+                guard let own else { continue }
+                ordinal += 1; modelContext.insert(StoredLink(MembershipValue(entryID: entry.id, topicID: own.id, ordinal: ordinal)))
+            } else { modelContext.delete(entry) }
+        }
+        invalidateSelection(); try modelContext.save()
     }
     public func importEntries(_ preview: ImportPreview, action: ImportAction = .new, topicID: String? = nil, splitSections: Bool = false) throws -> ImportResult {
         invalidateSelection()
@@ -124,11 +171,24 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             if action != .new, let topicID, let existing = try topics().first(where: { $0.id == topicID }) { topic = existing }
             else { topic = TopicValue(name: preview.name); modelContext.insert(StoredTopic(topic)) }
             let id = topic.id
-            if action == .replace { try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == id }) }
+            if let stored = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first {
+                stored.updatedAt = Date(); stored.format = preview.format; stored.originalFilename = preview.filename
+                stored.checksum = preview.checksum; stored.warningCount = preview.malformed
+            }
+            if action == .replace {
+                let oldSections = try modelContext.fetch(FetchDescriptor<StoredTopic>()).filter { $0.parentTopicID == id }
+                for section in oldSections {
+                    let sectionID = section.id
+                    try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == sectionID })
+                    modelContext.delete(section)
+                }
+                try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == id })
+            }
             let existingLinks = try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == id }))
             var linked = Set(existingLinks.map(\.entryID))
+            let linksByEntry = Dictionary(uniqueKeysWithValues: existingLinks.map { ($0.entryID, $0) })
             var ordinal = (existingLinks.map(\.ordinal).max() ?? -1) + 1, inserted = 0, duplicates = preview.duplicates
-            var sectionTopics: [String: String] = [:]
+            var sectionTopics = Dictionary(uniqueKeysWithValues: try modelContext.fetch(FetchDescriptor<StoredTopic>()).filter { $0.parentTopicID == id }.map { (EntryDraft.normalized($0.name), $0.id) })
             // Transactions keep cancellation atomic; batches bound query/temporary-object sizes.
             for start in stride(from: 0, to: preview.entries.count, by: 500) {
                 try Task.checkCancellation()
@@ -141,13 +201,19 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
                     if known.insert(entryID).inserted { modelContext.insert(StoredEntry(EntryValue(draft: draft))); inserted += 1 }
                     else { duplicates += 1 }
                     if linked.insert(entryID).inserted {
-                        modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: id, ordinal: ordinal))); ordinal += 1
+                        modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: id, ordinal: ordinal, section: draft.section, tags: draft.tags))); ordinal += 1
+                    } else if let link = linksByEntry[entryID] {
+                        link.section = draft.section; link.tags = draft.tags
                     }
                     if splitSections && !draft.section.isEmpty {
                         let sectionID: String
-                        if let existing = sectionTopics[draft.section] { sectionID = existing }
-                        else { let section = TopicValue(name: "\(topic.name) · \(draft.section)", kind: "section"); sectionID = section.id; sectionTopics[draft.section] = sectionID; modelContext.insert(StoredTopic(section)) }
-                        modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: sectionID, ordinal: ordinal)))
+                        let key = EntryDraft.normalized(draft.section)
+                        if let existing = sectionTopics[key] { sectionID = existing }
+                        else { var section = TopicValue(name: draft.section, kind: "section"); section.parentTopicID = id; sectionID = section.id; sectionTopics[key] = sectionID; modelContext.insert(StoredTopic(section)) }
+                        let sectionLinkID = sectionID + ":" + entryID
+                        if try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.id == sectionLinkID })).isEmpty {
+                            modelContext.insert(StoredLink(MembershipValue(entryID: entryID, topicID: sectionID, ordinal: ordinal, section: draft.section, tags: draft.tags)))
+                        }
                     }
                 }
             }
@@ -164,7 +230,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             if try storedEntry(value.id) == nil { modelContext.insert(StoredEntry(value)) }
             let links = try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.entryID == oldID }))
             for link in links {
-                let v = MembershipValue(entryID: value.id, topicID: link.topicID, ordinal: link.ordinal)
+                let v = MembershipValue(entryID: value.id, topicID: link.topicID, ordinal: link.ordinal, section: link.section ?? "", tags: link.tags ?? [])
                 modelContext.delete(link); modelContext.insert(StoredLink(v))
             }
             let history = try modelContext.fetch(FetchDescriptor<StoredHistory>(predicate: #Predicate { $0.entryID == oldID }))
@@ -212,15 +278,31 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         for link in links { if let index = order[link.entryID] { link.ordinal = index } }
         try modelContext.save()
     }
-    private func sourceIDs(_ source: ContentSource) throws -> [String]? {
+    private func sourceLinks(_ source: ContentSource) throws -> [StoredLink]? {
         var topics = source.topicIDs
         if source.myContentOnly { topics += try self.topics().filter { $0.kind == "own" }.map(\.id); if topics.isEmpty { return [] } }
         guard !topics.isEmpty else { return nil }
-        let selected = topics
-        return try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { selected.contains($0.topicID) }, sortBy: [SortDescriptor(\.ordinal), SortDescriptor(\.id)])).map(\.entryID)
+        let selected = Set(topics)
+        let active = Set(try modelContext.fetch(FetchDescriptor<StoredTopic>()).filter { selected.contains($0.id) && ($0.status ?? "active") != "paused" }.map(\.id))
+        // An explicit paused or deleted source stays empty; it never broadens into All Entries.
+        guard !active.isEmpty else { return [] }
+        return try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { active.contains($0.topicID) }, sortBy: [SortDescriptor(\.ordinal), SortDescriptor(\.id)]))
+    }
+    private func sourceIDs(_ source: ContentSource) throws -> [String]? {
+        try sourceLinks(source)?.map(\.entryID)
+    }
+    private func matchesSourceMetadata(_ row: StoredEntry, source: ContentSource, links: [String: [StoredLink]]?) -> Bool {
+        let tag = EntryDraft.normalized(source.tag)
+        guard !tag.isEmpty else { return true }
+        guard let links else { return row.tags.contains { EntryDraft.normalized($0) == tag } || EntryDraft.normalized(row.section) == tag }
+        return links[row.id, default: []].contains { link in
+            EntryDraft.normalized(link.section ?? "") == tag || (link.tags ?? []).contains { EntryDraft.normalized($0) == tag }
+        }
     }
     public func page(source: ContentSource = ContentSource(), search: String = "", offset: Int = 0, limit: Int = 50, review: String = "") throws -> [EntryValue] {
-        let ids = try sourceIDs(source).map(Set.init)
+        let sourceLinks = try sourceLinks(source)
+        let ids = sourceLinks.map { Set($0.map(\.entryID)) }
+        let linksByEntry = sourceLinks.map { Dictionary(grouping: $0, by: \.entryID) }
         let preferences = try get("preferences", default: Preferences())
         let term = EntryDraft.normalized(search)
         var descriptor = FetchDescriptor<StoredEntry>(sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)])
@@ -233,7 +315,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             for row in rows {
                 if let ids, !ids.contains(row.id) { continue }
                 if source.favoritesOnly && !row.favorite { continue }
-                if !source.tag.isEmpty && !row.tags.contains(source.tag) && row.section != source.tag { continue }
+                if !matchesSourceMetadata(row, source: source, links: linksByEntry) { continue }
                 if review == "disliked" { if !row.disliked { continue } }
                 else if review == "muted" { if !row.muted { continue } }
                 else if row.disliked || row.muted || preferences.mutedWords.contains(where: { !$0.isEmpty && row.searchText.contains(EntryDraft.normalized($0)) }) { continue }
@@ -246,7 +328,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     }
     public func eligibleIDs(source: ContentSource) throws -> [String] {
         if let cached = eligibilityCache[source] { return cached }
-        let orderedIDs = try sourceIDs(source), membership = orderedIDs.map(Set.init)
+        let sourceLinks = try sourceLinks(source)
+        let orderedIDs = sourceLinks?.map(\.entryID), membership = orderedIDs.map(Set.init)
+        let linksByEntry = sourceLinks.map { Dictionary(grouping: $0, by: \.entryID) }
         let prefs = try get("preferences", default: Preferences())
         var descriptor = FetchDescriptor<StoredEntry>(predicate: #Predicate { !$0.disliked && !$0.muted }, sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.id)])
         descriptor.fetchLimit = 1000
@@ -257,7 +341,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             for row in rows {
                 if let membership, !membership.contains(row.id) { continue }
                 if source.favoritesOnly && !row.favorite { continue }
-                if !source.tag.isEmpty && !row.tags.contains(source.tag) && row.section != source.tag { continue }
+                if !matchesSourceMetadata(row, source: source, links: linksByEntry) { continue }
                 if prefs.mutedWords.contains(where: { !$0.isEmpty && row.searchText.contains(EntryDraft.normalized($0)) }) { continue }
                 result.append(row.id)
             }
