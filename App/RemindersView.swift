@@ -14,14 +14,7 @@ struct RemindersView: View {
                 else if state.scheduler.settings.sounds != "enabled" { Text("Alerts are enabled, but notification sounds are disabled in iOS Settings.") }
                 else if state.scheduler.settings.scheduledDelivery == "enabled" { Text("Scheduled Summary may delay normal reminders.") }
                 else { Text("Notifications are enabled. Focus and silent mode can still affect delivery.") }
-                LabeledContent("Pending reminders", value: "\(state.scheduler.pendingCount) / 60")
-                if let through = state.scheduler.scheduledThrough { LabeledContent("Scheduled through") { Text(through, format: .dateTime.month(.abbreviated).day().hour().minute()) } }
-                if let through = state.scheduler.scheduledThrough {
-                    let coverage = through.timeIntervalSinceNow
-                    Text("Coverage: about \(max(0, Int(coverage / 3600))) hours.").font(.caption).foregroundStyle(.secondary)
-                    if coverage < 3 * 24 * 60 * 60 { Label("This queue covers less than three days. Open LERN periodically so iOS can replenish personalized reminders.", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange) }
-                }
-                Text("LERN keeps up to 60 upcoming reminders scheduled at a time. Acceptance does not guarantee visible delivery: Focus, Silent Mode and Scheduled Summary still apply.").font(.caption).foregroundStyle(.secondary)
+                Text("Choose what each reminder says and how its topic is presented. Focus, Silent Mode and Scheduled Summary can still affect delivery.").font(.caption).foregroundStyle(.secondary)
                 if let error = state.scheduler.lastError { Text(error).foregroundStyle(.red) }
             }
             Section("Delivery diagnostics") {
@@ -37,7 +30,7 @@ struct RemindersView: View {
             Section("Reminder groups") {
                 ForEach(state.reminders) { rule in
                     Button { edit = rule } label: {
-                        HStack { Image(systemName: rule.isAlarm ? "alarm" : "bell"); VStack(alignment: .leading, spacing: 5) { Text(rule.name); Text(summary(rule)).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(rule.enabled ? "On" : "Off").font(.caption) }.padding(.vertical, 4)
+                        HStack { Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : (rule.isAlarm ? "⏰" : "✦")).font(.title3).frame(width: 28); VStack(alignment: .leading, spacing: 5) { Text(topic(rule)); Text(summary(rule)).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(rule.enabled ? "On" : "Off").font(.caption) }.padding(.vertical, 4)
                     }.foregroundStyle(.primary)
                 }.onDelete { indexes in state.reminders.remove(atOffsets: indexes); Task { await state.saveReminders() } }
                 Button("Add reminder group", systemImage: "plus") { edit = ReminderRule() }.accessibilityIdentifier("reminders.add")
@@ -50,7 +43,11 @@ struct RemindersView: View {
     }
     private func summary(_ rule: ReminderRule) -> String {
         let times = rule.minutes.map { String(format: "%02d:%02d", $0 / 60, $0 % 60) }.joined(separator: ", ")
-        return "\(rule.minutes.count)× · \(rule.weekdays.count)/7 · \(times)"
+        return times
+    }
+    private func topic(_ rule: ReminderRule) -> String {
+        let topic = rule.notificationTopic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return topic.isEmpty ? rule.name : topic
     }
     private func presentation(_ raw: String) -> String {
         switch raw {
@@ -68,7 +65,16 @@ struct ReminderEditor: View {
     @State private var extraTime = Date()
     var body: some View {
         Form {
-            Section { TextField("Name", text: $rule.name); Toggle("Enabled", isOn: $rule.enabled); NavigationLink { SourcePicker(source: $rule.source) } label: { Label("Type of Content", systemImage: "square.stack") }; Picker("Order", selection: $rule.mode) { Text("Sequential").tag(SelectionMode.sequential); Text("Shuffle without repeats").tag(SelectionMode.shuffle); Text("Random").tag(SelectionMode.random) } }
+            Section("Reminder") { TextField("Reminder name", text: $rule.name); Toggle("Enabled", isOn: $rule.enabled); NavigationLink { SourcePicker(source: $rule.source) } label: { Label("Type of Content", systemImage: "square.stack") }; Picker("Order", selection: $rule.mode) { Text("Sequential").tag(SelectionMode.sequential); Text("Shuffle without repeats").tag(SelectionMode.shuffle); Text("Random").tag(SelectionMode.random) } }
+            Section("Notification") {
+                Picker("Heading", selection: titleMode) { Text("Topic").tag("topic"); Text("Entry section").tag("section"); Text("No heading").tag("none") }
+                if titleMode.wrappedValue == "topic" { TextField("Topic title", text: topic) }
+                if titleMode.wrappedValue == "section" { Text("Uses the section name stored with each entry. If there is no section, LERN uses the topic title.").font(.caption).foregroundStyle(.secondary) }
+                TextField("Symbol or emoji", text: symbol).textInputAutocapitalization(.never)
+                ColorPicker("Preview color", selection: tint, supportsOpacity: false)
+                NotificationPreview(rule: rule)
+                Text("The symbol is added to the title. iOS uses the selected LERN app icon in the notification list.").font(.caption).foregroundStyle(.secondary)
+            }
             Section("Schedule") {
                 Toggle("Spread across a time range", isOn: $rule.usesRange)
                 if rule.usesRange {
@@ -94,5 +100,33 @@ struct ReminderEditor: View {
     }
     private func minuteBinding(_ value: Binding<Int>) -> Binding<Date> {
         Binding(get: { Calendar.current.date(bySettingHour: value.wrappedValue / 60, minute: value.wrappedValue % 60, second: 0, of: Date()) ?? Date() }, set: { value.wrappedValue = Calendar.current.component(.hour, from: $0) * 60 + Calendar.current.component(.minute, from: $0) })
+    }
+    private var titleMode: Binding<String> { Binding(get: { rule.notificationTitleMode ?? "topic" }, set: { rule.notificationTitleMode = $0 }) }
+    private var topic: Binding<String> { Binding(get: { rule.notificationTopic ?? "" }, set: { rule.notificationTopic = String($0.prefix(DataLimits.metadataCharacters)) }) }
+    private var symbol: Binding<String> { Binding(get: { rule.notificationSymbol ?? "" }, set: { rule.notificationSymbol = String($0.prefix(16)) }) }
+    private var tint: Binding<Color> { Binding(get: { Color(hex: rule.notificationTint ?? "6E60F8") }, set: { rule.notificationTint = $0.hexValue }) }
+}
+
+private struct NotificationPreview: View {
+    let rule: ReminderRule
+    private var topic: String {
+        let custom = rule.notificationTopic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return custom.isEmpty ? rule.name : custom
+    }
+    var body: some View {
+        let titleMode = rule.notificationTitleMode ?? "topic"
+        HStack(alignment: .top, spacing: 12) {
+            Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : "✦")
+                .font(.title2).frame(width: 42, height: 42).background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
+            VStack(alignment: .leading, spacing: 4) {
+                if titleMode != "none" { Text(titleMode == "section" ? "Entry section" : topic).font(.subheadline.weight(.semibold)) }
+                Text("A short thought will appear here.").font(.subheadline).lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(.white).padding(14)
+        .background(Color(hex: rule.notificationTint ?? "6E60F8").opacity(0.82), in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Notification preview")
     }
 }

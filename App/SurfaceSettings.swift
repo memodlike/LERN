@@ -118,7 +118,6 @@ struct DiagnosticsView: View {
             LabeledContent("Entries", value: state.total.formatted())
             LabeledContent("Topics", value: state.topics.count.formatted())
             LabeledContent("Local storage", value: ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
-            LabeledContent("Pending notifications", value: "\(state.scheduler.pendingCount) / 60")
             LabeledContent("Network dependency", value: String(localized: "None for core operation"))
             LabeledContent("Database", value: "SwiftData · local")
             LabeledContent("Network polling", value: String(localized: "None"))

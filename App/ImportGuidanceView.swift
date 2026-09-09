@@ -27,22 +27,38 @@ struct ImportFormatHelpView: View {
 struct ImportAIHelperView: View {
     @Environment(AppState.self) private var state
     @Environment(\.dismiss) private var dismiss
+    @State private var topic = ""
     @State private var copied = false
+    private var isRussian: Bool {
+        state.preferences.language == "ru" || (state.preferences.language == "system" && Locale.current.language.languageCode?.identifier == "ru")
+    }
     private var prompt: String {
-        state.preferences.language == "ru" ? """
-Собери локальную библиотеку LERN из моих материалов. Верни только Markdown в UTF-8: заголовки #–###### для разделов, один элемент списка на цитату, автора после длинного тире, теги через запятую. Не выдумывай цитаты и не добавляй ссылки, которых нет в исходном тексте. Сохрани дословный текст, дубликаты убери.
+        let cleanTopic = topic.trimmingCharacters(in: .whitespacesAndNewlines)
+        return isRussian ? """
+Создай личную библиотеку коротких мыслей для LERN на тему «\(cleanTopic)».
+
+Пиши простым, понятным языком. Сделай 20–30 коротких мыслей, которые помогают изучать тему. Раздели их на несколько понятных тем с заголовками #–######. Под каждым заголовком ставь одну мысль в строке списка: - Текст мысли. Не выдумывай авторов, цитаты известных людей или ссылки. Не повторяй мысли. Верни только Markdown в UTF-8, без вступления и пояснений.
 """ : """
-Create a LERN-ready local library from my source material. Return UTF-8 Markdown only: #–###### headings for sections, one list item per quote, author after an em dash, and comma-separated tags. Do not invent quotes or sources. Preserve original wording and remove duplicates.
+Create a personal LERN library of short thoughts about “\(cleanTopic)”.
+
+Use clear, everyday language. Write 20–30 short thoughts that help someone learn the topic. Group them under simple #–###### headings. Under each heading, put one thought on each list line: - Thought text. Do not invent authors, famous quotes, or links. Do not repeat ideas. Return only UTF-8 Markdown, with no introduction or explanation.
 """
     }
     var body: some View {
         NavigationStack {
             Form {
-                Section("Copy this prompt") { Text(prompt).textSelection(.enabled).font(.footnote) }
-                Section { Button(copied ? "Copied" : "Copy prompt", systemImage: copied ? "checkmark" : "doc.on.doc") { UIPasteboard.general.string = prompt; copied = true } }
-                Section { Text("Paste the response into a .md file, then choose it from Import files. LERN does not send your content to an AI service.").font(.footnote).foregroundStyle(.secondary) }
+                Section(isRussian ? "Что вы хотите изучить?" : "What do you want to explore?") {
+                    TextField(isRussian ? "Например: управление продуктом" : "For example: product management", text: $topic, axis: .vertical)
+                        .lineLimit(1...3)
+                    Text(isRussian ? "Тема станет основой для готового промпта." : "Your topic becomes the basis of the ready-to-copy prompt.").font(.caption).foregroundStyle(.secondary)
+                }
+                if !topic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Section(isRussian ? "Готовый промпт" : "Ready prompt") { Text(prompt).textSelection(.enabled).font(.footnote) }
+                }
+                Section { Button(copied ? (isRussian ? "Скопировано" : "Copied") : (isRussian ? "Скопировать промпт" : "Copy prompt"), systemImage: copied ? "checkmark" : "doc.on.doc") { UIPasteboard.general.string = prompt; copied = true }.disabled(topic.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+                Section { Text(isRussian ? "Вставьте ответ AI в файл .md, затем выберите его в разделе импорта. LERN не отправляет ваши данные в AI-сервис." : "Paste the AI response into a .md file, then select it from Import files. LERN does not send your content to an AI service.").font(.footnote).foregroundStyle(.secondary) }
             }
-            .navigationTitle("Create with AI")
+            .navigationTitle(isRussian ? "Создать с AI" : "Create with AI")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
         }
     }

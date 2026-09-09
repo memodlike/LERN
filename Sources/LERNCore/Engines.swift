@@ -135,7 +135,7 @@ public struct LibraryBackup: Codable, Sendable {
               Set(reminders.map(\.id)).count == reminders.count,
               reminders.allSatisfy({ !ReminderRule.isReservedID($0.id) }),
               themes.allSatisfy({ $0.overlay.isFinite && (0...0.85).contains($0.overlay) && ($0.photoName == nil || Self.safeAssetName($0.photoName!)) }),
-              reminders.allSatisfy({ (1...60).contains($0.frequency) && (0..<1440).contains($0.startMinute) && (0..<1440).contains($0.endMinute) && $0.explicitMinutes.count <= 60 && $0.explicitMinutes.allSatisfy({ (0..<1440).contains($0) }) && $0.weekdays.count <= 7 && $0.weekdays.allSatisfy({ (1...7).contains($0) }) }),
+              reminders.allSatisfy({ (1...60).contains($0.frequency) && (0..<1440).contains($0.startMinute) && (0..<1440).contains($0.endMinute) && $0.explicitMinutes.count <= 60 && $0.explicitMinutes.allSatisfy({ (0..<1440).contains($0) }) && $0.weekdays.count <= 7 && $0.weekdays.allSatisfy({ (1...7).contains($0) }) && ($0.notificationTitleMode == nil || ["topic", "section", "none"].contains($0.notificationTitleMode!)) && ($0.notificationTopic?.count ?? 0) <= DataLimits.metadataCharacters && ($0.notificationSymbol?.count ?? 0) <= 16 && ($0.notificationTint?.count ?? 0) <= 7 }),
               presets.allSatisfy({ (30...1440).contains($0.refreshMinutes) }),
               photos.values.reduce(Int64(0), { $0 + Int64($1.count) }) <= Int64(DataLimits.totalPhotoBytes)
         else { throw ImportFailure.malformed("Backup settings contain invalid counters, dates or limits.") }

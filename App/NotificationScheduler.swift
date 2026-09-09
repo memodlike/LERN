@@ -133,8 +133,22 @@ struct NotificationRequestSpec: Equatable, Sendable {
     private func request(plan: DeliveryPlan, entry: EntryValue, rule: ReminderRule, previewsVisible: Bool) -> NotificationRequestSpec {
         let text = String(entry.draft.text.prefix(NotificationBodyLimit.characters))
         let body = previewsVisible ? text + (entry.draft.text.count > NotificationBodyLimit.characters ? "…" : "") : "A thought is ready for you."
-        let signature = [plan.revision, plan.entryID, rule.name, body, rule.sound, rule.isAlarm ? "alarm" : "learning"].joined(separator: "|")
-        return NotificationRequestSpec(identifier: plan.id, date: plan.date, title: rule.name.isEmpty ? Product.name : String(rule.name.prefix(80)), body: body, userInfo: ["entryID": entry.id, "ruleID": rule.id, "planID": plan.id, "kind": rule.isAlarm ? "alarm" : "learning", "planSignature": signature], sound: rule.sound, isAlarm: rule.isAlarm)
+        let title = notificationTitle(for: entry, rule: rule)
+        let signature = [plan.revision, plan.entryID, title, body, rule.sound, rule.isAlarm ? "alarm" : "learning"].joined(separator: "|")
+        return NotificationRequestSpec(identifier: plan.id, date: plan.date, title: title, body: body, userInfo: ["entryID": entry.id, "ruleID": rule.id, "planID": plan.id, "kind": rule.isAlarm ? "alarm" : "learning", "planSignature": signature], sound: rule.sound, isAlarm: rule.isAlarm)
+    }
+    private func notificationTitle(for entry: EntryValue, rule: ReminderRule) -> String {
+        let mode = rule.notificationTitleMode ?? "topic"
+        guard mode != "none" else { return "" }
+        let topic: String
+        if mode == "section", !entry.draft.section.isEmpty { topic = entry.draft.section }
+        else {
+            let custom = rule.notificationTopic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let fallback = rule.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            topic = !custom.isEmpty ? custom : (!fallback.isEmpty ? fallback : Product.name)
+        }
+        let symbol = rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).prefix(16) ?? ""
+        return (symbol.isEmpty ? topic : "\(symbol) \(topic)").prefix(80).description
     }
     func opened(_ planID: String) async {
         guard planID.hasPrefix("lern.") else { return }

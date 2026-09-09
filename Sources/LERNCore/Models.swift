@@ -142,6 +142,12 @@ public struct ReminderRule: Codable, Identifiable, Equatable, Sendable {
     public var frequency = 3
     public var sound = "default"
     public var isAlarm = false
+    /// Optional appearance controls for a reminder. Optional values keep existing
+    /// locally stored reminder rules compatible with newer app versions.
+    public var notificationTitleMode: String?
+    public var notificationTopic: String?
+    public var notificationSymbol: String?
+    public var notificationTint: String?
     public var revision = UUID().uuidString
     public init() {}
     public static func isReservedID(_ value: String) -> Bool { value.hasPrefix("system.") }
