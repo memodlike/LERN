@@ -12,7 +12,7 @@ import LERNCore
     override init() {
         super.init()
         if let data = defaults.data(forKey: "watch.entries"), data.count < 60_000,
-           let saved = try? JSONDecoder().decode([EntryValue].self, from: data), saved.count <= 100 { entries = saved }
+           let saved = WatchPayload.decodeEntries(data, version: defaults.object(forKey: "watch.entries.version") as? Int) { entries = saved }
         index = entries.indices.contains(defaults.integer(forKey: "watch.index")) ? defaults.integer(forKey: "watch.index") : 0
         pendingFavorites = defaults.dictionary(forKey: "watch.pendingFavorites") as? [String: Bool] ?? [:]
         for position in entries.indices { if let favorite = pendingFavorites[entries[position].id] { entries[position].favorite = favorite } }
@@ -30,6 +30,7 @@ import LERNCore
     private func persist() {
         guard let data = try? JSONEncoder().encode(entries), data.count < 60_000 else { return }
         defaults.set(data, forKey: "watch.entries")
+        defaults.set(WatchPayload.schemaVersion, forKey: "watch.entries.version")
         defaults.set(index, forKey: "watch.index")
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -57,8 +58,7 @@ import LERNCore
     nonisolated private func receive(_ context: [String: Any]) {
         guard let data = context["entries"] as? Data, data.count < 60_000 else { return }
         Task { @MainActor in
-            guard var entries = try? JSONDecoder().decode([EntryValue].self, from: data), entries.count <= 100,
-                  Set(entries.map(\.id)).count == entries.count else { return }
+            guard var entries = WatchPayload.decodeEntries(data, version: context["version"] as? Int) else { return }
             let previousID = current?.id
             for position in entries.indices { if let favorite = pendingFavorites[entries[position].id] { entries[position].favorite = favorite } }
             self.entries = entries

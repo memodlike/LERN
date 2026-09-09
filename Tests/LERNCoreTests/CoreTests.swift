@@ -97,6 +97,23 @@ struct SelectionTests {
         #expect(SelectionEngine.next(ids: [], mode: .shuffle, cursor: &cursor) == nil)
     }
 }
+struct WatchPayloadTests {
+    @Test func acceptsLegacyAndCurrentPayloadsButRejectsUnknownVersions() throws {
+        let entry = EntryValue(draft: EntryDraft(text: "A watch thought"))
+        let data = try JSONEncoder().encode([entry])
+        #expect(WatchPayload.decodeEntries(data, version: nil) == [entry])
+        #expect(WatchPayload.decodeEntries(data, version: WatchPayload.schemaVersion) == [entry])
+        #expect(WatchPayload.decodeEntries(data, version: WatchPayload.schemaVersion + 1) == nil)
+    }
+    @Test func rejectsDuplicateAndOversizedPayloads() throws {
+        let entry = EntryValue(draft: EntryDraft(text: "Duplicate"))
+        let duplicateData = try JSONEncoder().encode([entry, entry])
+        #expect(WatchPayload.decodeEntries(duplicateData, version: WatchPayload.schemaVersion) == nil)
+        let entries = (0...WatchPayload.maximumEntries).map { EntryValue(draft: EntryDraft(text: "Thought \($0)")) }
+        let oversizedData = try JSONEncoder().encode(entries)
+        #expect(WatchPayload.decodeEntries(oversizedData, version: WatchPayload.schemaVersion) == nil)
+    }
+}
 struct ScheduleTests {
     var utc: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(secondsFromGMT: 0)!; return c }
     func date(_ value: String) -> Date { ISO8601DateFormatter().date(from: value)! }

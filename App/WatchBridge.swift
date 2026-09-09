@@ -40,7 +40,7 @@ import WidgetKit
                 guard candidate.count < 59_000 else { break }
                 snapshot.append(entry); data = candidate
             }
-            try WCSession.default.updateApplicationContext(["entries": data])
+            try WCSession.default.updateApplicationContext(["entries": data, "version": WatchPayload.schemaVersion])
             syncedCount = snapshot.count; lastSuccessfulSync = Date(); lastSyncError = nil
         } catch { lastSyncError = error.localizedDescription }
     }
