@@ -76,6 +76,22 @@ public struct EntryValue: Codable, Identifiable, Hashable, Sendable {
     public init(draft: EntryDraft) { self.id = draft.id; self.draft = draft }
 }
 
+public enum WatchPayload {
+    public static let schemaVersion = 1
+    public static let maximumEntries = 100
+    public static let maximumBytes = 60_000
+
+    public static func decodeEntries(_ data: Data, version: Int?) -> [EntryValue]? {
+        guard data.count < maximumBytes,
+              version == nil || version == schemaVersion,
+              let entries = try? JSONDecoder().decode([EntryValue].self, from: data),
+              entries.count <= maximumEntries,
+              Set(entries.map(\.id)).count == entries.count
+        else { return nil }
+        return entries
+    }
+}
+
 public struct TopicValue: Codable, Identifiable, Hashable, Sendable {
     public var id: String = UUID().uuidString
     public var name: String
