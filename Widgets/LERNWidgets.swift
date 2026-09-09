@@ -66,7 +66,9 @@ struct QuoteWidgetView: View {
                                 Button(intent: FavoriteEntryIntent(entryID: quote.id)) { Image(systemName: quote.favorite ? "heart.fill" : "heart") }.accessibilityLabel("Favorite")
                                 Spacer()
                                 if entry.preset.kind == "fortune" { Button(intent: NextFortuneIntent(presetID: entry.preset.id)) { Image(systemName: "arrow.clockwise") }.accessibilityLabel("Reveal a thought") }
-                                Link(destination: URL(string: "lern://entry/\(quote.id)?share=1")!) { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Open and share")
+                                if let shareURL = URL(string: "lern://entry/\(quote.id)?share=1") {
+                                    Link(destination: shareURL) { Image(systemName: "square.and.arrow.up") }.accessibilityLabel("Open and share")
+                                }
                             }.buttonStyle(.plain).font(.title3)
                         }
                     } else { Text("Open LERN to import your words.").font(.body) }
