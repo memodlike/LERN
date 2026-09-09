@@ -117,7 +117,11 @@ public struct LibraryBackup: Codable, Sendable {
     public func validated() throws -> Self {
         guard version == 1 else { throw ImportFailure.malformed("Unsupported backup version \(version).") }
         guard entries.count <= DataLimits.entriesInLibrary, topics.count <= DataLimits.topics, memberships.count <= DataLimits.memberships, reminders.count <= DataLimits.reminders, photos.count <= DataLimits.photos else { throw ImportFailure.tooLarge }
-        guard Set(entries.map(\.id)).count == entries.count, Set(topics.map(\.id)).count == topics.count else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
+        guard Set(entries.map(\.id)).count == entries.count,
+              Set(topics.map(\.id)).count == topics.count,
+              Set(memberships.map { $0.topicID + ":" + $0.entryID }).count == memberships.count,
+              Set(history.map(\.id)).count == history.count
+        else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
         let ids = Set(entries.map(\.id)), topicIDs = Set(topics.map(\.id))
         guard entries.allSatisfy({ !$0.draft.text.isEmpty && $0.draft.text.count <= DataLimits.entryCharacters && $0.draft.author.count <= DataLimits.metadataCharacters && $0.draft.source.count <= DataLimits.metadataCharacters && $0.draft.section.count <= DataLimits.metadataCharacters && $0.draft.tags.count <= DataLimits.tagsPerEntry && $0.draft.tags.allSatisfy({ $0.count <= DataLimits.tagCharacters }) && $0.id == $0.draft.id }),
               topics.allSatisfy({ ["active", "paused"].contains($0.status) && $0.name.count <= 120 && ($0.parentTopicID == nil || ($0.parentTopicID != $0.id && topicIDs.contains($0.parentTopicID!))) }),

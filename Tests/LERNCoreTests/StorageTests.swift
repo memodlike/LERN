@@ -104,6 +104,21 @@ import Foundation
         invalid = backup; invalid.photos = ["../../escape": Data()]
         #expect(throws: (any Error).self) { try invalid.validated() }
     }
+    @Test func failedRestorePreservesExistingLibrary() async throws {
+        let store = try store()
+        _ = try await store.importEntries(preview(["keep", "this library"]))
+        var preferences = Preferences(); preferences.mutedWords = ["retain"]
+        try await store.put("preferences", preferences)
+        let before = try await store.backup()
+        var invalid = before
+        invalid.memberships.append(before.memberships[0])
+        await #expect(throws: (any Error).self) { try await store.restore(invalid, merge: false) }
+        let after = try await store.backup()
+        #expect(after.entries.map(\.id).sorted() == before.entries.map(\.id).sorted())
+        #expect(after.topics.map(\.id).sorted() == before.topics.map(\.id).sorted())
+        #expect(after.memberships.map { $0.topicID + ":" + $0.entryID }.sorted() == before.memberships.map { $0.topicID + ":" + $0.entryID }.sorted())
+        #expect(after.preferences.mutedWords == ["retain"])
+    }
     @Test func partialCollectionReorderPreservesOtherPositions() async throws {
         let store = try store()
         let imported = try await store.importEntries(preview(["zero", "one", "two", "three"]))

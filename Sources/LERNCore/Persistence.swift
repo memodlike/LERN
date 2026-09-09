@@ -447,8 +447,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         return try LibraryBackup(entries: entries, topics: topics(), memberships: memberships, preferences: get("preferences", default: Preferences()), reminders: get("reminders", default: []), themes: get("themes", default: ThemeValue.starters), presets: get("presets", default: []), history: history, resources: get("resources", default: []), cursors: cursors, photos: photos)
     }
     public func restore(_ backup: LibraryBackup, merge: Bool) throws {
-        invalidateSelection()
         let data = try backup.validated()
+        modelContext.autosaveEnabled = false
+        invalidateSelection()
         do {
             if !merge {
                 try modelContext.delete(model: StoredLink.self); try modelContext.delete(model: StoredEntry.self)
