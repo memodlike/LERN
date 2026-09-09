@@ -109,6 +109,7 @@ struct WatchPayloadTests {
         let entry = EntryValue(draft: EntryDraft(text: "Duplicate"))
         let duplicateData = try JSONEncoder().encode([entry, entry])
         #expect(WatchPayload.decodeEntries(duplicateData, version: WatchPayload.schemaVersion) == nil)
+        #expect(WatchPayload.decodeEntries(Data("not a payload".utf8), version: WatchPayload.schemaVersion) == nil)
         let entries = (0...WatchPayload.maximumEntries).map { EntryValue(draft: EntryDraft(text: "Thought \($0)")) }
         let oversizedData = try JSONEncoder().encode(entries)
         #expect(WatchPayload.decodeEntries(oversizedData, version: WatchPayload.schemaVersion) == nil)
