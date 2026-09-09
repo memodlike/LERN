@@ -69,9 +69,9 @@ struct ReminderEditor: View {
         Form {
             Section("Reminder") { TextField("Reminder name", text: $rule.name); Toggle("Enabled", isOn: $rule.enabled); NavigationLink { SourcePicker(source: $rule.source) } label: { Label("Type of Content", systemImage: "square.stack") }; Picker("Order", selection: $rule.mode) { Text("Sequential").tag(SelectionMode.sequential); Text("Shuffle without repeats").tag(SelectionMode.shuffle); Text("Random").tag(SelectionMode.random) } }
             Section("Notification") {
-                Picker("Heading", selection: titleMode) { Text("Topic").tag("topic"); Text("Entry section").tag("section"); Text("No heading").tag("none") }
-                if titleMode.wrappedValue == "topic" { TextField("Topic title", text: topic) }
-                if titleMode.wrappedValue == "section" { Text("Uses the section name stored with each entry. If there is no section, LERN uses the topic title.").font(.caption).foregroundStyle(.secondary) }
+                Picker("Heading", selection: $rule.notificationTitleMode) { Text("Topic").tag(NotificationTitleMode.topic); Text("Entry section").tag(NotificationTitleMode.section); Text("No heading").tag(NotificationTitleMode.none) }
+                if rule.notificationTitleMode == .topic { TextField("Topic title", text: topic) }
+                if rule.notificationTitleMode == .section { Text("Uses the section name stored with each entry. If there is no section, LERN uses the topic title.").font(.caption).foregroundStyle(.secondary) }
                 TextField("Symbol or emoji", text: symbol).textInputAutocapitalization(.never)
                 ColorPicker("Preview color", selection: tint, supportsOpacity: false)
                 NotificationPreview(rule: rule)
@@ -103,7 +103,6 @@ struct ReminderEditor: View {
     private func minuteBinding(_ value: Binding<Int>) -> Binding<Date> {
         Binding(get: { Calendar.current.date(bySettingHour: value.wrappedValue / 60, minute: value.wrappedValue % 60, second: 0, of: Date()) ?? Date() }, set: { value.wrappedValue = Calendar.current.component(.hour, from: $0) * 60 + Calendar.current.component(.minute, from: $0) })
     }
-    private var titleMode: Binding<String> { Binding(get: { rule.notificationTitleMode ?? "topic" }, set: { rule.notificationTitleMode = $0 }) }
     private var topic: Binding<String> { Binding(get: { rule.notificationTopic ?? "" }, set: { rule.notificationTopic = String($0.prefix(DataLimits.metadataCharacters)) }) }
     private var symbol: Binding<String> { Binding(get: { rule.notificationSymbol ?? "" }, set: { rule.notificationSymbol = String($0.prefix(16)) }) }
     private var tint: Binding<Color> { Binding(get: { Color(hex: rule.notificationTint ?? "6E60F8") }, set: { rule.notificationTint = $0.hexValue }) }
@@ -116,12 +115,12 @@ private struct NotificationPreview: View {
         return custom.isEmpty ? rule.name : custom
     }
     var body: some View {
-        let titleMode = rule.notificationTitleMode ?? "topic"
+        let titleMode = rule.notificationTitleMode
         HStack(alignment: .top, spacing: 12) {
             Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : "✦")
                 .font(.title2).frame(width: 42, height: 42).background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
             VStack(alignment: .leading, spacing: 4) {
-                if titleMode != "none" { Text(titleMode == "section" ? "Entry section" : topic).font(.subheadline.weight(.semibold)) }
+                if titleMode != .none { Text(titleMode == .section ? "Entry section" : topic).font(.subheadline.weight(.semibold)) }
                 Text("A short thought will appear here.").font(.subheadline).lineLimit(2)
             }
             Spacer(minLength: 0)

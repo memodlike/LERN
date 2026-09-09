@@ -103,7 +103,7 @@ import LERNCore
 
     func testNotificationUsesTopicSymbolAndCanOmitHeading() async throws {
         let store = try library(); _ = try await store.addOwn(EntryDraft(text: "Choose the next useful step", section: "Focus"))
-        var rule = ReminderRule(); rule.id = "focus"; rule.explicitMinutes = [600]; rule.revision = "topic"; rule.notificationTopic = "Leadership"; rule.notificationSymbol = "🧭"; rule.notificationTitleMode = "topic"
+        var rule = ReminderRule(); rule.id = "focus"; rule.explicitMinutes = [600]; rule.revision = "topic"; rule.notificationTopic = "Leadership"; rule.notificationSymbol = "🧭"; rule.notificationTitleMode = .topic
         try await store.put("reminders", [rule])
         let center = FakeNotificationCenter(); let scheduler = NotificationScheduler(store: store, center: center)
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -112,7 +112,7 @@ import LERNCore
         XCTAssertTrue(scheduledTopic)
         XCTAssertTrue(center.added.allSatisfy { $0.title == "🧭 Leadership" })
 
-        rule.revision = "no-heading"; rule.notificationTitleMode = "none"; try await store.put("reminders", [rule]); center.added = []
+        rule.revision = "no-heading"; rule.notificationTitleMode = .none; try await store.put("reminders", [rule]); center.added = []
         let scheduledWithoutHeading = await scheduler.replenish(now: now, calendar: calendar)
         XCTAssertTrue(scheduledWithoutHeading)
         XCTAssertTrue(center.added.allSatisfy { $0.title.isEmpty })

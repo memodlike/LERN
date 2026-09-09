@@ -156,6 +156,21 @@ struct ScheduleTests {
         #expect(decoded.name == "Ada")
         #expect(decoded.showNotificationPreview)
     }
+    @Test func notificationTitleModeNormalizesPersistedValues() throws {
+        func decode(_ value: String?) throws -> ReminderRule {
+            let data = value.map { Data("{\"notificationTitleMode\":\"\($0)\"}".utf8) } ?? Data("{}".utf8)
+            return try JSONDecoder().decode(ReminderRule.self, from: data)
+        }
+        #expect(try decode("topic").notificationTitleMode == .topic)
+        #expect(try decode("SECTION").notificationTitleMode == .section)
+        #expect(try decode("none").notificationTitleMode == .none)
+        #expect(try decode("").notificationTitleMode == .topic)
+        #expect(try decode("custom").notificationTitleMode == .topic)
+        #expect(try decode("future-mode").notificationTitleMode == .topic)
+        #expect(try decode(nil).notificationTitleMode == .topic)
+        var rule = ReminderRule(); rule.notificationTitleMode = .section
+        #expect(String(decoding: try JSONEncoder().encode(rule), as: UTF8.self).contains("\"notificationTitleMode\":\"section\""))
+    }
 }
 struct StreakTests {
     @Test func streakFreezeAndRegeneration() {
