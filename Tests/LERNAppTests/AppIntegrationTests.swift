@@ -104,6 +104,12 @@ import LERNCore
         XCTAssertEqual(Set(center.added.map(\.identifier)), firstIDs)
         XCTAssertTrue(center.removed.isEmpty)
         XCTAssertTrue(center.added.allSatisfy { $0.body == "A thought is ready for you." })
+
+        rule.enabled = false; try await store.put("reminders", [rule])
+        let disabled = await scheduler.replenish(now: now, calendar: calendar); XCTAssertTrue(disabled)
+        XCTAssertTrue(center.pending.isEmpty)
+        let plans: [DeliveryPlan] = try await store.get("plans", default: [])
+        XCTAssertTrue(plans.isEmpty)
     }
 
     func testNotificationUsesTopicSymbolAndCanOmitHeading() async throws {
