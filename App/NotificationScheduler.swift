@@ -21,6 +21,12 @@ struct NotificationRequestSpec: Equatable, Sendable {
     var userInfo: [String: String]; var sound: String; var isAlarm: Bool
 }
 
+private enum NotificationReconciliationError: LocalizedError {
+    case pendingRequestsDoNotMatchPlan
+
+    var errorDescription: String? { "Notification Center did not apply the reminder plan." }
+}
+
 @MainActor protocol NotificationCenterClient: AnyObject {
     func requestAuthorization() async throws
     func settings() async -> NotificationSettingsSnapshot
@@ -111,21 +117,31 @@ struct NotificationRequestSpec: Equatable, Sendable {
                 guard let id = SelectionEngine.next(ids: pool, mode: rule.mode, cursor: &cursor) else { continue }
                 cursors[key] = cursor; plans.append(DeliveryPlan(id: slot.id, ruleID: rule.id, revision: revision, date: slot.date, entryID: id))
             }
-            let desiredIDs = Set(plans.map(\.id)), pendingIDs = Set(pending.map(\.identifier))
+            let entries = try await store.entries(ids: plans.map(\.entryID))
+            let rulesByID = Dictionary(uniqueKeysWithValues: rules.map { ($0.id, $0) })
+            var requests: [(plan: DeliveryPlan, spec: NotificationRequestSpec)] = []
+            for plan in plans {
+                guard let entry = entries[plan.entryID], let rule = rulesByID[plan.ruleID] else { continue }
+                requests.append((plan, request(plan: plan, entry: entry, rule: rule, previewsVisible: preferences.showNotificationPreview)))
+            }
+            let desiredIDs = Set(requests.map(\.spec.identifier)), pendingIDs = Set(pending.map(\.identifier))
             let obsoleteIDs = pendingIDs.subtracting(desiredIDs)
             if !obsoleteIDs.isEmpty { center.removePendingRequests(withIdentifiers: obsoleteIDs.sorted()) }
-            try await store.put("plans", plans)
-            for (key, cursor) in cursors { try await store.put(key, cursor) }
             let pendingByID = Dictionary(uniqueKeysWithValues: pending.map { ($0.identifier, $0) })
-            for index in plans.indices {
-                guard let entry = try await store.entry(plans[index].entryID), let rule = rules.first(where: { $0.id == plans[index].ruleID }) else { continue }
-                let spec = request(plan: plans[index], entry: entry, rule: rule, previewsVisible: preferences.showNotificationPreview)
-                if pendingByID[spec.identifier]?.signature == spec.userInfo["planSignature"] { plans[index].state = "scheduled" }
-                else { try await center.add(spec); plans[index].state = "scheduled" }
-                try await store.put("plans", plans)
+            var scheduledPlans: [DeliveryPlan] = []
+            for request in requests {
+                let spec = request.spec
+                if pendingByID[spec.identifier]?.signature != spec.userInfo["planSignature"] { try await center.add(spec) }
+                var plan = request.plan; plan.state = "scheduled"; scheduledPlans.append(plan)
             }
             let refreshed = await center.pendingRequests(); pendingCount = refreshed.count
-            scheduledThrough = settings.visiblyDeliverable ? plans.filter { $0.state == "scheduled" }.map(\.date).max() : nil
+            let refreshedByID = Dictionary(uniqueKeysWithValues: refreshed.map { ($0.identifier, $0) })
+            guard Set(refreshedByID.keys).isSubset(of: desiredIDs), requests.allSatisfy({ refreshedByID[$0.spec.identifier]?.signature == $0.spec.userInfo["planSignature"] }) else {
+                throw NotificationReconciliationError.pendingRequestsDoNotMatchPlan
+            }
+            try await store.put("plans", scheduledPlans)
+            for (key, cursor) in cursors { try await store.put(key, cursor) }
+            scheduledThrough = settings.visiblyDeliverable ? scheduledPlans.map(\.date).max() : nil
             lastError = nil; return true
         } catch { lastError = error.localizedDescription; scheduledThrough = nil; return false }
     }
