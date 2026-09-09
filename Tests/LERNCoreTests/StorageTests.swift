@@ -17,6 +17,17 @@ import Foundation
         #expect(try await store.entry(EntryDraft(text: "one").id)?.favorite == true)
         #expect(try await store.eligibleIDs(source: source).count == 2)
     }
+    @Test func reopenedSharedStoreSeesCommittedData() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("library.store")
+        let writer = LibraryStore(modelContainer: try StorageFactory.container(url: url))
+        let reader = LibraryStore(modelContainer: try StorageFactory.container(url: url))
+
+        let stored = try await writer.addOwn(EntryDraft(text: "Visible to every app-group client"))
+        #expect(try await reader.entry(stored.id)?.draft.text == "Visible to every app-group client")
+    }
     @Test func libraryLifecycleKeepsSharedAndFavoriteEntries() async throws {
         let store = try store()
         let first = try await store.importEntries(preview(["shared", "first only"]))
