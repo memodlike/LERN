@@ -138,10 +138,10 @@ struct NotificationRequestSpec: Equatable, Sendable {
         return NotificationRequestSpec(identifier: plan.id, date: plan.date, title: title, body: body, userInfo: ["entryID": entry.id, "ruleID": rule.id, "planID": plan.id, "kind": rule.isAlarm ? "alarm" : "learning", "planSignature": signature], sound: rule.sound, isAlarm: rule.isAlarm)
     }
     private func notificationTitle(for entry: EntryValue, rule: ReminderRule) -> String {
-        let mode = rule.notificationTitleMode ?? "topic"
-        guard mode != "none" else { return "" }
+        let mode = rule.notificationTitleMode
+        guard mode != .none else { return "" }
         let topic: String
-        if mode == "section", !entry.draft.section.isEmpty { topic = entry.draft.section }
+        if mode == .section, !entry.draft.section.isEmpty { topic = entry.draft.section }
         else {
             let custom = rule.notificationTopic?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let fallback = rule.name.trimmingCharacters(in: .whitespacesAndNewlines)

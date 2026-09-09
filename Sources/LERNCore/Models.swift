@@ -119,6 +119,20 @@ public struct ContentSource: Codable, Equatable, Hashable, Sendable {
 }
 
 public enum SelectionMode: String, Codable, CaseIterable, Sendable { case sequential, shuffle, random }
+public enum NotificationTitleMode: String, Codable, CaseIterable, Sendable {
+    case topic
+    case section
+    case none
+
+    public static func normalized(_ persistedValue: String?) -> Self {
+        switch persistedValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "section": .section
+        case "none": .none
+        case "topic", "custom", "appname", "app_name", "", nil: .topic
+        default: .topic
+        }
+    }
+}
 public struct SelectionCursor: Codable, Sendable {
     public var position: Int = 0
     public var cycle: UInt64 = 0
@@ -142,14 +156,47 @@ public struct ReminderRule: Codable, Identifiable, Equatable, Sendable {
     public var frequency = 3
     public var sound = "default"
     public var isAlarm = false
-    /// Optional appearance controls for a reminder. Optional values keep existing
-    /// locally stored reminder rules compatible with newer app versions.
-    public var notificationTitleMode: String?
+    public var notificationTitleMode: NotificationTitleMode = .topic
     public var notificationTopic: String?
     public var notificationSymbol: String?
     public var notificationTint: String?
     public var revision = UUID().uuidString
     public init() {}
+    private enum CodingKeys: String, CodingKey {
+        case id, name, enabled, source, mode, weekdays, explicitMinutes, usesRange, startMinute, endMinute, frequency, sound, isAlarm, notificationTitleMode, notificationTopic, notificationSymbol, notificationTint, revision
+    }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decodeIfPresent(String.self, forKey: .id) ?? id
+        name = try values.decodeIfPresent(String.self, forKey: .name) ?? name
+        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? enabled
+        source = try values.decodeIfPresent(ContentSource.self, forKey: .source) ?? source
+        mode = try values.decodeIfPresent(SelectionMode.self, forKey: .mode) ?? mode
+        weekdays = try values.decodeIfPresent([Int].self, forKey: .weekdays) ?? weekdays
+        explicitMinutes = try values.decodeIfPresent([Int].self, forKey: .explicitMinutes) ?? explicitMinutes
+        usesRange = try values.decodeIfPresent(Bool.self, forKey: .usesRange) ?? usesRange
+        startMinute = try values.decodeIfPresent(Int.self, forKey: .startMinute) ?? startMinute
+        endMinute = try values.decodeIfPresent(Int.self, forKey: .endMinute) ?? endMinute
+        frequency = try values.decodeIfPresent(Int.self, forKey: .frequency) ?? frequency
+        sound = try values.decodeIfPresent(String.self, forKey: .sound) ?? sound
+        isAlarm = try values.decodeIfPresent(Bool.self, forKey: .isAlarm) ?? isAlarm
+        notificationTitleMode = .normalized(try? values.decodeIfPresent(String.self, forKey: .notificationTitleMode))
+        notificationTopic = try values.decodeIfPresent(String.self, forKey: .notificationTopic)
+        notificationSymbol = try values.decodeIfPresent(String.self, forKey: .notificationSymbol)
+        notificationTint = try values.decodeIfPresent(String.self, forKey: .notificationTint)
+        revision = try values.decodeIfPresent(String.self, forKey: .revision) ?? revision
+    }
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id); try values.encode(name, forKey: .name); try values.encode(enabled, forKey: .enabled)
+        try values.encode(source, forKey: .source); try values.encode(mode, forKey: .mode); try values.encode(weekdays, forKey: .weekdays)
+        try values.encode(explicitMinutes, forKey: .explicitMinutes); try values.encode(usesRange, forKey: .usesRange)
+        try values.encode(startMinute, forKey: .startMinute); try values.encode(endMinute, forKey: .endMinute)
+        try values.encode(frequency, forKey: .frequency); try values.encode(sound, forKey: .sound); try values.encode(isAlarm, forKey: .isAlarm)
+        try values.encode(notificationTitleMode.rawValue, forKey: .notificationTitleMode)
+        try values.encodeIfPresent(notificationTopic, forKey: .notificationTopic); try values.encodeIfPresent(notificationSymbol, forKey: .notificationSymbol)
+        try values.encodeIfPresent(notificationTint, forKey: .notificationTint); try values.encode(revision, forKey: .revision)
+    }
     public static func isReservedID(_ value: String) -> Bool { value.hasPrefix("system.") }
     public var minutes: [Int] {
         if !usesRange { return Array(Set(explicitMinutes.filter { (0..<1440).contains($0) })).sorted() }
