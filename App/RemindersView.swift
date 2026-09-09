@@ -31,7 +31,9 @@ struct RemindersView: View {
                 ForEach(state.reminders) { rule in
                     Button { edit = rule } label: {
                         HStack { Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : (rule.isAlarm ? "⏰" : "✦")).font(.title3).frame(width: 28); VStack(alignment: .leading, spacing: 5) { Text(topic(rule)); Text(summary(rule)).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(rule.enabled ? "On" : "Off").font(.caption) }.padding(.vertical, 4)
-                    }.foregroundStyle(.primary)
+                    }
+                    .foregroundStyle(.primary)
+                    .accessibilityIdentifier("reminders.rule")
                 }.onDelete { indexes in state.reminders.remove(atOffsets: indexes); Task { await state.saveReminders() } }
                 Button("Add reminder group", systemImage: "plus") { edit = ReminderRule() }.accessibilityIdentifier("reminders.add")
                 Button("Add morning alarm", systemImage: "alarm") { var rule = ReminderRule(); rule.name = String(localized: "Morning thought"); rule.isAlarm = true; rule.explicitMinutes = [420]; edit = rule }
