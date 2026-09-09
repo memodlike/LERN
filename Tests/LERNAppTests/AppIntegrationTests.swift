@@ -9,12 +9,17 @@ import LERNCore
     var added: [NotificationRequestSpec] = []
     var removed: [[String]] = []
     var failNextAdd = false
+    var failOnAddNumber: Int?
+    var dropNextAdd = false
     func requestAuthorization() async throws { snapshot.authorization = .authorized }
     func settings() async -> NotificationSettingsSnapshot { snapshot }
     func pendingRequests() async -> [PendingNotification] { Array(pending.values) }
     func add(_ request: NotificationRequestSpec) async throws {
+        if let failOnAddNumber, added.count + 1 == failOnAddNumber { throw NSError(domain: "FakeNotificationCenter", code: 1) }
         if failNextAdd { failNextAdd = false; throw NSError(domain: "FakeNotificationCenter", code: 1) }
-        added.append(request); pending[request.identifier] = PendingNotification(identifier: request.identifier, signature: request.userInfo["planSignature"])
+        added.append(request)
+        if dropNextAdd { dropNextAdd = false; return }
+        pending[request.identifier] = PendingNotification(identifier: request.identifier, signature: request.userInfo["planSignature"])
     }
     func removePendingRequests(withIdentifiers identifiers: [String]) { removed.append(identifiers); for id in identifiers { pending.removeValue(forKey: id) } }
 }
@@ -118,16 +123,18 @@ import LERNCore
         XCTAssertTrue(center.added.allSatisfy { $0.title.isEmpty })
     }
 
-    func testNotificationFailureLeavesRetryablePlansAndStreakRemovesToday() async throws {
+    func testNotificationFailureDoesNotPersistPartialPlansAndStreakRemovesToday() async throws {
         let store = try library(); _ = try await store.addOwn(EntryDraft(text: "Streak thought"))
         var preferences = Preferences(); preferences.streakReminder = true; try await store.put("preferences", preferences)
-        let center = FakeNotificationCenter(); center.failNextAdd = true
+        let center = FakeNotificationCenter(); center.failOnAddNumber = 2
         let scheduler = NotificationScheduler(store: store, center: center)
         var calendar = Calendar(identifier: .gregorian); calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let evening = ISO8601DateFormatter().date(from: "2026-09-06T18:00:00Z")!
         let failedReconcile = await scheduler.replenish(now: evening, calendar: calendar); XCTAssertFalse(failedReconcile)
         let failed: [DeliveryPlan] = try await store.get("plans", default: [])
-        XCTAssertTrue(failed.contains { $0.state == "planned" })
+        XCTAssertTrue(failed.isEmpty)
+        XCTAssertEqual(center.added.count, 1)
+        center.failOnAddNumber = nil
         let recovered = await scheduler.replenish(now: evening, calendar: calendar); XCTAssertTrue(recovered)
         XCTAssertTrue(center.pending.keys.contains { $0.contains("system.streak") })
         let todayStreakIDs = center.pending.keys.filter { id in
@@ -139,6 +146,18 @@ import LERNCore
         let readToday = await scheduler.replenish(now: evening, calendar: calendar); XCTAssertTrue(readToday)
         XCTAssertTrue(todayStreakIDs.allSatisfy { center.pending[$0] == nil })
         XCTAssertTrue(center.pending.keys.contains { $0.contains("system.streak") })
+    }
+
+    func testNotificationPlanIsNotPersistedWhenPendingQueueDoesNotMatch() async throws {
+        let store = try library(); _ = try await store.addOwn(EntryDraft(text: "Queue verification"))
+        var rule = ReminderRule(); rule.id = "queue"; try await store.put("reminders", [rule])
+        let center = FakeNotificationCenter(); center.dropNextAdd = true
+        let scheduler = NotificationScheduler(store: store, center: center)
+        let reconciled = await scheduler.replenish()
+        XCTAssertFalse(reconciled)
+        let plans: [DeliveryPlan] = try await store.get("plans", default: [])
+        XCTAssertTrue(plans.isEmpty)
+        XCTAssertEqual(center.pending.count, center.added.count - 1)
     }
 
     func testDeniedNotificationsDoNotAdvertiseCoverage() async throws {
