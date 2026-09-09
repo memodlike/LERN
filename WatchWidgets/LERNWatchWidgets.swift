@@ -9,8 +9,9 @@ struct WatchProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<WatchEntry>) -> Void) { completion(Timeline(entries: [value()], policy: .after(Date().addingTimeInterval(3600)))) }
     private func value() -> WatchEntry {
         let defaults = UserDefaults(suiteName: Product.appGroup) ?? .standard
-        guard let data = defaults.data(forKey: "watch.entries"), data.count < 60_000,
-              let entries = try? JSONDecoder().decode([EntryValue].self, from: data), !entries.isEmpty, entries.count <= 100 else { return WatchEntry(date: Date(), quote: String(localized: "Open LERN on iPhone")) }
+        guard let data = defaults.data(forKey: "watch.entries"),
+              let entries = WatchPayload.decodeEntries(data, version: defaults.object(forKey: "watch.entries.version") as? Int),
+              !entries.isEmpty else { return WatchEntry(date: Date(), quote: String(localized: "Open LERN on iPhone")) }
         let savedIndex = defaults.integer(forKey: "watch.index")
         let index = entries.indices.contains(savedIndex) ? savedIndex : 0
         return WatchEntry(date: Date(), quote: entries[index].draft.text)
