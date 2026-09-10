@@ -13,8 +13,9 @@ struct ImportFormatHelpView: View {
                     Label("JSON and JSONL", systemImage: "curlybraces")
                 }
                 Section("How LERN reads them") {
-                    Text("Markdown headings make sections. Markdown lists make entries. Fenced code stays literal and never becomes a heading.")
-                    Text("TXT can use one entry per line or blank-separated paragraphs. CSV accepts comma, semicolon, or tab delimiters and recognizes text, quote, body, content, author, source, tags, section, and category columns.")
+                    Text("Markdown headings make sections. Markdown lists make entries. Backtick and tilde fenced code stays literal and never becomes a heading.")
+                    Text("TXT can use one entry per line or blank-separated paragraphs. CSV and TSV recognize text, quote, body, content, author, source, tags, section, and category columns. When detection is ambiguous, choose the delimiter and header mode in the preview.")
+                    Text("Matching entries use normalized text, author and source. Tags and sections do not create a separate entry identity.")
                     Text("Imported text stays on this device. Review the preview before importing.")
                 }
             }
