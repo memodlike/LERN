@@ -10,26 +10,48 @@ struct ResourcesView: View {
     @State private var search = ""
     @State private var editing: ResourceBook?
     @State private var importing = false
+    @State private var importPreview: ResourceImportPreview?
+    @State private var importLoading = false
     private var filtered: [ResourceBook] { books.filter { search.isEmpty || ($0.title + " " + $0.author + " " + $0.note).localizedCaseInsensitiveContains(search) } }
     var body: some View {
         List {
             Section { Button("Add a resource", systemImage: "plus") { editing = ResourceBook() }; Button("Import JSON or CSV", systemImage: "square.and.arrow.down") { importing = true } }
+            if importLoading { Section { ProgressView("Preparing import preview") } }
+            if let importPreview {
+                Section("Import preview") {
+                    LabeledContent("File", value: importPreview.filename)
+                    LabeledContent("Format", value: importPreview.format)
+                    LabeledContent("Valid resources", value: importPreview.valid.count.formatted())
+                    LabeledContent("Duplicates", value: importPreview.duplicates.formatted())
+                    LabeledContent("Malformed", value: importPreview.malformed.formatted())
+                    ForEach(importPreview.firstFive) { book in Text(book.title).font(.subheadline) }
+                    ForEach(importPreview.issues, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
+                    Button("Import resources") {
+                        guard books.count + importPreview.valid.count <= DataLimits.resources else { state.error = ImportFailure.resourceCountExceeded.localizedDescription; return }
+                        books += importPreview.valid; save(); self.importPreview = nil
+                    }.accessibilityIdentifier("resources.import.commit")
+                    Button("Discard preview", role: .cancel) { self.importPreview = nil }
+                }
+            }
             ForEach(filtered) { book in
                 Button { editing = book } label: { HStack(alignment: .top) { if let name = book.coverName, let url = SharedStore.photoURL(name), let cover = UIImage(contentsOfFile: url.path) { Image(uiImage: cover).resizable().scaledToFill().frame(width: 48, height: 66).clipped().accessibilityHidden(true) }; VStack(alignment: .leading, spacing: 5) { HStack { Text(book.title).font(.headline); if book.favorite { Image(systemName: "heart.fill") } }; Text(book.author).foregroundStyle(.secondary); Text(book.note).font(.subheadline).lineLimit(2) } } }.foregroundStyle(.primary)
             }.onDelete { offsets in let ids = Set(offsets.map { filtered[$0].id }); books.removeAll { ids.contains($0.id) }; save() }
         }.navigationTitle("Resources / Books").searchable(text: $search)
             .task { do { books = try await state.store.get("resources", default: []) } catch { state.error = error.localizedDescription } }
             .sheet(item: $editing) { book in NavigationStack { BookEditor(book: book) { value in if let index = books.firstIndex(where: { $0.id == value.id }) { books[index] = value } else { books.append(value) }; save() } } }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .commaSeparatedText]) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: ["csv", "json"].compactMap { UTType(filenameExtension: $0) }) { result in
                 if case .success(let url) = result { Task {
+                    importLoading = true
                     do {
-                        let parsed = try await Task.detached { () throws -> [ResourceBook] in
+                        let existing = books
+                        let parsed = try await Task.detached { () throws -> ResourceImportPreview in
                             let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                            guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) < 10_000_000 else { throw ImportFailure.tooLarge }
-                            return try ResourceImporter.parse(data: Data(contentsOf: url), filename: url.lastPathComponent)
+                            guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= DataLimits.resourceImportBytes else { throw ImportFailure.resourceTooLarge }
+                            return try ResourceImporter.preview(data: Data(contentsOf: url), filename: url.lastPathComponent, existing: existing)
                         }.value
-                        guard books.count + parsed.count <= 10_000 else { throw ImportFailure.tooLarge }; books += parsed; save()
+                        importPreview = parsed
                     } catch { state.error = error.localizedDescription }
+                    importLoading = false
                 } }
             }
     }

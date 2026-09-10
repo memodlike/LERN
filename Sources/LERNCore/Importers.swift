@@ -2,7 +2,9 @@ import Foundation
 import CryptoKit
 
 public enum ImportFailure: LocalizedError {
-    case tooLarge, encoding, malformed(String), empty, unsupported
+    case tooLarge, encoding, malformed(String), empty, unsupported, targetNotFound
+    case capacity(kind: String, limit: Int)
+    case resourceTooLarge, resourceCountExceeded
     public var errorDescription: String? {
         switch self {
         case .tooLarge: return "The file exceeds the 100 MB limit. Split it into smaller files."
@@ -10,13 +12,26 @@ public enum ImportFailure: LocalizedError {
         case .malformed(let detail): return "The file could not be read: \(detail)"
         case .empty: return "No valid entries were found."
         case .unsupported: return "Choose a Markdown, TXT, CSV, TSV, JSON or JSONL file."
+        case .targetNotFound: return "The selected library no longer exists. Choose a destination and try again."
+        case .capacity(let kind, let limit): return "The library would exceed its \(kind) limit of \(limit.formatted())."
+        case .resourceTooLarge: return "The resource file exceeds the 10 MB limit. Split it into smaller files."
+        case .resourceCountExceeded: return "The resource library supports up to 10,000 resources."
         }
     }
 }
 public enum TextImportMode: String, CaseIterable, Sendable { case automatic, lines, paragraphs }
+public enum CSVHeaderMode: String, CaseIterable, Sendable { case automatic, present, absent }
+public enum CSVHeaderStatus: String, Sendable { case present, absent, ambiguous
+    public var label: String { rawValue.capitalized }
+}
 public enum CSVDelimiter: String, CaseIterable, Sendable { case automatic, comma, semicolon, tab
     public var character: Character? { switch self { case .automatic: return nil; case .comma: return ","; case .semicolon: return ";"; case .tab: return "\t" } }
     public var label: String { switch self { case .automatic: return "Automatic"; case .comma: return "Comma"; case .semicolon: return "Semicolon"; case .tab: return "Tab" } }
+}
+public struct DelimiterDetection: Sendable {
+    public var delimiter: CSVDelimiter
+    public var ambiguous: Bool
+    public init(delimiter: CSVDelimiter, ambiguous: Bool) { self.delimiter = delimiter; self.ambiguous = ambiguous }
 }
 public struct ImportPreview: Sendable {
     public var name: String
@@ -29,8 +44,9 @@ public struct ImportPreview: Sendable {
     public var issues: [String]
     public var detectedLayout: TextImportMode?
     public var detectedDelimiter: CSVDelimiter?
-    public init(name: String, filename: String = "", format: String, checksum: String = "", entries: [EntryDraft], duplicates: Int, malformed: Int, issues: [String], detectedLayout: TextImportMode? = nil, detectedDelimiter: CSVDelimiter? = nil) {
-        self.name = name; self.filename = filename; self.format = format; self.checksum = checksum; self.entries = entries; self.duplicates = duplicates; self.malformed = malformed; self.issues = issues; self.detectedLayout = detectedLayout; self.detectedDelimiter = detectedDelimiter
+    public var detectedHeader: CSVHeaderStatus?
+    public init(name: String, filename: String = "", format: String, checksum: String = "", entries: [EntryDraft], duplicates: Int, malformed: Int, issues: [String], detectedLayout: TextImportMode? = nil, detectedDelimiter: CSVDelimiter? = nil, detectedHeader: CSVHeaderStatus? = nil) {
+        self.name = name; self.filename = filename; self.format = format; self.checksum = checksum; self.entries = entries; self.duplicates = duplicates; self.malformed = malformed; self.issues = issues; self.detectedLayout = detectedLayout; self.detectedDelimiter = detectedDelimiter; self.detectedHeader = detectedHeader
     }
     public var firstFive: [EntryDraft] { Array(entries.prefix(5)) }
     public var sectionCount: Int { Set(entries.map { EntryDraft.normalized($0.section) }.filter { !$0.isEmpty }).count }
@@ -47,7 +63,7 @@ public struct ImportService: Sendable {
     public static let textLimit = DataLimits.entryCharacters
     private let importers: [any ContentImporter] = [MarkdownImporter(), PlainTextImporter(), DelimitedImporter(), JSONImporter()]
     public init() {}
-    public func preview(data: Data, filename: String, mode: TextImportMode = .automatic, delimiter: CSVDelimiter = .automatic) throws -> ImportPreview {
+    public func preview(data: Data, filename: String, mode: TextImportMode = .automatic, delimiter: CSVDelimiter = .automatic, headerMode: CSVHeaderMode = .automatic) throws -> ImportPreview {
         guard data.count <= Self.byteLimit else { throw ImportFailure.tooLarge }
         guard var text = String(data: data, encoding: .utf8) else { throw ImportFailure.encoding }
         if text.first == "\u{FEFF}" { text.removeFirst() }
@@ -56,10 +72,18 @@ public struct ImportService: Sendable {
         guard let parser = importers.first(where: { $0.extensions.contains(ext) }) else { throw ImportFailure.unsupported }
         let output: (entries: [EntryDraft], issues: [String])
         var detectedDelimiter: CSVDelimiter? = nil
-        if ext == "tsv" { output = try DelimitedImporter(separator: "\t").parse(text, mode: mode); detectedDelimiter = .tab }
+        var detectedHeader: CSVHeaderStatus? = nil
+        if ext == "tsv" {
+            let parsed = try DelimitedImporter(separator: "\t").parse(text, mode: mode, headerMode: headerMode)
+            output = (parsed.entries, parsed.issues); detectedDelimiter = .tab; detectedHeader = parsed.headerStatus
+        }
         else if ext == "csv" {
-            let choice = delimiter == .automatic ? DelimitedImporter.detectDelimiter(in: text) : delimiter
-            output = try DelimitedImporter(separator: choice.character ?? ",").parse(text, mode: mode); detectedDelimiter = choice
+            let detection = DelimitedImporter.detectDelimiter(in: text)
+            let choice = delimiter == .automatic ? detection.delimiter : delimiter
+            let parsed = try DelimitedImporter(separator: choice.character ?? ",").parse(text, mode: mode, headerMode: headerMode)
+            var issues = parsed.issues
+            if delimiter == .automatic && detection.ambiguous { issues.append("Delimiter detection is ambiguous. Choose a delimiter to confirm the preview.") }
+            output = (parsed.entries, issues); detectedDelimiter = choice; detectedHeader = parsed.headerStatus
         }
         else if ext == "jsonl" { output = try JSONImporter(lines: true).parse(text, mode: mode) }
         else { output = try parser.parse(text, mode: mode); detectedDelimiter = nil }
@@ -75,7 +99,7 @@ public struct ImportService: Sendable {
         guard !unique.isEmpty else { throw ImportFailure.empty }
         let layout: TextImportMode? = ext == "txt" ? PlainTextImporter.detectedLayout(text, requested: mode) : nil
         let checksum = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-        return ImportPreview(name: (filename as NSString).deletingPathExtension, filename: filename, format: ext.uppercased(), checksum: checksum, entries: unique, duplicates: duplicates, malformed: issues.count, issues: Array(issues.prefix(20)), detectedLayout: layout, detectedDelimiter: detectedDelimiter)
+        return ImportPreview(name: (filename as NSString).deletingPathExtension, filename: filename, format: ext.uppercased(), checksum: checksum, entries: unique, duplicates: duplicates, malformed: issues.count, issues: Array(issues.prefix(20)), detectedLayout: layout, detectedDelimiter: detectedDelimiter, detectedHeader: detectedHeader)
     }
 }
 
@@ -167,7 +191,7 @@ public struct MarkdownImporter: ContentImporter {
             }
             lines.removeFirst(end + 1)
         }
-        var entries: [EntryDraft] = [], paragraph: [String] = [], section = "", inCode = false
+        var entries: [EntryDraft] = [], paragraph: [String] = [], section = "", codeFence: (character: Character, length: Int)?
         var paragraphLength = 0, budget = DraftBudget()
         func append(_ value: String) throws {
             guard !value.isEmpty else { return }
@@ -179,12 +203,23 @@ public struct MarkdownImporter: ContentImporter {
             try append(value)
             paragraph = []; paragraphLength = 0
         }
+        func fence(_ line: String) -> (character: Character, length: Int, trailing: String)? {
+            guard let character = line.first, character == "`" || character == "~" else { return nil }
+            let length = line.prefix { $0 == character }.count
+            guard length >= 3 else { return nil }
+            return (character, length, String(line.dropFirst(length)))
+        }
         for (index, raw) in lines.enumerated() {
             if index % 256 == 0 { try Task.checkCancellation() }
             guard entries.count <= ImportService.entryLimit, raw.count <= ImportService.textLimit else { throw ImportFailure.tooLarge }
             let line = raw.trimmingCharacters(in: .whitespaces)
-            if line.hasPrefix("```") { paragraph.append(raw); paragraphLength += raw.count; inCode.toggle(); continue }
-            if inCode { paragraph.append(raw); paragraphLength += raw.count + 1; guard paragraphLength <= ImportService.textLimit else { throw ImportFailure.malformed("A code block exceeds 20,000 characters.") }; continue }
+            if let active = codeFence {
+                paragraph.append(raw); paragraphLength += raw.count + 1
+                if let candidate = fence(line), candidate.character == active.character, candidate.length >= active.length, candidate.trailing.trimmingCharacters(in: .whitespaces).isEmpty { codeFence = nil }
+                guard paragraphLength <= ImportService.textLimit else { throw ImportFailure.malformed("A code block exceeds 20,000 characters.") }
+                continue
+            }
+            if let candidate = fence(line) { paragraph.append(raw); paragraphLength += raw.count; codeFence = (candidate.character, candidate.length); continue }
             if line.isEmpty || line == "---" { try flush(); continue }
             if let heading = line.range(of: "^#{1,6}[ \\t]+", options: .regularExpression) { try flush(); section = line[heading.upperBound...].trimmingCharacters(in: .whitespaces); try validateMetadata(section: section); continue }
             let range = line.range(of: "^(?:[-*+] |[0-9]+[.)] |> ?)", options: .regularExpression)
@@ -207,66 +242,91 @@ public struct DelimitedImporter: ContentImporter {
     let separator: Character
     let headerAliases: [String: String]
     public init(separator: Character = ",", headerAliases: [String: String] = [:]) { self.separator = separator; self.headerAliases = headerAliases }
-    public static func detectDelimiter(in text: String) -> CSVDelimiter {
-        let sample = text.prefix(8_192)
-        var quoted = false, counts: [Character: Int] = [",": 0, ";": 0, "\t": 0]
-        for character in sample {
-            if character == "\"" { quoted.toggle() }
-            else if !quoted, counts[character] != nil { counts[character, default: 0] += 1 }
-        }
-        switch counts.max(by: { $0.value < $1.value })?.key {
-        case ";": return .semicolon
-        case "\t": return .tab
-        default: return .comma
-        }
+    private struct Record { var values: [String]; var line: Int }
+    private static let knownHeaders = Set(["text", "quote", "body", "content", "author", "source", "tags", "section", "category", "title", "note", "url"])
+    public static func detectDelimiter(in text: String) -> DelimiterDetection {
+        let candidates: [(CSVDelimiter, Character)] = [(.comma, ","), (.semicolon, ";"), (.tab, "\t")]
+        let scored = candidates.map { candidate -> (CSVDelimiter, Int) in
+            guard let rows = try? records(in: text, separator: candidate.1, maximumRecords: 32), !rows.isEmpty else { return (candidate.0, Int.min / 2) }
+            let widths = rows.map { $0.values.count }
+            let frequencies = Dictionary(grouping: widths, by: { $0 }).mapValues(\.count)
+            let modal = frequencies.max { $0.value < $1.value }!
+            let normalized = rows[0].values.map { normalizeHeader($0, aliases: [:]) }
+            let headerBonus = normalized.contains(where: { knownHeaders.contains($0) }) ? 10 : 0
+            let score = modal.value * 100 + (modal.key > 1 ? 500 + modal.key * 10 : -500) + headerBonus
+            return (candidate.0, score)
+        }.sorted { $0.1 > $1.1 }
+        guard let best = scored.first else { return DelimiterDetection(delimiter: .comma, ambiguous: true) }
+        let tie = scored.dropFirst().first.map { $0.1 == best.1 } ?? false
+        return DelimiterDetection(delimiter: best.0, ambiguous: tie || best.1 < 0)
     }
     public func parse(_ text: String, mode: TextImportMode) throws -> (entries: [EntryDraft], issues: [String]) {
-        var entries: [EntryDraft] = [], issues: [String] = [], row: [String] = [], cell = ""
-        var quoted = false, afterQuote = false, headers: [String]?, hasHeader = false, rowCount = 0, processed = 0, fieldLength = 0
-            let aliases = ["text", "quote", "body", "content"]
-        var budget = DraftBudget()
-        func finishCell() throws {
-            guard row.count < 64 else { throw ImportFailure.malformed("A row has more than 64 columns.") }
-            row.append(cell); cell = ""; fieldLength = 0; afterQuote = false
+        let parsed = try parse(text, mode: mode, headerMode: .automatic)
+        return (parsed.entries, parsed.issues)
+    }
+    public func parse(_ text: String, mode: TextImportMode, headerMode: CSVHeaderMode) throws -> (entries: [EntryDraft], issues: [String], headerStatus: CSVHeaderStatus) {
+        let records = try Self.records(in: text, separator: separator)
+        guard let first = records.first else { return ([], [], .absent) }
+        let aliases = ["text", "quote", "body", "content"]
+        let headers = first.values.map { Self.normalizeHeader($0, aliases: headerAliases) }
+        let headerStatus: CSVHeaderStatus
+        let hasHeader: Bool
+        switch headerMode {
+        case .present: headerStatus = .present; hasHeader = true
+        case .absent: headerStatus = .absent; hasHeader = false
+        case .automatic:
+            let nonempty = headers.filter { !$0.isEmpty }
+            if nonempty.count == 1 && aliases.contains(nonempty[0]) { headerStatus = .ambiguous; hasHeader = false }
+            else if !nonempty.isEmpty && nonempty.allSatisfy({ Self.knownHeaders.contains($0) }) && nonempty.contains(where: { aliases.contains($0) }) { headerStatus = .present; hasHeader = true }
+            else if nonempty.contains(where: { aliases.contains($0) }) { headerStatus = .ambiguous; hasHeader = false }
+            else { headerStatus = .absent; hasHeader = false }
         }
-        func finishRow() throws {
-            try finishCell()
-            defer { row = [] }
-            guard row.contains(where: { !$0.isEmpty }) else { return }
-            rowCount += 1
-            guard rowCount <= ImportService.entryLimit + 1 else { throw ImportFailure.tooLarge }
-            if headers == nil {
-                headers = row.map { field in
-                    let key = field.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\u{FEFF}"))).lowercased()
-                    return headerAliases[key] ?? key
-                }
-                hasHeader = headers!.contains(where: aliases.contains)
-                if hasHeader { return }
-            }
-            let textIndex = hasHeader ? headers!.firstIndex(where: aliases.contains)! : 0
-            func value(_ key: String) -> String { guard hasHeader, let i = headers!.firstIndex(of: key), i < row.count else { return "" }; return row[i] }
-            guard textIndex < row.count, !row[textIndex].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { issues.append("Row \(rowCount): missing text."); return }
+        if hasHeader {
+            let recognized = headers.filter { Self.knownHeaders.contains($0) }
+            guard Set(recognized).count == recognized.count else { throw ImportFailure.malformed("Duplicate CSV headers.") }
+            guard headers.contains(where: { aliases.contains($0) }) else { throw ImportFailure.malformed("CSV headers must include text, quote, body or content.") }
+        }
+        let expectedWidth = first.values.count
+        var entries: [EntryDraft] = [], issues: [String] = []
+        if headerStatus == .ambiguous { issues.append("Header detection is ambiguous. Choose whether the file has a header before importing.") }
+        var budget = DraftBudget()
+        for record in records.dropFirst(hasHeader ? 1 : 0) {
+            if record.values.count < expectedWidth { issues.append("Row \(record.line): too few columns; missing metadata was left blank.") }
+            if record.values.count > expectedWidth { issues.append("Row \(record.line): too many columns; extra values were ignored.") }
+            let textIndex = hasHeader ? headers.firstIndex(where: { aliases.contains($0) })! : 0
+            func value(_ key: String) -> String { guard hasHeader, let index = headers.firstIndex(of: key), index < record.values.count else { return "" }; return record.values[index] }
+            guard textIndex < record.values.count, !record.values[textIndex].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { issues.append("Row \(record.line): missing text."); continue }
             guard entries.count < ImportService.entryLimit else { throw ImportFailure.tooLarge }
             let tags = value("tags").split(whereSeparator: { $0 == "," || $0 == ";" || $0 == "|" }).map(String.init)
-            entries.append(try budget.make(text: row[textIndex], author: value("author"), source: value("source"), tags: tags, section: value("section").isEmpty ? value("category") : value("section")))
+            entries.append(try budget.make(text: record.values[textIndex], author: value("author"), source: value("source"), tags: tags, section: value("section").isEmpty ? value("category") : value("section")))
         }
-        for c in text {
+        return (entries, issues, headerStatus)
+    }
+    private static func normalizeHeader(_ value: String, aliases: [String: String]) -> String {
+        let key = value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\u{FEFF}"))).lowercased()
+        return aliases[key] ?? key
+    }
+    private static func records(in text: String, separator: Character, maximumRecords: Int? = nil) throws -> [Record] {
+        var records: [Record] = [], row: [String] = [], cell = ""
+        var quoted = false, afterQuote = false, fieldLength = 0, processed = 0, line = 1
+        func finishCell() throws { guard row.count < 64 else { throw ImportFailure.malformed("A row has more than 64 columns.") }; row.append(cell); cell = ""; fieldLength = 0; afterQuote = false }
+        func finishRow() throws { try finishCell(); defer { row = [] }; guard row.contains(where: { !$0.isEmpty }) else { return }; records.append(Record(values: row, line: line)) }
+        for character in text {
             processed += 1; if processed % 8192 == 0 { try Task.checkCancellation() }
             if quoted {
-                if c == "\"" { quoted = false; afterQuote = true }
-                else { cell.append(c); fieldLength += 1 }
-            } else if afterQuote && c == "\"" { cell.append(c); fieldLength += 1; quoted = true; afterQuote = false }
-            else if c == separator { try finishCell() }
-            else if c == "\n" { try finishRow() }
-            else if c == "\"" && cell.isEmpty { quoted = true }
-            else if afterQuote { if !c.isWhitespace { throw ImportFailure.malformed("Unexpected character after a quoted field.") } }
-            else if c == "\"" { throw ImportFailure.malformed("Unexpected quote in CSV field.") }
-            else { cell.append(c); fieldLength += 1 }
+                if character == "\"" { quoted = false; afterQuote = true } else { cell.append(character); fieldLength += 1 }
+            } else if afterQuote && character == "\"" { cell.append(character); fieldLength += 1; quoted = true; afterQuote = false }
+            else if character == separator { try finishCell() }
+            else if character == "\n" { try finishRow(); if let maximumRecords, records.count >= maximumRecords { return records }; line += 1 }
+            else if character == "\"" && cell.isEmpty { quoted = true }
+            else if afterQuote { if !character.isWhitespace { throw ImportFailure.malformed("Unexpected character after a quoted field.") } }
+            else if character == "\"" { throw ImportFailure.malformed("Unexpected quote in CSV field.") }
+            else { cell.append(character); fieldLength += 1 }
             guard fieldLength <= ImportService.textLimit else { throw ImportFailure.malformed("A field exceeds 20,000 characters.") }
         }
         guard !quoted else { throw ImportFailure.malformed("Unclosed CSV quote.") }
         if !row.isEmpty || !cell.isEmpty { try finishRow() }
-        return (entries, issues)
+        return records
     }
 }
 
@@ -278,24 +338,38 @@ public struct JSONImporter: ContentImporter {
         guard text.utf8.count <= ImportService.byteLimit else { throw ImportFailure.tooLarge }
         var entries: [EntryDraft] = [], issues: [String] = []
         var jsonBudget = JSONResourceBudget(), draftBudget = DraftBudget()
-        func append(_ object: Any, index: Int) throws {
+        func append(_ object: Any, index: Int, location: String) throws {
             guard entries.count < ImportService.entryLimit else { throw ImportFailure.tooLarge }
             if let value = object as? String { entries.append(try draftBudget.make(text: value)); return }
-            guard let object = object as? [String: Any], let text = ["text", "quote", "body", "content"].compactMap({ object[$0] as? String }).first else {
-                issues.append("Entry \(index + 1): missing text."); return
+            guard let object = object as? [String: Any] else {
+                issues.append("\(location): expected a string or object."); return
             }
-            let tags = object["tags"] as? [String] ?? (object["tags"] as? String)?.split(separator: ",", maxSplits: 64).map(String.init) ?? []
-            let section = object["section"] as? String ?? object["category"] as? String ?? ""
-            entries.append(try draftBudget.make(text: text, author: object["author"] as? String ?? "", source: object["source"] as? String ?? "", tags: tags, section: section))
+            let aliases = Set(["text", "quote", "body", "content", "author", "source", "tags", "section", "category"])
+            var normalized: [String: Any] = [:]
+            for (key, value) in object {
+                let canonical = key.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                guard aliases.contains(canonical) else { continue }
+                guard normalized[canonical] == nil else {
+                    issues.append("\(location): duplicate keys map to \(canonical)."); return
+                }
+                normalized[canonical] = value
+            }
+            guard let text = ["text", "quote", "body", "content"].compactMap({ normalized[$0] as? String }).first else {
+                issues.append("\(location): missing text."); return
+            }
+            let tags = normalized["tags"] as? [String] ?? (normalized["tags"] as? String)?.split(separator: ",", maxSplits: 64).map(String.init) ?? []
+            let section = normalized["section"] as? String ?? normalized["category"] as? String ?? ""
+            entries.append(try draftBudget.make(text: text, author: normalized["author"] as? String ?? "", source: normalized["source"] as? String ?? "", tags: tags, section: section))
         }
         if lines {
             for (index, line) in TextLines(text: text).enumerated() {
                 guard index < ImportService.entryLimit else { throw ImportFailure.tooLarge }; try Task.checkCancellation()
+                guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
                 try jsonBudget.validate(String(line))
                 let object: Any
                 do { object = try JSONSerialization.jsonObject(with: Data(line.utf8), options: [.fragmentsAllowed]) }
                 catch { issues.append("Line \(index + 1): invalid JSON."); continue }
-                try append(object, index: index)
+                try append(object, index: index, location: "Line \(index + 1)")
             }
         } else {
             try jsonBudget.validate(text)
@@ -303,7 +377,7 @@ public struct JSONImporter: ContentImporter {
             guard let array = object as? [Any] else { throw ImportFailure.malformed("Expected a JSON array.") }
             for (index, object) in array.enumerated() {
                 if index % 256 == 0 { try Task.checkCancellation() }
-                try append(object, index: index)
+                try append(object, index: index, location: "Entry \(index + 1)")
             }
         }
         return (entries, issues)

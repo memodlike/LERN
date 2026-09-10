@@ -120,6 +120,18 @@ struct LibraryDetailsView: View {
                     if let filename = topic.originalFilename, !filename.isEmpty { LabeledContent("Original file", value: filename) }
                     if let format = topic.format, !format.isEmpty { LabeledContent("Format", value: format) }
                     if topic.warningCount > 0 { LabeledContent("Import warnings", value: topic.warningCount.formatted()) }
+                    if !topic.sourceManifest.isEmpty { LabeledContent("Sources", value: topic.sourceManifest.count.formatted()) }
+                }
+                if !topic.sourceManifest.isEmpty {
+                    Section("Import sources") {
+                        ForEach(topic.sourceManifest) { source in
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(source.filename)
+                                Text("\(source.format) · \(source.importedAt.formatted(date: .abbreviated, time: .shortened))").font(.caption).foregroundStyle(.secondary)
+                                if source.warningCount > 0 { Text("\(source.warningCount) warnings").font(.caption).foregroundStyle(.secondary) }
+                            }
+                        }
+                    }
                 }
                 Section("Dates") { LabeledContent("Created", value: topic.createdAt.formatted(date: .abbreviated, time: .shortened)); LabeledContent("Updated", value: topic.updatedAt.formatted(date: .abbreviated, time: .shortened)) }
             }

@@ -124,7 +124,7 @@ public struct LibraryBackup: Codable, Sendable {
         else { throw ImportFailure.malformed("Duplicate identifiers in backup.") }
         let ids = Set(entries.map(\.id)), topicIDs = Set(topics.map(\.id))
         guard entries.allSatisfy({ !$0.draft.text.isEmpty && $0.draft.text.count <= DataLimits.entryCharacters && $0.draft.author.count <= DataLimits.metadataCharacters && $0.draft.source.count <= DataLimits.metadataCharacters && $0.draft.section.count <= DataLimits.metadataCharacters && $0.draft.tags.count <= DataLimits.tagsPerEntry && $0.draft.tags.allSatisfy({ $0.count <= DataLimits.tagCharacters }) && $0.id == $0.draft.id }),
-              topics.allSatisfy({ ["active", "paused"].contains($0.status) && $0.name.count <= 120 && ($0.parentTopicID == nil || ($0.parentTopicID != $0.id && topicIDs.contains($0.parentTopicID!))) }),
+              topics.allSatisfy({ ["active", "paused"].contains($0.status) && $0.name.count <= DataLimits.topicNameCharacters && ($0.parentTopicID == nil || ($0.parentTopicID != $0.id && topicIDs.contains($0.parentTopicID!))) }),
               memberships.allSatisfy({ ids.contains($0.entryID) && topicIDs.contains($0.topicID) && $0.section.count <= DataLimits.metadataCharacters && $0.tags.count <= DataLimits.tagsPerEntry && $0.tags.allSatisfy({ $0.count <= DataLimits.tagCharacters }) }),
               photos.allSatisfy({ Self.safeAssetName($0.key) && $0.value.count <= DataLimits.photoBytes }) else { throw ImportFailure.malformed("Invalid entries, libraries, links or photo names.") }
         let streak = preferences.streak

@@ -35,10 +35,14 @@ import SwiftData
     public var checksum: String?
     public var updatedAt: Date?
     public var warningCount: Int?
+    public var sectionKey: String?
+    public var sourceManifestData: Data?
     public init(_ topic: TopicValue) {
         id = topic.id; name = topic.name; kind = topic.kind; createdAt = topic.createdAt
         status = topic.status; parentTopicID = topic.parentTopicID; originalFilename = topic.originalFilename
         format = topic.format; checksum = topic.checksum; updatedAt = topic.updatedAt; warningCount = topic.warningCount
+        sectionKey = topic.sectionKey
+        sourceManifestData = try? JSONEncoder().encode(topic.sourceManifest)
     }
 }
 @Model public final class StoredLink {
@@ -77,6 +81,17 @@ public enum StorageFactory {
 
 public enum ImportAction: String, CaseIterable, Sendable { case new, merge, replace }
 public struct ImportResult: Sendable { public var topic: TopicValue; public var inserted: Int; public var duplicates: Int }
+public struct LibraryCapacitySnapshot: Sendable {
+    public var entries: Int
+    public var topics: Int
+    public var memberships: Int
+    public init(entries: Int, topics: Int, memberships: Int) { self.entries = entries; self.topics = topics; self.memberships = memberships }
+}
+public func validateProjectedCapacity(_ snapshot: LibraryCapacitySnapshot) throws {
+    guard snapshot.entries <= DataLimits.entriesInLibrary else { throw ImportFailure.capacity(kind: "entries", limit: DataLimits.entriesInLibrary) }
+    guard snapshot.topics <= DataLimits.topics else { throw ImportFailure.capacity(kind: "topics", limit: DataLimits.topics) }
+    guard snapshot.memberships <= DataLimits.memberships else { throw ImportFailure.capacity(kind: "memberships", limit: DataLimits.memberships) }
+}
 
 @ModelActor public actor LibraryStore {
     private var eligibilityCache: [ContentSource: [String]] = [:]
@@ -109,6 +124,23 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     private func storedEntry(_ id: String) throws -> StoredEntry? {
         try modelContext.fetch(FetchDescriptor<StoredEntry>(predicate: #Predicate { $0.id == id })).first
     }
+    private func topicName(_ source: String) -> String {
+        String(source.trimmingCharacters(in: .whitespacesAndNewlines).prefix(DataLimits.topicNameCharacters))
+    }
+    private func sourceManifest(for topic: StoredTopic) -> [ImportSourceValue] {
+        if let data = topic.sourceManifestData,
+           let values = try? JSONDecoder().decode([ImportSourceValue].self, from: data) {
+            return values
+        }
+        guard let filename = topic.originalFilename, let format = topic.format, let checksum = topic.checksum else { return [] }
+        return [ImportSourceValue(filename: filename, format: format, checksum: checksum, warningCount: topic.warningCount ?? 0, importedAt: topic.updatedAt ?? topic.createdAt)]
+    }
+    private func validateFinalCapacity() throws {
+        let entries = try modelContext.fetchCount(FetchDescriptor<StoredEntry>())
+        let topics = try modelContext.fetchCount(FetchDescriptor<StoredTopic>())
+        let memberships = try modelContext.fetchCount(FetchDescriptor<StoredLink>())
+        try validateProjectedCapacity(LibraryCapacitySnapshot(entries: entries, topics: topics, memberships: memberships))
+    }
     public func totalCount() throws -> Int { try modelContext.fetchCount(FetchDescriptor<StoredEntry>()) }
     public func topics() throws -> [TopicValue] {
         let topics = try modelContext.fetch(FetchDescriptor<StoredTopic>(sortBy: [SortDescriptor(\.createdAt)]))
@@ -119,6 +151,13 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             value.status = topic.status ?? "active"; value.parentTopicID = topic.parentTopicID
             value.originalFilename = topic.originalFilename; value.format = topic.format; value.checksum = topic.checksum
             value.createdAt = topic.createdAt; value.updatedAt = topic.updatedAt ?? topic.createdAt; value.warningCount = topic.warningCount ?? 0
+            value.sectionKey = topic.sectionKey
+            if let data = topic.sourceManifestData,
+               let manifest = try? JSONDecoder().decode([ImportSourceValue].self, from: data) {
+                value.sourceManifest = manifest
+            } else if let filename = topic.originalFilename, let format = topic.format, let checksum = topic.checksum {
+                value.sourceManifest = [ImportSourceValue(filename: filename, format: format, checksum: checksum, warningCount: topic.warningCount ?? 0, importedAt: topic.updatedAt ?? topic.createdAt)]
+            }
             value.count = counts[id, default: 0]
             return value
         }
@@ -126,7 +165,8 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     public func createTopic(name: String, kind: String = "collection") throws -> TopicValue {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw ImportFailure.empty }
-        let topic = TopicValue(name: String(trimmed.prefix(120)), kind: kind)
+        guard try modelContext.fetchCount(FetchDescriptor<StoredTopic>()) < DataLimits.topics else { throw ImportFailure.capacity(kind: "topics", limit: DataLimits.topics) }
+        let topic = TopicValue(name: topicName(trimmed), kind: kind)
         modelContext.insert(StoredTopic(topic)); try modelContext.save(); return topic
     }
     private func makeOwnTopicIfNeeded(_ own: inout TopicValue?) throws -> TopicValue {
@@ -160,7 +200,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
     public func renameTopic(id: String, name: String) throws {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         if let topic = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first {
-            topic.name = String(name.prefix(120)); topic.updatedAt = Date()
+            topic.name = String(name.prefix(DataLimits.topicNameCharacters)); topic.updatedAt = Date()
         }
         try modelContext.save()
     }
@@ -192,12 +232,22 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         modelContext.autosaveEnabled = false
         do {
             var topic: TopicValue
-            if action != .new, let topicID, let existing = try topics().first(where: { $0.id == topicID }) { topic = existing }
-            else { topic = TopicValue(name: preview.name); modelContext.insert(StoredTopic(topic)) }
+            if action == .new {
+                guard try modelContext.fetchCount(FetchDescriptor<StoredTopic>()) < DataLimits.topics else { throw ImportFailure.capacity(kind: "topics", limit: DataLimits.topics) }
+                topic = TopicValue(name: topicName(preview.name)); modelContext.insert(StoredTopic(topic))
+            } else {
+                guard let topicID,
+                      let existing = try topics().first(where: { $0.id == topicID }) else { throw ImportFailure.targetNotFound }
+                topic = existing
+            }
             let id = topic.id
             if let stored = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == id })).first {
-                stored.updatedAt = Date(); stored.format = preview.format; stored.originalFilename = preview.filename
+                let source = ImportSourceValue(filename: preview.filename, format: preview.format, checksum: preview.checksum, warningCount: preview.malformed)
+                var manifest = action == .replace ? [] : sourceManifest(for: stored)
+                manifest.append(source)
+                stored.updatedAt = source.importedAt; stored.format = preview.format; stored.originalFilename = preview.filename
                 stored.checksum = preview.checksum; stored.warningCount = preview.malformed
+                stored.sourceManifestData = try JSONEncoder().encode(manifest)
             }
             var replacedEntryIDs = Set<String>()
             if action == .replace {
@@ -216,14 +266,13 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
             let linksByEntry = Dictionary(uniqueKeysWithValues: existingLinks.map { ($0.entryID, $0) })
             var ordinal = (existingLinks.map(\.ordinal).max() ?? -1) + 1, inserted = 0, duplicates = preview.duplicates
             let childTopics = try modelContext.fetch(FetchDescriptor<StoredTopic>()).filter { $0.parentTopicID == id }
-            var sectionTopics = Dictionary(uniqueKeysWithValues: childTopics.map { (EntryDraft.normalized($0.name), $0.id) })
+            var sectionTopics = Dictionary(uniqueKeysWithValues: childTopics.map { ($0.sectionKey ?? EntryDraft.normalized($0.name), $0.id) })
             let childIDs = Set(childTopics.map(\.id))
             let childLinks = try modelContext.fetch(FetchDescriptor<StoredLink>()).filter { childIDs.contains($0.topicID) }
             var sectionLinksByEntry = Dictionary(grouping: childLinks, by: \.entryID)
             var sectionOrdinals = Dictionary(uniqueKeysWithValues: childTopics.map { topic in
                 (topic.id, childLinks.filter { $0.topicID == topic.id }.map(\.ordinal).max() ?? -1)
             })
-            var libraryCount = try modelContext.fetchCount(FetchDescriptor<StoredEntry>())
             // Transactions keep cancellation atomic; batches bound query/temporary-object sizes.
             for start in stride(from: 0, to: preview.entries.count, by: 500) {
                 try Task.checkCancellation()
@@ -234,8 +283,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
                 for draft in batch {
                     let entryID = draft.id
                     if known.insert(entryID).inserted {
-                        guard action == .replace || libraryCount < DataLimits.entriesInLibrary else { throw ImportFailure.tooLarge }
-                        modelContext.insert(StoredEntry(EntryValue(draft: draft))); inserted += 1; libraryCount += 1
+                        modelContext.insert(StoredEntry(EntryValue(draft: draft))); inserted += 1
                     }
                     else { duplicates += 1 }
                     if linked.insert(entryID).inserted {
@@ -250,8 +298,9 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
                         let key = EntryDraft.normalized(draft.section)
                         if let existing = sectionTopics[key] { desiredSectionID = existing }
                         else {
-                            var section = TopicValue(name: draft.section, kind: "section")
+                            var section = TopicValue(name: topicName(draft.section), kind: "section")
                             section.parentTopicID = id
+                            section.sectionKey = key
                             sectionTopics[key] = section.id; sectionOrdinals[section.id] = -1
                             modelContext.insert(StoredTopic(section)); desiredSectionID = section.id
                         }
@@ -274,6 +323,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
                 }
             }
             if action == .replace { try removeOrphans(replacedEntryIDs) }
+            try validateFinalCapacity()
             try Task.checkCancellation(); try modelContext.save(); topic.count = linked.count
             return ImportResult(topic: topic, inserted: inserted, duplicates: duplicates)
         } catch { modelContext.rollback(); throw error }
@@ -326,6 +376,7 @@ public struct ImportResult: Sendable { public var topic: TopicValue; public var 
         invalidateSelection()
         let key = topicID + ":" + entryID
         guard try modelContext.fetch(FetchDescriptor<StoredLink>(predicate: #Predicate { $0.id == key })).isEmpty else { return }
+        guard try modelContext.fetchCount(FetchDescriptor<StoredLink>()) < DataLimits.memberships else { throw ImportFailure.capacity(kind: "memberships", limit: DataLimits.memberships) }
         var last = FetchDescriptor<StoredLink>(predicate: #Predicate { $0.topicID == topicID }, sortBy: [SortDescriptor(\.ordinal, order: .reverse)])
         last.fetchLimit = 1
         let ordinal = (try modelContext.fetch(last).first?.ordinal ?? -1) + 1

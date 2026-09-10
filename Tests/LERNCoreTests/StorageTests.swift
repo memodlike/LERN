@@ -142,6 +142,45 @@ import Foundation
         try await store.addToCollection(entryID: extra.id, topicID: topic)
         #expect(try await store.eligibleIDs(source: ContentSource(topicIDs: [topic])).last == extra.id)
     }
+    @Test func mergedFilesPreserveAllSourceProvenance() async throws {
+        let store = try store()
+        let first = ImportPreview(name: "Library", filename: "one.txt", format: "TXT", checksum: "a", entries: [EntryDraft(text: "One")], duplicates: 0, malformed: 1, issues: [])
+        let topic = try await store.importEntries(first).topic
+        let second = ImportPreview(name: "Library", filename: "two.csv", format: "CSV", checksum: "b", entries: [EntryDraft(text: "Two")], duplicates: 0, malformed: 0, issues: [])
+        _ = try await store.importEntries(second, action: .merge, topicID: topic.id)
+        let backup = try await store.backup()
+        #expect(backup.topics.first(where: { $0.id == topic.id })?.sourceManifest.map(\.filename) == ["one.txt", "two.csv"])
+        let restored = try self.store(); try await restored.restore(backup, merge: false)
+        #expect(try await restored.topics().first(where: { $0.id == topic.id })?.sourceManifest.count == 2)
+    }
+    @Test func importedTopicNamesAlwaysBackupValid() async throws {
+        let store = try store()
+        let sharedPrefix = String(repeating: "S", count: DataLimits.topicNameCharacters)
+        let preview = ImportPreview(name: String(repeating: "N", count: DataLimits.topicNameCharacters + 20), format: "MD", entries: [
+            EntryDraft(text: "One", section: sharedPrefix + " A"),
+            EntryDraft(text: "Two", section: sharedPrefix + " B")
+        ], duplicates: 0, malformed: 0, issues: [])
+        let topic = try await store.importEntries(preview, splitSections: true).topic
+        let children = try await store.topics().filter { $0.parentTopicID == topic.id }
+        #expect(topic.name.count == DataLimits.topicNameCharacters)
+        #expect(children.count == 2)
+        #expect(Set(children.compactMap(\.sectionKey)).count == 2)
+        let backup = try await store.backup()
+        _ = try backup.validated()
+        let restored = try self.store(); try await restored.restore(backup, merge: false)
+        #expect(try await restored.topics().filter { $0.parentTopicID == topic.id }.count == 2)
+    }
+    @Test func importTargetsFailClosedAndCapacityBoundariesAreExact() async throws {
+        let store = try store()
+        let before = try await store.topics().count
+        await #expect(throws: (any Error).self) { try await store.importEntries(preview(["new"]), action: .merge, topicID: "missing") }
+        await #expect(throws: (any Error).self) { try await store.importEntries(preview(["new"]), action: .replace, topicID: "missing") }
+        #expect(try await store.topics().count == before)
+        try validateProjectedCapacity(LibraryCapacitySnapshot(entries: DataLimits.entriesInLibrary, topics: DataLimits.topics, memberships: DataLimits.memberships))
+        #expect(throws: (any Error).self) { try validateProjectedCapacity(LibraryCapacitySnapshot(entries: DataLimits.entriesInLibrary + 1, topics: DataLimits.topics, memberships: DataLimits.memberships)) }
+        #expect(throws: (any Error).self) { try validateProjectedCapacity(LibraryCapacitySnapshot(entries: DataLimits.entriesInLibrary, topics: DataLimits.topics + 1, memberships: DataLimits.memberships)) }
+        #expect(throws: (any Error).self) { try validateProjectedCapacity(LibraryCapacitySnapshot(entries: DataLimits.entriesInLibrary, topics: DataLimits.topics, memberships: DataLimits.memberships + 1)) }
+    }
     @Test func largeLibraryBenchmark() async throws {
         guard ProcessInfo.processInfo.environment["LERN_LARGE_TEST"] == "1" else { return }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

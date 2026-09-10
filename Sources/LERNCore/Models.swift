@@ -18,11 +18,13 @@ public enum DataLimits {
     public static let tagCharacters = 256
     public static let topics = 10_000
     public static let memberships = 1_000_000
+    public static let topicNameCharacters = 120
     public static let history = 1_000_000
     public static let reminders = 100
     public static let themes = 200
     public static let presets = 100
     public static let resources = 10_000
+    public static let resourceImportBytes = 10_000_000
     public static let cursors = 10_000
     public static let mutedWords = 1_000
     public static let photos = 200
@@ -92,6 +94,24 @@ public enum WatchPayload {
     }
 }
 
+public struct ImportSourceValue: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var filename: String
+    public var format: String
+    public var checksum: String
+    public var warningCount: Int
+    public var importedAt: Date
+
+    public init(filename: String, format: String, checksum: String, warningCount: Int, importedAt: Date = Date()) {
+        self.id = UUID().uuidString
+        self.filename = filename
+        self.format = format
+        self.checksum = checksum
+        self.warningCount = warningCount
+        self.importedAt = importedAt
+    }
+}
+
 public struct TopicValue: Codable, Identifiable, Hashable, Sendable {
     public var id: String = UUID().uuidString
     public var name: String
@@ -105,9 +125,12 @@ public struct TopicValue: Codable, Identifiable, Hashable, Sendable {
     public var createdAt = Date()
     public var updatedAt = Date()
     public var warningCount = 0
+    /// Stable normalized section identity. It keeps distinct long source sections from merging when their display names share a prefix.
+    public var sectionKey: String?
+    public var sourceManifest: [ImportSourceValue] = []
     public init(name: String, kind: String = "import") { self.name = name; self.kind = kind }
     public var isPaused: Bool { status == "paused" }
-    private enum CodingKeys: String, CodingKey { case id, name, kind, count, status, parentTopicID, originalFilename, format, checksum, createdAt, updatedAt, warningCount }
+    private enum CodingKeys: String, CodingKey { case id, name, kind, count, status, parentTopicID, originalFilename, format, checksum, createdAt, updatedAt, warningCount, sectionKey, sourceManifest }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         self.init(name: try values.decode(String.self, forKey: .name), kind: try values.decodeIfPresent(String.self, forKey: .kind) ?? "import")
@@ -121,6 +144,8 @@ public struct TopicValue: Codable, Identifiable, Hashable, Sendable {
         createdAt = try values.decodeIfPresent(Date.self, forKey: .createdAt) ?? createdAt
         updatedAt = try values.decodeIfPresent(Date.self, forKey: .updatedAt) ?? updatedAt
         warningCount = try values.decodeIfPresent(Int.self, forKey: .warningCount) ?? warningCount
+        sectionKey = try values.decodeIfPresent(String.self, forKey: .sectionKey)
+        sourceManifest = try values.decodeIfPresent([ImportSourceValue].self, forKey: .sourceManifest) ?? []
     }
 }
 

@@ -12,6 +12,7 @@ struct ImportView: View {
     @State private var task: Task<Void, Never>?
     @State private var mode: TextImportMode = .automatic
     @State private var delimiter: CSVDelimiter = .automatic
+    @State private var headerMode: CSVHeaderMode = .automatic
     @State private var action: ImportAction = .new
     @State private var target = ""
     @State private var mergeFiles = false
@@ -21,12 +22,15 @@ struct ImportView: View {
     @State private var showHelp = false
     @State private var showAIHelper = false
     @State private var selectedURLs: [URL] = []
+    @State private var previewByURL: [URL: ImportPreview] = [:]
+    @State private var errorsByURL: [URL: String] = [:]
+    @State private var generation = UUID()
     var body: some View {
         Form {
             Section {
                 Label("Your files are processed locally", systemImage: "lock.shield")
                 Text("Import Markdown, TXT, CSV, TSV, JSON or JSONL. Each file becomes a topic. Up to 100 MB and 100,000 entries per file.").font(.subheadline).foregroundStyle(.secondary)
-                Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading)
+                if hasFormat("txt") { Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading) }
                 Button("Choose files", systemImage: "folder") { picker = true }.disabled(loading).accessibilityIdentifier("import.choose")
                 Button("Create a library with AI", systemImage: "sparkles") { showAIHelper = true }
                 Button("Format help", systemImage: "questionmark.circle") { showHelp = true }
@@ -40,6 +44,7 @@ struct ImportView: View {
                     LabeledContent("Malformed", value: preview.malformed.formatted())
                     if let layout = preview.detectedLayout { LabeledContent("Detected TXT layout", value: layout == .paragraphs ? "Paragraphs" : "Lines") }
                     if let delimiter = preview.detectedDelimiter { LabeledContent("Detected delimiter", value: delimiter.label) }
+                    if let header = preview.detectedHeader { LabeledContent("Detected header", value: header.label) }
                     if preview.sectionCount > 0 { LabeledContent("Sections", value: preview.sectionCount.formatted()) }
                     if preview.shortenedInNotifications > 0 { Label("\(preview.shortenedInNotifications) entries will be shortened in notifications.", systemImage: "bell.badge").font(.caption).foregroundStyle(.secondary) }
                     ForEach(Array(preview.firstFive.enumerated()), id: \.offset) { _, entry in Text(entry.text).lineLimit(4).font(.subheadline) }
@@ -49,16 +54,16 @@ struct ImportView: View {
             if !previews.isEmpty && !finished {
                 Section("Import options") {
                     Toggle("Merge files into one topic", isOn: $mergeFiles)
-                    Toggle("Make topics from Markdown sections", isOn: $splitSections)
-                    if previews.contains(where: { $0.format == "CSV" }) {
+                    if previews.contains(where: { $0.sectionCount > 0 }) { Toggle("Create topics from sections/categories", isOn: $splitSections) }
+                    if hasFormat("csv") {
                         Picker("CSV delimiter", selection: $delimiter) {
                             ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
                         }
-                        Text("Changing this option rereads selected CSV files.").font(.caption).foregroundStyle(.secondary)
                     }
+                    if hasFormat("csv") || hasFormat("tsv") { Picker("CSV/TSV header", selection: $headerMode) { Text("Detect automatically").tag(CSVHeaderMode.automatic); Text("Header row present").tag(CSVHeaderMode.present); Text("No header row").tag(CSVHeaderMode.absent) } }
                     Picker("Action", selection: $action) { Text("Import as new").tag(ImportAction.new); Text("Merge into topic").tag(ImportAction.merge); Text("Replace topic entries").tag(ImportAction.replace) }
                     if action != .new { Picker("Existing topic", selection: $target) { Text("Choose a topic").tag(""); ForEach(state.topics.filter { $0.parentTopicID == nil && $0.kind != "collection" }) { Text($0.name).tag($0.id) } } }
-                    Text("Exact duplicates already in the library reuse the original entry, keeping favorites and collections.").font(.caption).foregroundStyle(.secondary)
+                    Text("Matching entries use normalized text, author and source. Case, spacing, tags and sections do not create a new entry.").font(.caption).foregroundStyle(.secondary)
                     Button("Import entries") { commit() }.disabled(loading || (action != .new && target.isEmpty)).accessibilityIdentifier("import.commit")
                 }
             }
@@ -71,29 +76,50 @@ struct ImportView: View {
             }
             .sheet(isPresented: $showHelp) { ImportFormatHelpView() }
             .sheet(isPresented: $showAIHelper) { ImportAIHelperView() }
-            .onChange(of: delimiter) { _, _ in if !selectedURLs.isEmpty { read(selectedURLs) } }
-            .onChange(of: mode) { _, _ in if !selectedURLs.isEmpty { read(selectedURLs) } }
+            .onChange(of: delimiter) { _, _ in reparse(formats: ["csv"]) }
+            .onChange(of: headerMode) { _, _ in reparse(formats: ["csv", "tsv"]) }
+            .onChange(of: mode) { _, _ in reparse(formats: ["txt"]) }
             .onDisappear { task?.cancel() }
     }
-    private func read(_ urls: [URL]) {
-        task?.cancel(); selectedURLs = urls; previews = []; errors = []; finished = false; loading = true
+    private func hasFormat(_ format: String) -> Bool {
+        selectedURLs.contains { $0.pathExtension.lowercased() == format }
+    }
+    private func reparse(formats: Set<String>) {
+        guard !selectedURLs.isEmpty else { return }
+        read(selectedURLs, formats: formats)
+    }
+    private func read(_ urls: [URL], formats: Set<String>? = nil) {
+        task?.cancel(); selectedURLs = urls; errors = []; finished = false; loading = true
+        let current = UUID(); generation = current
+        if formats == nil { previewByURL = [:]; errorsByURL = [:]; previews = [] }
         let selectedMode = mode
         let selectedDelimiter = delimiter
+        let selectedHeaderMode = headerMode
         task = Task {
-            for url in urls {
+            var nextPreviews = previewByURL
+            var nextErrors = errorsByURL
+            for url in urls where formats == nil || formats!.contains(url.pathExtension.lowercased()) {
                 if Task.isCancelled { break }
                 let work = Task.detached(priority: .userInitiated) { () throws -> ImportPreview in
                     let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
                     let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
                     guard size <= ImportService.byteLimit else { throw ImportFailure.tooLarge }
                     let data = try Data(contentsOf: url, options: .mappedIfSafe)
-                    return try ImportService().preview(data: data, filename: url.lastPathComponent, mode: selectedMode, delimiter: selectedDelimiter)
+                    return try ImportService().preview(data: data, filename: url.lastPathComponent, mode: selectedMode, delimiter: selectedDelimiter, headerMode: selectedHeaderMode)
                 }
                 do {
                     let preview = try await withTaskCancellationHandler { try await work.value } onCancel: { work.cancel() }
-                    if !Task.isCancelled { previews.append(preview) }
-                } catch { if !Task.isCancelled { errors.append("\(url.lastPathComponent): \(error.localizedDescription)") } }
+                    guard !Task.isCancelled, generation == current else { return }
+                    nextPreviews[url] = preview; nextErrors[url] = nil
+                } catch {
+                    guard !Task.isCancelled, generation == current else { return }
+                    nextPreviews[url] = nil; nextErrors[url] = "\(url.lastPathComponent): \(error.localizedDescription)"
+                }
             }
+            guard !Task.isCancelled, generation == current else { return }
+            previewByURL = nextPreviews; errorsByURL = nextErrors
+            previews = urls.compactMap { nextPreviews[$0] }
+            errors = urls.compactMap { nextErrors[$0] }
             loading = false
         }
     }
@@ -117,6 +143,6 @@ struct ImportView: View {
         }
     }
     private var supportedTypes: [UTType] {
-        [.plainText, .commaSeparatedText, .json, .text] + ["md", "markdown", "tsv", "jsonl"].compactMap { UTType(filenameExtension: $0) }
+        ["txt", "md", "markdown", "csv", "tsv", "json", "jsonl"].compactMap { UTType(filenameExtension: $0) }
     }
 }

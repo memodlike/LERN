@@ -35,6 +35,45 @@ struct ImporterTests {
         #expect(result.malformed == 1)
         #expect(try parse("\"one\"\n{\"content\":\"two\"}\nbroken", "jsonl").malformed == 1)
     }
+    @Test func csvHeaderlessAliasFirstRow() throws {
+        let automatic = try ImportService().preview(data: Data("text\nnext".utf8), filename: "thoughts.csv")
+        #expect(automatic.entries.map(\.text) == ["text", "next"])
+        #expect(automatic.detectedHeader == .ambiguous)
+        let present = try ImportService().preview(data: Data("text\na".utf8), filename: "thoughts.csv", headerMode: .present)
+        #expect(present.entries.map(\.text) == ["a"])
+        let absent = try ImportService().preview(data: Data("text\na".utf8), filename: "thoughts.csv", headerMode: .absent)
+        #expect(absent.entries.map(\.text) == ["text", "a"])
+    }
+    @Test func csvDelimiterAmbiguityAndRaggedRowsWarn() throws {
+        let semicolon = try ImportService().preview(data: Data("text;author\nPrice 3,14;Ada".utf8), filename: "thoughts.csv")
+        #expect(semicolon.detectedDelimiter == .semicolon)
+        #expect(semicolon.entries.first?.author == "Ada")
+        let ambiguous = try ImportService().preview(data: Data("one\ntwo".utf8), filename: "thoughts.csv")
+        #expect(ambiguous.issues.contains { $0.localizedCaseInsensitiveContains("delimiter detection is ambiguous") })
+        let ragged = try ImportService().preview(data: Data("text,author,source\nOne,Ada\nTwo,Ada,Site,extra".utf8), filename: "thoughts.csv")
+        #expect(ragged.entries.count == 2)
+        #expect(ragged.issues.contains { $0.contains("too few columns") })
+        #expect(ragged.issues.contains { $0.contains("too many columns") })
+    }
+    @Test func csvDuplicateHeadersAreRejected() {
+        #expect(throws: (any Error).self) {
+            try ImportService().preview(data: Data("text,TEXT\none,two".utf8), filename: "thoughts.csv", headerMode: .present)
+        }
+    }
+    @Test func jsonKeyCaseContractAndBlankJSONLLines() throws {
+        let mixed = try ImportService().preview(data: Data(#"[{"Text":"One","AUTHOR":"Ada"}]"#.utf8), filename: "thoughts.json")
+        #expect(mixed.entries.first?.author == "Ada")
+        let collision = try ImportService().preview(data: Data(#"[{"text":"One","Text":"Two"},{"text":"Safe"}]"#.utf8), filename: "thoughts.json")
+        #expect(collision.issues.contains { $0.localizedCaseInsensitiveContains("duplicate keys") })
+        let lines = try ImportService().preview(data: Data("\n{\"text\":\"One\"}\n\nbroken".utf8), filename: "thoughts.jsonl")
+        #expect(lines.entries.map(\.text) == ["One"])
+        #expect(lines.issues == ["Line 4: invalid JSON."])
+    }
+    @Test func markdownTildeFenceRemainsLiteral() throws {
+        let preview = try ImportService().preview(data: Data("~~~swift\n# not a heading\n~~~\n# Heading\nThought".utf8), filename: "thoughts.md")
+        #expect(preview.entries.contains { $0.text.contains("# not a heading") && $0.section.isEmpty })
+        #expect(preview.entries.contains { $0.text == "Thought" && $0.section == "Heading" })
+    }
     @Test func malformedAndEmpty() {
         #expect(throws: (any Error).self) { try parse("", "txt") }
         #expect(throws: (any Error).self) { try parse("{", "json") }
