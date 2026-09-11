@@ -47,6 +47,23 @@ import LERNCore
         XCTAssertTrue(history.contains { $0.entryID == target.id && $0.kind == "opened" })
     }
 
+    func testWallpaperStyleIsIndependentFromFeedTheme() async throws {
+        let store = try library()
+        var preferences = Preferences()
+        preferences.themeID = ThemeValue.starters[0].id
+        preferences.wallpaperUsesAppTheme = false
+        preferences.wallpaperThemeID = ThemeValue.starters[1].id
+        preferences.wallpaperOverlay = 0.48
+        try await store.put("preferences", preferences)
+
+        let state = AppState(store: store)
+        await state.load()
+
+        XCTAssertEqual(state.activeTheme.id, ThemeValue.starters[0].id)
+        XCTAssertEqual(state.wallpaperTheme.id, ThemeValue.starters[1].id)
+        XCTAssertEqual(state.wallpaperTheme.overlay, 0.48)
+    }
+
     func testProfileSourceChangeAndMuteRemoveOldFeedHistory() async throws {
         let store = try library()
         let a = try ImportService().preview(data: Data("Alpha first\nAlpha second".utf8), filename: "alpha.txt")

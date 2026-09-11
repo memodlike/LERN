@@ -345,6 +345,15 @@ public struct Preferences: Codable, Sendable {
     public var feedMode: SelectionMode = .shuffle
     public var watchSource = ContentSource()
     public var wallpaperSource = ContentSource()
+    // Wallpaper styling is intentionally separate from the reading feed. Nil overlay
+    // preserves the visual output of preferences saved before this setting existed.
+    public var wallpaperThemeID = ""
+    public var wallpaperUsesAppTheme = true
+    public var wallpaperPhotoName: String?
+    public var wallpaperOverlay: Double?
+    public var wallpaperBlur: Double = 0
+    public var wallpaperFocalX: Double = 0.5
+    public var wallpaperFocalY: Double = 0.5
     public var lockSource = ContentSource()
     public var fortuneSource = ContentSource()
     public var themeID = "starter-0"
@@ -359,7 +368,7 @@ public struct Preferences: Codable, Sendable {
     public var streak = StreakState()
     public init() {}
     private enum CodingKeys: String, CodingKey {
-        case name, gender, language, feedSource, feedMode, watchSource, wallpaperSource, lockSource, fortuneSource
+        case name, gender, language, feedSource, feedMode, watchSource, wallpaperSource, wallpaperThemeID, wallpaperUsesAppTheme, wallpaperPhotoName, wallpaperOverlay, wallpaperBlur, wallpaperFocalX, wallpaperFocalY, lockSource, fortuneSource
         case themeID, themeMixIDs, themeRotation, watermark, haptics, streakReminder, showNotificationPreview
         case onboardingComplete, mutedWords, streak
     }
@@ -373,6 +382,13 @@ public struct Preferences: Codable, Sendable {
         feedMode = try values.decodeIfPresent(SelectionMode.self, forKey: .feedMode) ?? feedMode
         watchSource = try values.decodeIfPresent(ContentSource.self, forKey: .watchSource) ?? watchSource
         wallpaperSource = try values.decodeIfPresent(ContentSource.self, forKey: .wallpaperSource) ?? wallpaperSource
+        wallpaperThemeID = try values.decodeIfPresent(String.self, forKey: .wallpaperThemeID) ?? wallpaperThemeID
+        wallpaperUsesAppTheme = try values.decodeIfPresent(Bool.self, forKey: .wallpaperUsesAppTheme) ?? wallpaperUsesAppTheme
+        wallpaperPhotoName = try values.decodeIfPresent(String.self, forKey: .wallpaperPhotoName)
+        wallpaperOverlay = try values.decodeIfPresent(Double.self, forKey: .wallpaperOverlay)
+        wallpaperBlur = min(20, max(0, try values.decodeIfPresent(Double.self, forKey: .wallpaperBlur) ?? wallpaperBlur))
+        wallpaperFocalX = min(1, max(0, try values.decodeIfPresent(Double.self, forKey: .wallpaperFocalX) ?? wallpaperFocalX))
+        wallpaperFocalY = min(1, max(0, try values.decodeIfPresent(Double.self, forKey: .wallpaperFocalY) ?? wallpaperFocalY))
         lockSource = try values.decodeIfPresent(ContentSource.self, forKey: .lockSource) ?? lockSource
         fortuneSource = try values.decodeIfPresent(ContentSource.self, forKey: .fortuneSource) ?? fortuneSource
         themeID = try values.decodeIfPresent(String.self, forKey: .themeID) ?? themeID

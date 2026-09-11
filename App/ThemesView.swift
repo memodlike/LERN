@@ -13,21 +13,28 @@ struct ThemesView: View {
             VStack(alignment: .leading, spacing: 24) {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(state.themes) { theme in
-                        Button { state.preferences.themeID = theme.id; Task { await state.savePreferences() } } label: {
-                            ZStack {
-                                ThemeBackground(theme: theme)
-                                VStack(spacing: 20) { Spacer(); Text("A little room\nto think.").font(.system(.title3, design: theme.design)).multilineTextAlignment(.center); Spacer(); HStack { Text(theme.name).font(.caption.weight(.medium)); Spacer(); if state.preferences.themeID == theme.id { Image(systemName: "checkmark.circle.fill") } } }
-                                    .foregroundStyle(theme.textColor).padding(16)
-                            }.frame(height: 210).clipShape(RoundedRectangle(cornerRadius: 18))
-                        }.buttonStyle(.plain).contextMenu { Button("Edit theme") { editing = theme } }
+                        VStack(spacing: 8) {
+                            Button { state.preferences.themeID = theme.id; Task { await state.savePreferences() } } label: {
+                                ZStack {
+                                    ThemeBackground(theme: theme)
+                                    VStack(spacing: 20) { Spacer(); Text("A little room\nto think.").font(.system(.title3, design: theme.design)).multilineTextAlignment(.center); Spacer(); HStack { Text(theme.name).font(.caption.weight(.medium)); Spacer(); if state.preferences.themeID == theme.id { Image(systemName: "checkmark.circle.fill") } } }
+                                        .foregroundStyle(theme.textColor).padding(16)
+                                }.frame(height: 210).clipShape(RoundedRectangle(cornerRadius: 18))
+                            }.buttonStyle(.plain).contextMenu { Button("Edit theme") { editing = theme } }
+                            if state.preferences.themeID == theme.id { Button("Edit", systemImage: "slider.horizontal.3") { editing = theme }.font(.caption).frame(minHeight: 32) }
+                        }
                     }
+                    Button { editing = ThemeValue(name: String(localized: "My theme")) } label: {
+                        VStack(spacing: 12) { Image(systemName: "plus.circle.fill").font(.largeTitle); Text("Create a theme").font(.headline) }
+                            .frame(maxWidth: .infinity).frame(height: 210).overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [6])))
+                    }.buttonStyle(.plain).accessibilityLabel("Create a theme")
                 }
-                Button("Edit current theme", systemImage: "slider.horizontal.3") { editing = state.activeTheme }.frame(minHeight: 44)
-                Button("Create a theme", systemImage: "plus") { editing = ThemeValue(name: String(localized: "My theme")) }.frame(minHeight: 44)
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Theme Mix").font(.title2.bold())
                     Picker("Rotate themes", selection: $state.preferences.themeRotation) { Text("Fixed").tag("fixed"); Text("Every entry").tag("entry"); Text("Every day").tag("day") }.pickerStyle(.segmented)
-                    ForEach(state.themes) { theme in Toggle(theme.name, isOn: Binding(get: { state.preferences.themeMixIDs.contains(theme.id) }, set: { on in if on { state.preferences.themeMixIDs.append(theme.id) } else { state.preferences.themeMixIDs.removeAll { $0 == theme.id } }; Task { await state.savePreferences() } })) }
+                    if state.preferences.themeRotation != "fixed" {
+                        ForEach(state.themes) { theme in Toggle(theme.name, isOn: Binding(get: { state.preferences.themeMixIDs.contains(theme.id) }, set: { on in if on { state.preferences.themeMixIDs.append(theme.id) } else { state.preferences.themeMixIDs.removeAll { $0 == theme.id } }; Task { await state.savePreferences() } })) }
+                    }
                 }
             }.padding(20)
         }.navigationTitle("Themes")

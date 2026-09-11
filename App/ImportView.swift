@@ -29,10 +29,9 @@ struct ImportView: View {
         Form {
             Section {
                 Label("Your files are processed locally", systemImage: "lock.shield")
-                Text("Import Markdown, TXT, CSV, TSV, JSON or JSONL. Each file becomes a topic. Up to 100 MB and 100,000 entries per file.").font(.subheadline).foregroundStyle(.secondary)
-                if hasFormat("txt") { Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading) }
+                Text("TXT · Markdown · CSV · TSV · JSON · JSONL").font(.subheadline).foregroundStyle(.secondary)
                 Button("Choose files", systemImage: "folder") { picker = true }.disabled(loading).accessibilityIdentifier("import.choose")
-                Button("Create a library with AI", systemImage: "sparkles") { showAIHelper = true }
+                Button("Build with AI", systemImage: "sparkles") { showAIHelper = true }
                 Button("Format help", systemImage: "questionmark.circle") { showHelp = true }
             }
             if loading { Section { ProgressView("Processing on this device"); Button("Cancel import", role: .cancel) { task?.cancel() } } }
@@ -53,16 +52,15 @@ struct ImportView: View {
             }
             if !previews.isEmpty && !finished {
                 Section("Import options") {
-                    Toggle("Merge files into one topic", isOn: $mergeFiles)
-                    if previews.contains(where: { $0.sectionCount > 0 }) { Toggle("Create topics from sections/categories", isOn: $splitSections) }
-                    if hasFormat("csv") {
-                        Picker("CSV delimiter", selection: $delimiter) {
-                            ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) }
-                        }
-                    }
-                    if hasFormat("csv") || hasFormat("tsv") { Picker("CSV/TSV header", selection: $headerMode) { Text("Detect automatically").tag(CSVHeaderMode.automatic); Text("Header row present").tag(CSVHeaderMode.present); Text("No header row").tag(CSVHeaderMode.absent) } }
                     Picker("Action", selection: $action) { Text("Import as new").tag(ImportAction.new); Text("Merge into topic").tag(ImportAction.merge); Text("Replace topic entries").tag(ImportAction.replace) }
                     if action != .new { Picker("Existing topic", selection: $target) { Text("Choose a topic").tag(""); ForEach(state.topics.filter { $0.parentTopicID == nil && $0.kind != "collection" }) { Text($0.name).tag($0.id) } } }
+                    DisclosureGroup("Advanced import options") {
+                        if hasFormat("txt") { Picker("TXT layout", selection: $mode) { Text("Detect automatically").tag(TextImportMode.automatic); Text("One entry per line").tag(TextImportMode.lines); Text("Blank-separated paragraphs").tag(TextImportMode.paragraphs) }.disabled(loading) }
+                        Toggle("Merge files into one topic", isOn: $mergeFiles)
+                        if previews.contains(where: { $0.sectionCount > 0 }) { Toggle("Create topics from sections/categories", isOn: $splitSections) }
+                        if hasFormat("csv") { Picker("CSV delimiter", selection: $delimiter) { ForEach(CSVDelimiter.allCases, id: \.self) { Text($0.label).tag($0) } } }
+                        if hasFormat("csv") || hasFormat("tsv") { Picker("CSV/TSV header", selection: $headerMode) { Text("Detect automatically").tag(CSVHeaderMode.automatic); Text("Header row present").tag(CSVHeaderMode.present); Text("No header row").tag(CSVHeaderMode.absent) } }
+                    }
                     Text("Matching entries use normalized text, author and source. Case, spacing, tags and sections do not create a new entry.").font(.caption).foregroundStyle(.secondary)
                     Button("Import entries") { commit() }.disabled(loading || (action != .new && target.isEmpty)).accessibilityIdentifier("import.commit")
                 }

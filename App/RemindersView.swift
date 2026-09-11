@@ -1,5 +1,7 @@
 import SwiftUI
 import UserNotifications
+import AVFoundation
+import AudioToolbox
 import LERNCore
 
 struct RemindersView: View {
@@ -73,9 +75,8 @@ struct ReminderEditor: View {
                 if rule.notificationTitleMode == .topic { TextField("Topic title", text: topic) }
                 if rule.notificationTitleMode == .section { Text("Uses the section name stored with each entry. If there is no section, LERN uses the topic title.").font(.caption).foregroundStyle(.secondary) }
                 TextField("Symbol or emoji", text: symbol).textInputAutocapitalization(.never)
-                ColorPicker("Preview color", selection: tint, supportsOpacity: false)
                 NotificationPreview(rule: rule)
-                Text("The symbol is added to the title. iOS uses the selected LERN app icon in the notification list.").font(.caption).foregroundStyle(.secondary)
+                Text("iOS controls the final notification appearance. This preview shows only the content LERN can choose.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Schedule") {
                 Toggle("Spread across a time range", isOn: $rule.usesRange)
@@ -92,7 +93,7 @@ struct ReminderEditor: View {
                 ForEach(1...7, id: \.self) { day in Toggle(Calendar.current.weekdaySymbols[day - 1], isOn: Binding(get: { rule.weekdays.contains(day) }, set: { on in if on { rule.weekdays.append(day) } else { rule.weekdays.removeAll { $0 == day } } })) }
                 HStack { Button("Every day") { rule.weekdays = Array(1...7) }; Spacer(); Button("Weekdays") { rule.weekdays = Array(2...6) }; Spacer(); Button("Weekends") { rule.weekdays = [1, 7] } }.font(.caption).frame(minHeight: 44)
             }
-            Section { Picker("Sound", selection: $rule.sound) { Text("No sound").tag("none"); Text("System default").tag("default"); ForEach(1...3, id: \.self) { Text("Soft chime \($0)").tag("chime\($0)") } } }
+            Section("Sound") { NavigationLink { ReminderSoundPicker(selection: $rule.sound) } label: { LabeledContent("Sound", value: ReminderSoundPicker.name(for: rule.sound)) } }
             if rule.isAlarm { Section { Text("This alarm is a local notification. It follows Focus and silent-mode settings and does not behave like a critical system alarm.").font(.footnote) } }
         }.navigationTitle(rule.isAlarm ? "Morning alarm" : "Reminder group")
             .toolbar {
@@ -105,7 +106,6 @@ struct ReminderEditor: View {
     }
     private var topic: Binding<String> { Binding(get: { rule.notificationTopic ?? "" }, set: { rule.notificationTopic = String($0.prefix(DataLimits.metadataCharacters)) }) }
     private var symbol: Binding<String> { Binding(get: { rule.notificationSymbol ?? "" }, set: { rule.notificationSymbol = String($0.prefix(16)) }) }
-    private var tint: Binding<Color> { Binding(get: { Color(hex: rule.notificationTint ?? "6E60F8") }, set: { rule.notificationTint = $0.hexValue }) }
 }
 
 private struct NotificationPreview: View {
@@ -117,17 +117,73 @@ private struct NotificationPreview: View {
     var body: some View {
         let titleMode = rule.notificationTitleMode
         HStack(alignment: .top, spacing: 12) {
-            Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : "✦")
-                .font(.title2).frame(width: 42, height: 42).background(.white.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
-            VStack(alignment: .leading, spacing: 4) {
+            Group {
+                let symbol = rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                if symbol.isEmpty {
+                    Image(systemName: "app.badge").font(.title3)
+                } else {
+                    Text(symbol).font(.title3)
+                }
+            }
+                .frame(width: 38, height: 38)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("LERN").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                 if titleMode != .none { Text(titleMode == .section ? "Entry section" : topic).font(.subheadline.weight(.semibold)) }
                 Text("A short thought will appear here.").font(.subheadline).lineLimit(2)
             }
             Spacer(minLength: 0)
         }
-        .foregroundStyle(.white).padding(14)
-        .background(Color(hex: rule.notificationTint ?? "6E60F8").opacity(0.82), in: RoundedRectangle(cornerRadius: 18))
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.separator.opacity(0.6)))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Notification preview")
+        .accessibilityLabel("Notification content preview")
+    }
+}
+
+@MainActor private final class ReminderSoundPreviewer {
+    private var player: AVAudioPlayer?
+    func play(_ sound: String) {
+        stop()
+        if sound == "default" { AudioServicesPlaySystemSound(1007); return }
+        guard sound.hasPrefix("chime"), let url = Bundle.main.url(forResource: sound, withExtension: "caf") else { return }
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            player = try AVAudioPlayer(contentsOf: url)
+            player?.prepareToPlay(); player?.play()
+        } catch { player = nil }
+    }
+    func stop() { player?.stop(); player = nil }
+}
+
+private struct ReminderSoundPicker: View {
+    @Environment(AppState.self) private var state
+    @Binding var selection: String
+    @State private var previewer = ReminderSoundPreviewer()
+    private let sounds = ["none", "default", "chime1", "chime2", "chime3"]
+    var body: some View {
+        List {
+            Section {
+                ForEach(sounds, id: \.self) { sound in
+                    HStack {
+                        Button { selection = sound } label: {
+                            HStack { Text(Self.name(for: sound)); Spacer(); if selection == sound { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Selected") } }
+                        }.buttonStyle(.plain).foregroundStyle(.primary)
+                        if sound != "none" { Button { previewer.play(sound) } label: { Image(systemName: "play.circle").font(.title3) }.buttonStyle(.borderless).accessibilityLabel("Preview \(Self.name(for: sound))") }
+                    }.padding(.vertical, 4)
+                }
+            } footer: { Text("Previews are played only when you tap Play and mix with other audio.") }
+            Section("Haptics") {
+                Button("Preview haptic", systemImage: "wave.3.right") { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+                    .disabled(!state.preferences.haptics)
+                if !state.preferences.haptics { Text("Turn on Haptics in General to preview it.").font(.caption).foregroundStyle(.secondary) }
+            }
+        }.navigationTitle("Reminder sound")
+            .onDisappear { previewer.stop() }
+    }
+    static func name(for sound: String) -> String {
+        switch sound { case "none": "No sound"; case "default": "System default"; case "chime1": "Soft chime 1"; case "chime2": "Soft chime 2"; case "chime3": "Soft chime 3"; default: "System default" }
     }
 }
