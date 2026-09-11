@@ -5,13 +5,21 @@ import LERNCore
 struct ShareImageView: View {
     @Environment(AppState.self) private var state
     let entry: EntryValue
+    let wallpaperTheme: ThemeValue?
+    let wallpaperBlur: Double
+    let wallpaperFocalX: Double
+    let wallpaperFocalY: Double
     @State private var format = "square"
     @State private var image: UIImage?
     @State private var activity = false
     @State private var saving = false
     @State private var saved = false
-    init(entry: EntryValue, initialFormat: String = "square") {
+    init(entry: EntryValue, initialFormat: String = "square", wallpaperTheme: ThemeValue? = nil, wallpaperBlur: Double = 0, wallpaperFocalX: Double = 0.5, wallpaperFocalY: Double = 0.5) {
         self.entry = entry
+        self.wallpaperTheme = wallpaperTheme
+        self.wallpaperBlur = wallpaperBlur
+        self.wallpaperFocalX = wallpaperFocalX
+        self.wallpaperFocalY = wallpaperFocalY
         _format = State(initialValue: initialFormat)
     }
     var size: CGSize { switch format { case "story": CGSize(width: 432, height: 768); case "portrait": CGSize(width: 432, height: 540); case "wallpaper": CGSize(width: 430, height: 932); default: CGSize(width: 540, height: 540) } }
@@ -35,7 +43,8 @@ struct ShareImageView: View {
             .sheet(isPresented: $activity) { if let image { ActivitySheet(items: [image]) } }
     }
     private func render() {
-        let renderer = ImageRenderer(content: QuoteArtwork(entry: entry, theme: state.activeTheme, watermark: state.preferences.watermark).frame(width: size.width, height: size.height))
+        let style = format == "wallpaper" ? (wallpaperTheme ?? state.activeTheme) : state.activeTheme
+        let renderer = ImageRenderer(content: QuoteArtwork(entry: entry, theme: style, watermark: state.preferences.watermark, imageBlur: format == "wallpaper" ? wallpaperBlur : 0, focalX: format == "wallpaper" ? wallpaperFocalX : 0.5, focalY: format == "wallpaper" ? wallpaperFocalY : 0.5).frame(width: size.width, height: size.height))
         renderer.scale = 3; image = renderer.uiImage
     }
     private func save() async {

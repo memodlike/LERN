@@ -18,18 +18,22 @@ struct ProfileView: View {
                 NavigationLink("Muted Content") { EntryListScreen(title: "Muted Content", review: "muted") }
                 NavigationLink("Disliked content") { EntryListScreen(title: "Disliked content", review: "disliked") }
                 NavigationLink("Muted words") { MutedWordsView() }
+                NavigationLink("Resources / Books") { ResourcesView() }
             }
-            Section("Experience") {
+            Section("Routine") {
                 NavigationLink("Reminders") { RemindersView() }
                 Toggle("Show thought text in notifications", isOn: $state.preferences.showNotificationPreview)
+                NavigationLink("Streak") { StreakView() }
+            }
+            Section("Surfaces") {
                 NavigationLink("Home Screen Widgets") { WidgetPresetsView() }
                 NavigationLink("Lock Screen Widgets") { SurfaceSettings(surface: "lock") }
                 NavigationLink("Apple Watch") { SurfaceSettings(surface: "watch") }
-                NavigationLink("Themes") { ThemesView() }
                 NavigationLink("Wallpapers") { WallpaperView() }
+            }
+            Section("Personalize") {
+                NavigationLink("Themes") { ThemesView() }
                 NavigationLink("App Icon") { AppIconsView() }
-                NavigationLink("Streak") { StreakView() }
-                NavigationLink("Resources / Books") { ResourcesView() }
             }
             Section("General") {
                 Picker("Language", selection: $state.preferences.language) { Text("System").tag("system"); Text("English").tag("en"); Text("Русский").tag("ru") }

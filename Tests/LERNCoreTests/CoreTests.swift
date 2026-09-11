@@ -213,6 +213,22 @@ struct ScheduleTests {
         #expect(decoded.name == "Ada")
         #expect(decoded.showNotificationPreview)
     }
+    @Test func olderPreferencesKeepWallpaperLinkedToAppTheme() throws {
+        let legacy = try JSONDecoder().decode(Preferences.self, from: Data("{\"themeID\":\"starter-2\"}".utf8))
+        #expect(legacy.wallpaperUsesAppTheme)
+        #expect(legacy.wallpaperThemeID.isEmpty)
+        #expect(legacy.wallpaperOverlay == nil)
+        #expect(legacy.wallpaperBlur == 0)
+        var configured = Preferences(); configured.wallpaperUsesAppTheme = false; configured.wallpaperThemeID = "starter-3"; configured.wallpaperPhotoName = "wallpaper.jpg"; configured.wallpaperOverlay = 0.45; configured.wallpaperBlur = 8; configured.wallpaperFocalX = 0.2; configured.wallpaperFocalY = 0.8
+        let roundTrip = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(configured))
+        #expect(roundTrip.wallpaperUsesAppTheme == false)
+        #expect(roundTrip.wallpaperThemeID == "starter-3")
+        #expect(roundTrip.wallpaperPhotoName == "wallpaper.jpg")
+        #expect(roundTrip.wallpaperOverlay == 0.45)
+        #expect(roundTrip.wallpaperBlur == 8)
+        #expect(roundTrip.wallpaperFocalX == 0.2)
+        #expect(roundTrip.wallpaperFocalY == 0.8)
+    }
     @Test func notificationTitleModeNormalizesPersistedValues() throws {
         func decode(_ value: String?) throws -> ReminderRule {
             let data = value.map { Data("{\"notificationTitleMode\":\"\($0)\"}".utf8) } ?? Data("{}".utf8)
@@ -227,6 +243,10 @@ struct ScheduleTests {
         #expect(try decode(nil).notificationTitleMode == .topic)
         var rule = ReminderRule(); rule.notificationTitleMode = .section
         #expect(String(decoding: try JSONEncoder().encode(rule), as: UTF8.self).contains("\"notificationTitleMode\":\"section\""))
+    }
+    @Test func legacyNotificationTintStillDecodes() throws {
+        let rule = try JSONDecoder().decode(ReminderRule.self, from: Data("{\"notificationTint\":\"#BADA55\"}".utf8))
+        #expect(rule.notificationTint == "#BADA55")
     }
 }
 struct StreakTests {

@@ -43,6 +43,9 @@ extension ThemeValue {
 }
 struct ThemeBackground: View {
     var theme: ThemeValue
+    var imageBlur: Double = 0
+    var focalX: Double = 0.5
+    var focalY: Double = 0.5
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -53,7 +56,17 @@ struct ThemeBackground: View {
                 }
                 #if os(iOS)
                 if let name = theme.photoName, let url = SharedStore.photoURL(name), let image = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: image).resizable().scaledToFill().frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                    if focalX == 0.5 && focalY == 0.5 && imageBlur == 0 {
+                        Image(uiImage: image).resizable().scaledToFill().frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                    } else {
+                        Image(uiImage: image).resizable().scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .scaleEffect(1.08)
+                            .offset(x: (0.5 - min(1, max(0, focalX))) * geometry.size.width * 0.16,
+                                    y: (0.5 - min(1, max(0, focalY))) * geometry.size.height * 0.16)
+                            .blur(radius: min(20, max(0, imageBlur)))
+                            .clipped()
+                    }
                 }
                 #endif
                 Color.black.opacity(max(0, min(0.85, theme.overlay)))
@@ -65,9 +78,12 @@ struct QuoteArtwork: View {
     let entry: EntryValue
     let theme: ThemeValue
     var watermark = false
+    var imageBlur: Double = 0
+    var focalX: Double = 0.5
+    var focalY: Double = 0.5
     var body: some View {
         ZStack {
-            ThemeBackground(theme: theme)
+            ThemeBackground(theme: theme, imageBlur: imageBlur, focalX: focalX, focalY: focalY)
             VStack(spacing: 28) {
                 Spacer(minLength: 0)
                 Text(String(entry.draft.text.prefix(600)) + (entry.draft.text.count > 600 ? "…" : "")).font(.system(size: entry.draft.text.count > 400 ? 26 : 38, weight: theme.fontWeight, design: theme.design))

@@ -24,7 +24,8 @@ struct LibraryView: View {
                     NavigationLink { ImportView() } label: { Label("Import files", systemImage: "square.and.arrow.down") }
                     NavigationLink { EntryEditor() } label: { Label("Write a thought", systemImage: "square.and.pencil") }
                 }
-                Section("Read from") {
+                Section("Feed source") {
+                    Text("Search finds entries below. Choose a source here, then confirm before changing what the Feed reads.").font(.caption).foregroundStyle(.secondary)
                     sourceRow("All entries", symbol: "square.stack", value: ContentSource())
                     sourceRow("Favorites", symbol: "heart", value: ContentSource(favoritesOnly: true))
                     sourceRow("My Content", symbol: "pencil.line", value: ContentSource(myContentOnly: true))
@@ -37,7 +38,7 @@ struct LibraryView: View {
                     NavigationLink { SourcePicker(source: Binding(get: { source }, set: { source = $0 })) } label: { Label("Mix topics or choose a tag", systemImage: "line.3.horizontal.decrease") }
                 }
                 Section {
-                    Button("Read selected source") { Task { await state.changeFeedSource(source); dismiss() } }.accessibilityIdentifier("library.read")
+                    Button("Start reading · \(selectedSourceName)") { Task { await state.changeFeedSource(source); dismiss() } }.accessibilityIdentifier("library.read")
                     Picker("Order", selection: Binding(get: { state.preferences.feedMode }, set: { state.preferences.feedMode = $0; state.feedPast = []; state.feedPosition = -1; Task { await state.savePreferences() } })) {
                         Text("Shuffle without repeats").tag(SelectionMode.shuffle); Text("Sequential").tag(SelectionMode.sequential); Text("Random").tag(SelectionMode.random)
                     }
@@ -68,6 +69,14 @@ struct LibraryView: View {
         } message: { Text("Entries shared with other libraries stay there. Favorite entries that would otherwise be orphaned move to My Content.") }
         .task(id: LibraryQuery(source: source, search: search)) { do { try await Task.sleep(for: .milliseconds(250)); try Task.checkCancellation(); await reload() } catch {} }
         .onAppear { Task { try? await state.refreshLibrary() } }
+    }
+    private var selectedSourceName: String {
+        if source == ContentSource() { return String(localized: "All entries") }
+        if source.favoritesOnly && !source.myContentOnly && source.topicIDs.isEmpty && source.tag.isEmpty { return String(localized: "Favorites") }
+        if source.myContentOnly && !source.favoritesOnly && source.topicIDs.isEmpty && source.tag.isEmpty { return String(localized: "My Content") }
+        if source.topicIDs.count == 1, let topic = state.topics.first(where: { $0.id == source.topicIDs[0] }) { return topic.name }
+        if !source.tag.isEmpty { return source.tag }
+        return String(localized: "Custom selection")
     }
     private func sourceRow(_ title: LocalizedStringKey, symbol: String, value: ContentSource) -> some View {
         Button { source = value } label: { HStack { Label(title, systemImage: symbol); Spacer(); if source == value { Image(systemName: "checkmark") } } }.foregroundStyle(.primary)

@@ -25,6 +25,12 @@ import UserNotifications
     private var foregroundRefreshPending = false
     private var selectedFeedSource = ContentSource()
     var activeTheme: ThemeValue { themes.first { $0.id == preferences.themeID } ?? ThemeValue.starters[0] }
+    var wallpaperTheme: ThemeValue {
+        var theme = preferences.wallpaperUsesAppTheme ? activeTheme : (themes.first { $0.id == preferences.wallpaperThemeID } ?? activeTheme)
+        if let photo = preferences.wallpaperPhotoName { theme.photoName = photo }
+        if let overlay = preferences.wallpaperOverlay { theme.overlay = min(0.85, max(0, overlay)) }
+        return theme
+    }
     init(store: LibraryStore) {
         self.store = store; self.scheduler = NotificationScheduler(store: store)
         WatchBridge.shared.onFavoriteMutation = { [weak self] in await self?.contentChanged() }
