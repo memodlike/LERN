@@ -17,6 +17,24 @@ import Foundation
         #expect(try await store.entry(EntryDraft(text: "one").id)?.favorite == true)
         #expect(try await store.eligibleIDs(source: source).count == 2)
     }
+    @Test func setFlagReportsMissingEntriesAndIsIdempotent() async throws {
+        let library = try store()
+        let saved = try await library.addOwn(EntryDraft(text: "Sync target"))
+        #expect(try await library.setFlag(saved.id, flag: "favorite", value: true))
+        #expect(try await library.setFlag(saved.id, flag: "favorite", value: true))
+        #expect(try await library.entry(saved.id)?.favorite == true)
+        #expect(try await library.setFlag(String(repeating: "f", count: 64), flag: "favorite", value: true) == false)
+    }
+    @Test func multiFileProgressReportsOnlyCommittedFiles() {
+        var progress = MultiFileImportProgress()
+        var topic = TopicValue(name: "First")
+        progress.record(ImportResult(topic: topic, inserted: 3, duplicates: 1))
+        topic.name = "Second"
+        progress.record(ImportResult(topic: topic, inserted: 2, duplicates: 4))
+        #expect(progress.completedFiles == 2)
+        #expect(progress.insertedEntries == 5)
+        #expect(progress.reusedDuplicates == 5)
+    }
     @Test func reopenedSharedStoreSeesCommittedData() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -106,6 +124,7 @@ import Foundation
         let own = try await store.addOwn(EntryDraft(text: "my own"))
         #expect(try await store.page(source: ContentSource(myContentOnly: true)).first?.id == own.id)
         let backup = try await store.backup(); let restored = try self.store()
+        #expect(try backup.encodedData().count <= LibraryBackup.maximumSerializedBytes)
         try await restored.restore(backup, merge: false)
         #expect(try await restored.totalCount() == 4)
         #expect(try await restored.get("preferences", default: Preferences()).mutedWords == ["this word"])
@@ -195,9 +214,13 @@ import Foundation
             _ = try await library.importEntries(preview)
         }
         #expect(try await library.totalCount() == 100_000)
+        let storageElapsed = Date().timeIntervalSince(start)
         let searchStart = Date(); let result = try await library.page(search: "Entry 99999")
         #expect(result.count == 1)
-        print("BENCHMARK storage_100k_seconds=\(Date().timeIntervalSince(start)) search_seconds=\(Date().timeIntervalSince(searchStart))")
+        let searchElapsed = Date().timeIntervalSince(searchStart)
+        print("BENCHMARK storage_100k_seconds=\(storageElapsed) search_seconds=\(searchElapsed)")
+        #expect(storageElapsed <= 120, "storage_100k exceeded the 120-second release gate")
+        #expect(searchElapsed <= 1, "search_100k exceeded the 1-second release gate")
     }
 }
 

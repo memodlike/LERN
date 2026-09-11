@@ -113,7 +113,11 @@ struct ImporterTests {
         let text = (0..<50_000).map { "Thought number \($0) — привет" }.joined(separator: "\n")
         let start = Date(); let preview = try parse(text, "txt", mode: .lines)
         #expect(preview.entries.count == 50_000)
-        print("BENCHMARK parser_50k_seconds=\(Date().timeIntervalSince(start))")
+        let elapsed = Date().timeIntervalSince(start)
+        print("BENCHMARK parser_50k_seconds=\(elapsed)")
+        if ProcessInfo.processInfo.environment["LERN_LARGE_TEST"] == "1" {
+            #expect(elapsed <= 12, "parser_50k exceeded the 12-second regression gate")
+        }
     }
 }
 struct SelectionTests {

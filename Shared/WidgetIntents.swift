@@ -35,7 +35,7 @@ struct FavoriteEntryIntent: AppIntent {
             try await store.setFlag(entryID, flag: "favorite", value: !entry.favorite)
             SharedStore.markNotificationScheduleDirty()
         }
-        WidgetCenter.shared.reloadAllTimelines(); return .result()
+        WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget"); return .result()
     }
 }
 struct NextFortuneIntent: AppIntent {
@@ -49,7 +49,7 @@ struct NextFortuneIntent: AppIntent {
         if let preset = presets.first(where: { $0.id == presetID }), let next = try await store.next(source: preset.source, surface: "fortune." + presetID, mode: .random) {
             try await store.put("fortune.current." + presetID, next.id)
         }
-        WidgetCenter.shared.reloadAllTimelines(); return .result()
+        WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget"); return .result()
     }
 }
 #if !WIDGET_EXTENSION

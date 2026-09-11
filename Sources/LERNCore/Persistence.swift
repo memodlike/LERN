@@ -228,6 +228,15 @@ public func validateProjectedCapacity(_ snapshot: LibraryCapacitySnapshot) throw
         invalidateSelection(); try modelContext.save()
     }
     public func importEntries(_ preview: ImportPreview, action: ImportAction = .new, topicID: String? = nil, splitSections: Bool = false) throws -> ImportResult {
+        // A large, simple new library used to retain every inserted SwiftData
+        // model in one context until its final save. Bounded saves plus exact
+        // compensating cleanup keep the current-file atomicity contract while
+        // preventing the context from growing to hundreds of thousands of
+        // registered objects.
+        if action == .new, !splitSections,
+           try canUseBatchedNewImport(preview) {
+            return try importNewEntriesBatched(preview)
+        }
         invalidateSelection()
         modelContext.autosaveEnabled = false
         do {
@@ -328,6 +337,80 @@ public func validateProjectedCapacity(_ snapshot: LibraryCapacitySnapshot) throw
             return ImportResult(topic: topic, inserted: inserted, duplicates: duplicates)
         } catch { modelContext.rollback(); throw error }
     }
+    private func canUseBatchedNewImport(_ preview: ImportPreview) throws -> Bool {
+        let snapshot = LibraryCapacitySnapshot(
+            entries: try modelContext.fetchCount(FetchDescriptor<StoredEntry>()) + preview.entries.count,
+            topics: try modelContext.fetchCount(FetchDescriptor<StoredTopic>()) + 1,
+            memberships: try modelContext.fetchCount(FetchDescriptor<StoredLink>()) + preview.entries.count
+        )
+        // Fall back to the exact legacy path near a hard limit: it can account
+        // for existing duplicates without conservatively rejecting an import.
+        return snapshot.entries <= DataLimits.entriesInLibrary && snapshot.topics <= DataLimits.topics && snapshot.memberships <= DataLimits.memberships
+    }
+    private func importNewEntriesBatched(_ preview: ImportPreview) throws -> ImportResult {
+        invalidateSelection()
+        modelContext.autosaveEnabled = false
+        var topic = TopicValue(name: topicName(preview.name))
+        let topicID = topic.id
+        var insertedIDs: [String] = []
+        insertedIDs.reserveCapacity(preview.entries.count)
+        var inserted = 0, duplicates = preview.duplicates
+        do {
+            modelContext.insert(StoredTopic(topic))
+            var ordinal = 0
+            // Keep predicates below SQLite's conservative bind-variable limit,
+            // while committing a larger bounded unit to avoid a WAL checkpoint
+            // for every lookup chunk.
+            for saveStart in stride(from: 0, to: preview.entries.count, by: 5_000) {
+                let saveEnd = min(saveStart + 5_000, preview.entries.count)
+                for start in stride(from: saveStart, to: saveEnd, by: 500) {
+                    try Task.checkCancellation()
+                    let drafts = preview.entries[start..<min(start + 500, saveEnd)]
+                    let ids = drafts.map(\.id)
+                    let existing = Set(try modelContext.fetch(FetchDescriptor<StoredEntry>(predicate: #Predicate { ids.contains($0.id) })).map(\.id))
+                    for draft in drafts {
+                        if existing.contains(draft.id) { duplicates += 1 }
+                        else {
+                            modelContext.insert(StoredEntry(EntryValue(draft: draft)))
+                            inserted += 1; insertedIDs.append(draft.id)
+                        }
+                        modelContext.insert(StoredLink(MembershipValue(entryID: draft.id, topicID: topicID, ordinal: ordinal, section: draft.section, tags: draft.tags)))
+                        ordinal += 1
+                    }
+                }
+                try modelContext.save()
+            }
+            guard let storedTopic = try modelContext.fetch(FetchDescriptor<StoredTopic>(predicate: #Predicate { $0.id == topicID })).first else { throw ImportFailure.targetNotFound }
+            let source = ImportSourceValue(filename: preview.filename, format: preview.format, checksum: preview.checksum, warningCount: preview.malformed)
+            storedTopic.updatedAt = source.importedAt; storedTopic.format = preview.format; storedTopic.originalFilename = preview.filename
+            storedTopic.checksum = preview.checksum; storedTopic.warningCount = preview.malformed
+            storedTopic.sourceManifestData = try JSONEncoder().encode([source])
+            try Task.checkCancellation(); try modelContext.save()
+            topic.count = preview.entries.count
+            return ImportResult(topic: topic, inserted: inserted, duplicates: duplicates)
+        } catch {
+            let operationError = error
+            modelContext.rollback()
+            do {
+                try cleanupBatchedNewImport(topicID: topicID, insertedIDs: insertedIDs)
+            } catch {
+                // A failed cleanup is a data-integrity failure and must be visible
+                // to the caller instead of masking a partially committed import.
+                throw error
+            }
+            throw operationError
+        }
+    }
+    private func cleanupBatchedNewImport(topicID: String, insertedIDs: [String]) throws {
+        try modelContext.delete(model: StoredLink.self, where: #Predicate { $0.topicID == topicID })
+        for start in stride(from: 0, to: insertedIDs.count, by: 500) {
+            let ids = Array(insertedIDs[start..<min(start + 500, insertedIDs.count)])
+            try modelContext.delete(model: StoredEntry.self, where: #Predicate { ids.contains($0.id) })
+        }
+        try modelContext.delete(model: StoredTopic.self, where: #Predicate { $0.id == topicID })
+        try modelContext.save()
+        invalidateSelection()
+    }
     public func addOwn(_ draft: EntryDraft, replacing oldID: String? = nil) throws -> EntryValue {
         invalidateSelection()
         guard !draft.text.isEmpty, draft.text.count <= ImportService.textLimit else { throw ImportFailure.empty }
@@ -360,11 +443,15 @@ public func validateProjectedCapacity(_ snapshot: LibraryCapacitySnapshot) throw
         _ = try importEntries(preview, action: .merge, topicID: own.id)
         return try entry(draft.id) ?? EntryValue(draft: draft)
     }
-    public func setFlag(_ id: String, flag: String, value: Bool) throws {
+    /// Returns false only when the entry no longer exists. Callers that need
+    /// application-level acknowledgement, such as Watch sync, can distinguish
+    /// a terminal deletion from a persistence failure.
+    @discardableResult public func setFlag(_ id: String, flag: String, value: Bool) throws -> Bool {
         invalidateSelection()
-        guard let item = try storedEntry(id) else { return }
-        switch flag { case "favorite": item.favorite = value; case "disliked": item.disliked = value; case "muted": item.muted = value; default: return }
+        guard let item = try storedEntry(id) else { return false }
+        switch flag { case "favorite": item.favorite = value; case "disliked": item.disliked = value; case "muted": item.muted = value; default: return false }
         try modelContext.save()
+        return true
     }
     public func deleteEntry(_ id: String) throws {
         invalidateSelection()

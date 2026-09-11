@@ -2,20 +2,28 @@ import SwiftUI
 import WatchConnectivity
 import WidgetKit
 import LERNCore
+import os
 
 @MainActor @Observable final class WatchLibrary: NSObject, WCSessionDelegate {
     var entries: [EntryValue] = []
     var index = 0
     var current: EntryValue? { entries.indices.contains(index) ? entries[index] : nil }
     private let defaults = UserDefaults(suiteName: Product.appGroup) ?? .standard
-    private var pendingFavorites: [String: Bool] = [:]
+    private var pendingFavorites = PendingFavoriteMutations()
+    private let logger = Logger(subsystem: "com.memodlike.lern", category: "watch.favoriteSync")
     override init() {
         super.init()
         if let data = defaults.data(forKey: "watch.entries"), data.count < 60_000,
            let saved = WatchPayload.decodeEntries(data, version: defaults.object(forKey: "watch.entries.version") as? Int) { entries = saved }
         index = entries.indices.contains(defaults.integer(forKey: "watch.index")) ? defaults.integer(forKey: "watch.index") : 0
-        pendingFavorites = defaults.dictionary(forKey: "watch.pendingFavorites") as? [String: Bool] ?? [:]
-        for position in entries.indices { if let favorite = pendingFavorites[entries[position].id] { entries[position].favorite = favorite } }
+        if let data = defaults.data(forKey: "watch.pendingFavoriteMutations"),
+           let pending = try? JSONDecoder().decode(PendingFavoriteMutations.self, from: data) {
+            pendingFavorites = pending
+        } else if let legacy = defaults.dictionary(forKey: "watch.pendingFavorites") as? [String: Bool] {
+            pendingFavorites = PendingFavoriteMutations(legacy.map { FavoriteMutation(entryID: $0.key, desiredFavorite: $0.value) })
+            defaults.removeObject(forKey: "watch.pendingFavorites")
+        }
+        entries = pendingFavorites.applying(to: entries)
         persist()
         if WCSession.isSupported() { WCSession.default.delegate = self; WCSession.default.activate() }
     }
@@ -23,8 +31,8 @@ import LERNCore
     func favorite() {
         guard let entry = current else { return }
         entries[index].favorite.toggle()
-        pendingFavorites[entry.id] = entries[index].favorite
-        defaults.set(pendingFavorites, forKey: "watch.pendingFavorites")
+        _ = pendingFavorites.replace(entryID: entry.id, desiredFavorite: entries[index].favorite)
+        savePendingFavorites()
         persist(); flushFavorites()
     }
     private func persist() {
@@ -34,10 +42,21 @@ import LERNCore
         defaults.set(index, forKey: "watch.index")
         WidgetCenter.shared.reloadAllTimelines()
     }
+    private func savePendingFavorites() {
+        guard !pendingFavorites.isEmpty else {
+            defaults.removeObject(forKey: "watch.pendingFavoriteMutations")
+            return
+        }
+        guard let data = try? JSONEncoder().encode(pendingFavorites) else { return }
+        defaults.set(data, forKey: "watch.pendingFavoriteMutations")
+    }
     private func flushFavorites() {
         guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
-        for (id, favorite) in pendingFavorites { WCSession.default.transferUserInfo(["favoriteID": id, "favorite": favorite]) }
-        pendingFavorites = [:]; defaults.removeObject(forKey: "watch.pendingFavorites")
+        let outstanding = Set(WCSession.default.outstandingUserInfoTransfers.compactMap { $0.userInfo["favoriteMutationID"] as? String })
+        for mutation in pendingFavorites.values where !outstanding.contains(mutation.mutationID) {
+            guard let data = try? JSONEncoder().encode(mutation) else { continue }
+            WCSession.default.transferUserInfo(["favoriteMutationID": mutation.mutationID, "favoriteMutation": data])
+        }
     }
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         guard activationState == .activated else { return }
@@ -45,23 +64,28 @@ import LERNCore
         Task { @MainActor in flushFavorites() }
     }
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) { receive(applicationContext) }
-    nonisolated func session(_ session: WCSession, didFinish userInfoTransfer: WCSessionUserInfoTransfer, error: Error?) {
-        guard error != nil, let id = userInfoTransfer.userInfo["favoriteID"] as? String,
-              let favorite = userInfoTransfer.userInfo["favorite"] as? Bool else { return }
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor in flushFavorites() }
+    }
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        guard let data = userInfo["favoriteAck"] as? Data,
+              let ack = try? JSONDecoder().decode(FavoriteAck.self, from: data), ack.isValid() else { return }
         Task { @MainActor in
-            guard pendingFavorites[id] == nil,
-                  entries.first(where: { $0.id == id })?.favorite == favorite else { return }
-            pendingFavorites[id] = favorite
-            defaults.set(pendingFavorites, forKey: "watch.pendingFavorites")
+            if pendingFavorites.acknowledge(ack) { savePendingFavorites() }
         }
+    }
+    nonisolated func session(_ session: WCSession, didFinish userInfoTransfer: WCSessionUserInfoTransfer, error: Error?) {
+        // A successful transfer only means WatchConnectivity accepted delivery;
+        // durable pending state is cleared exclusively by FavoriteAck.
+        if let error { logger.error("favorite transfer failed: \(String(describing: type(of: error)), privacy: .public)") }
     }
     nonisolated private func receive(_ context: [String: Any]) {
         guard let data = context["entries"] as? Data, data.count < 60_000 else { return }
         Task { @MainActor in
             guard var entries = WatchPayload.decodeEntries(data, version: context["version"] as? Int) else { return }
             let previousID = current?.id
-            for position in entries.indices { if let favorite = pendingFavorites[entries[position].id] { entries[position].favorite = favorite } }
-            self.entries = entries
+            self.entries = pendingFavorites.applying(to: entries)
             index = entries.firstIndex(where: { $0.id == previousID }) ?? 0
             persist()
         }

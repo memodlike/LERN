@@ -2,6 +2,7 @@ import Foundation
 import WatchConnectivity
 import LERNCore
 import WidgetKit
+import os
 
 @MainActor final class WatchBridge: NSObject, WCSessionDelegate {
     static let shared = WatchBridge()
@@ -11,6 +12,7 @@ import WidgetKit
     private(set) var lastSuccessfulSync: Date?
     private(set) var syncedCount = 0
     private(set) var lastSyncError: String?
+    private let logger = Logger(subsystem: "com.memodlike.lern", category: "watch.favoriteSync")
     var onFavoriteMutation: (@MainActor () async -> Void)?
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -71,19 +73,30 @@ import WidgetKit
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) { session.activate() }
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        guard let id = userInfo["favoriteID"] as? String, id.utf8.count == 64,
-              id.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
-              let favorite = userInfo["favorite"] as? Bool else { return }
+        guard let data = userInfo["favoriteMutation"] as? Data,
+              let mutation = try? JSONDecoder().decode(FavoriteMutation.self, from: data),
+              mutation.isValid() else {
+            Logger(subsystem: "com.memodlike.lern", category: "watch.favoriteSync").error("rejected invalid favorite mutation payload")
+            return
+        }
         Task { @MainActor in
             do {
                 let library: LibraryStore
                 if let store = self.store { library = store } else { library = try SharedStore.open() }
-                try await library.setFlag(id, flag: "favorite", value: favorite)
-                WidgetCenter.shared.reloadAllTimelines()
-                if let onFavoriteMutation { await onFavoriteMutation() }
-                else { SharedStore.markNotificationScheduleDirty() }
-                await retry()
-            } catch {}
+                let applied = try await library.setFlag(mutation.entryID, flag: "favorite", value: mutation.desiredFavorite)
+                let result: FavoriteMutationResult = applied ? .applied : .rejectedMissingEntry
+                let ack = FavoriteAck(mutationID: mutation.mutationID, entryID: mutation.entryID, result: result)
+                guard let ackData = try? JSONEncoder().encode(ack) else { return }
+                session.transferUserInfo(["favoriteAck": ackData])
+                if applied {
+                    WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget")
+                    if let onFavoriteMutation { await onFavoriteMutation() }
+                    else { SharedStore.markNotificationScheduleDirty() }
+                    await retry()
+                }
+            } catch {
+                self.logger.error("favorite mutation persistence failed: \(String(describing: type(of: error)), privacy: .public)")
+            }
         }
     }
 }
