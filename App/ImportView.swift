@@ -124,19 +124,29 @@ struct ImportView: View {
     private func commit() {
         loading = true; errors = []
         task = Task {
+            var progress = MultiFileImportProgress()
+            var currentFilename = ""
             do {
-                var inserted = 0, duplicates = 0
                 var destination: String? = target.isEmpty ? nil : target
                 for (index, preview) in previews.enumerated() {
                     try Task.checkCancellation()
+                    currentFilename = preview.filename.isEmpty ? preview.name : preview.filename
                     let useAction = (mergeFiles || action != .new) && index > 0 ? ImportAction.merge : action
                     let result = try await state.store.importEntries(preview, action: useAction, topicID: destination, splitSections: splitSections)
                     if mergeFiles || action != .new { destination = result.topic.id }
-                    inserted += result.inserted; duplicates += result.duplicates
+                    progress.record(result)
                 }
                 await state.contentChanged(); finished = true
-                summary = String(localized: "Imported \(inserted) entries. Reused \(duplicates) duplicates.")
-            } catch { errors.append(error is CancellationError ? String(localized: "Import cancelled. Completed files remain in your library.") : error.localizedDescription) }
+                summary = String(localized: "Imported \(progress.insertedEntries) entries. Reused \(progress.reusedDuplicates) duplicates.")
+            } catch {
+                if error is CancellationError {
+                    errors.append(String(localized: "Import cancelled. Completed files remain in your library."))
+                } else if progress.completedFiles > 0 {
+                    errors.append(String(localized: "Imported \(progress.completedFiles) completed files with \(progress.insertedEntries) entries. Reused \(progress.reusedDuplicates) duplicates. \(currentFilename) could not be imported. Completed files were preserved."))
+                } else {
+                    errors.append(error.localizedDescription)
+                }
+            }
             loading = false
         }
     }

@@ -56,3 +56,13 @@
 - Оставить приложение закрытым более 24 часов, затем проверить best-effort BGAppRefresh. Не считать время запуска гарантированным.
 - Изменить или удалить группу/запись, изменить избранное из Widget и Apple Watch, затем открыть приложение и убедиться, что устаревший identifier удалён из pending.
 - Проверить private preview: текст записи не показывается на lock screen, а касание открывает точную запись. Проверить `chime1.caf`, `chime2.caf` и `chime3.caf` на подписанном устройстве.
+
+## Apple Watch favorite sync: paired-device release gate
+
+**Watch build: automated. Watch sync state machine: automated. Real `transferUserInfo` transport: paired-device verification required.** Do not mark the following scenarios as verified from a simulator-only run.
+
+- Disable connectivity on the Watch, favorite an entry, reconnect, and confirm the two devices converge.
+- Kill or suspend the iPhone, favorite an entry on the Watch, then confirm the mutation eventually commits.
+- Kill and relaunch the Watch before the ACK arrives; confirm its pending mutation survives and later clears only after the ACK.
+- Toggle the same entry twice quickly; confirm the final desired state wins even when the first ACK arrives last.
+- Delete an entry on iPhone while Watch holds an older snapshot; confirm the Watch receives terminal missing-entry handling and does not retry forever.

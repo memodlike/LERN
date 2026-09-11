@@ -2,6 +2,9 @@ import SwiftUI
 import WidgetKit
 import AppIntents
 import LERNCore
+import os
+
+private let widgetLogger = Logger(subsystem: "com.memodlike.lern", category: "widget.timeline")
 
 struct QuoteTimelineEntry: TimelineEntry {
     let date: Date
@@ -42,7 +45,10 @@ struct QuoteProvider: AppIntentTimelineProvider {
                 value = try await store.next(source: preset.source, surface: "widget." + preset.id, mode: preset.mode)
             }
             return Entry(date: Date(), entry: value, theme: themes.first { $0.id == preset.themeID } ?? themes.first ?? ThemeValue.starters[0], preset: preset, streak: prefs.streak)
-        } catch { return Entry(date: Date()) }
+        } catch {
+            widgetLogger.error("timeline fallback kind=LERNQuoteWidget operation=load error=\(String(describing: type(of: error)), privacy: .public)")
+            return Entry(date: Date())
+        }
     }
 }
 struct QuoteWidgetView: View {

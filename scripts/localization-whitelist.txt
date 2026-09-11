@@ -1,0 +1,3 @@
+# Exact String Catalog keys that deliberately remain language-neutral.
+# Add a key only with a reviewable reason in the same change.
+LERN

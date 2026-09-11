@@ -55,6 +55,9 @@ final class LERNUITests: XCTestCase {
     @MainActor func testRussianAndLargeText() throws {
         let app = application(language: "ru", largeText: true)
         XCTAssertTrue(app.buttons["Импорт файлов"].waitForExistence(timeout: 20))
+        let localizedEmptyState = "Импортируйте файл или запишите мысль, чтобы начать."
+        XCTAssertTrue(app.staticTexts[localizedEmptyState].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Import a file or write a thought to begin."].exists)
         capture(app, "Russian large text")
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }

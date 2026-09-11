@@ -96,7 +96,7 @@ import UserNotifications
         }
         do {
             try await store.put("preferences", preferences)
-            if reloadWidgets { WidgetCenter.shared.reloadAllTimelines() }
+            if reloadWidgets { WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget") }
             if notificationImpact {
                 let reconciled = await scheduler.replenish()
                 if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
@@ -119,7 +119,7 @@ import UserNotifications
             }
             let reconciled = await scheduler.replenish()
             if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
-            WidgetCenter.shared.reloadAllTimelines()
+            WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget")
             await WatchBridge.shared.update(store: store, source: preferences.watchSource)
         } catch { self.error = error.localizedDescription }
     }

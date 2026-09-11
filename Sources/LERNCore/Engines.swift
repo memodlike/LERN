@@ -101,6 +101,8 @@ private extension Array {
 }
 
 public struct LibraryBackup: Codable, Sendable {
+    /// Keep export and restore on the same compatibility contract.
+    public static let maximumSerializedBytes = 500_000_000
     public var version = 1
     public var createdAt = Date()
     public var entries: [EntryValue]
@@ -114,6 +116,11 @@ public struct LibraryBackup: Codable, Sendable {
     public var resources: [ResourceBook]
     public var cursors: [String: SelectionCursor]
     public var photos: [String: Data]
+    public func encodedData() throws -> Data {
+        let data = try JSONEncoder().encode(self)
+        guard data.count <= Self.maximumSerializedBytes else { throw ImportFailure.tooLarge }
+        return data
+    }
     public func validated() throws -> Self {
         guard version == 1 else { throw ImportFailure.malformed("Unsupported backup version \(version).") }
         guard entries.count <= DataLimits.entriesInLibrary, topics.count <= DataLimits.topics, memberships.count <= DataLimits.memberships, reminders.count <= DataLimits.reminders, photos.count <= DataLimits.photos else { throw ImportFailure.tooLarge }

@@ -16,7 +16,7 @@ struct WidgetPresetsView: View {
         }.navigationTitle("Widget presets")
             .sheet(item: $editing) { preset in NavigationStack { WidgetPresetEditor(preset: preset) }.environment(state) }
     }
-    private func save() { Task { do { try await state.store.put("presets", state.presets); WidgetCenter.shared.reloadAllTimelines() } catch { state.error = error.localizedDescription } } }
+    private func save() { Task { do { try await state.store.put("presets", state.presets); WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget") } catch { state.error = error.localizedDescription } } }
 }
 struct WidgetPresetEditor: View {
     @Environment(AppState.self) private var state
@@ -33,7 +33,7 @@ struct WidgetPresetEditor: View {
             Toggle("Border", isOn: $preset.border); Toggle("Show buttons", isOn: $preset.showButtons)
             Text("Medium and large widgets support favorite and open/share actions. Refresh timing is managed by iOS.").font(.footnote).foregroundStyle(.secondary)
         }.navigationTitle("Widget preset")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Save") { if let index = state.presets.firstIndex(where: { $0.id == preset.id }) { state.presets[index] = preset } else { state.presets.append(preset) }; Task { do { try await state.store.put("presets", state.presets); WidgetCenter.shared.reloadAllTimelines(); dismiss() } catch { state.error = error.localizedDescription } } }.disabled(preset.name.isEmpty) } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Save") { if let index = state.presets.firstIndex(where: { $0.id == preset.id }) { state.presets[index] = preset } else { state.presets.append(preset) }; Task { do { try await state.store.put("presets", state.presets); WidgetCenter.shared.reloadTimelines(ofKind: "LERNQuoteWidget"); dismiss() } catch { state.error = error.localizedDescription } } }.disabled(preset.name.isEmpty) } }
     }
 }
 struct SurfaceSettings: View {

@@ -4913,6 +4913,38 @@
           }
         }
       }
+    },
+    "Import a file or write a thought to begin.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import a file or write a thought to begin."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортируйте файл или запишите мысль, чтобы начать."
+          }
+        }
+      }
+    },
+    "Imported %lld completed files with %lld entries. Reused %lld duplicates. %@ could not be imported. Completed files were preserved.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported %lld completed files with %lld entries. Reused %lld duplicates. %@ could not be imported. Completed files were preserved."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортировано файлов: %lld, записей: %lld, повторов: %lld. Не удалось импортировать %@. Уже обработанные файлы сохранены."
+          }
+        }
+      }
     }
   }
 }

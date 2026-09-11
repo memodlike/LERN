@@ -52,18 +52,18 @@ struct BackupView: View {
                 return output
             }.value
             let backup = try await state.store.backup(photos: photos)
-            document = BackupDocument(data: try await Task.detached { try JSONEncoder().encode(backup) }.value); exporting = true
+            document = BackupDocument(data: try await Task.detached { try backup.encodedData() }.value); exporting = true
         } catch { state.error = error.localizedDescription }
     }
     private func read(_ url: URL) async {
         busy = true; defer { busy = false }
         do { preview = try await Task.detached { () throws -> LibraryBackup in
             let scoped = url.startAccessingSecurityScopedResource(); defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= 500_000_000 else { throw ImportFailure.tooLarge }
+            guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= LibraryBackup.maximumSerializedBytes else { throw ImportFailure.tooLarge }
             let data = try Data(contentsOf: url, options: .mappedIfSafe)
-            guard data.count <= 500_000_000, let text = String(data: data, encoding: .utf8) else { throw ImportFailure.tooLarge }
+            guard data.count <= LibraryBackup.maximumSerializedBytes else { throw ImportFailure.tooLarge }
             var budget = JSONResourceBudget(maxTokens: 8_000_000, maxContainerItems: 1_000_000, maxNestedContainerItems: 1_000_000, maxStringBytes: 28_000_000)
-            try budget.validate(text)
+            try budget.validate(data)
             return try JSONDecoder().decode(LibraryBackup.self, from: data).validated()
         }.value } catch { state.error = error.localizedDescription }
     }

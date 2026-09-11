@@ -52,6 +52,20 @@ public struct ImportPreview: Sendable {
     public var sectionCount: Int { Set(entries.map { EntryDraft.normalized($0.section) }.filter { !$0.isEmpty }).count }
     public var shortenedInNotifications: Int { entries.filter { $0.text.count > NotificationBodyLimit.characters }.count }
 }
+/// Tracks multi-file progress without changing the existing per-file atomic
+/// import contract. The caller can accurately disclose preserved work if a
+/// later file fails.
+public struct MultiFileImportProgress: Sendable, Equatable {
+    public private(set) var completedFiles = 0
+    public private(set) var insertedEntries = 0
+    public private(set) var reusedDuplicates = 0
+    public init() {}
+    public mutating func record(_ result: ImportResult) {
+        completedFiles += 1
+        insertedEntries += result.inserted
+        reusedDuplicates += result.duplicates
+    }
+}
 public enum NotificationBodyLimit { public static let characters = 500 }
 public protocol ContentImporter: Sendable {
     var extensions: [String] { get }
@@ -395,7 +409,10 @@ public struct JSONResourceBudget: Sendable {
         self.maxTokens = maxTokens; self.maxContainerItems = maxContainerItems
         self.maxNestedContainerItems = maxNestedContainerItems; self.maxStringBytes = maxStringBytes
     }
-    public mutating func validate(_ text: String) throws {
+    public mutating func validate(_ text: String) throws { try validate(Data(text.utf8)) }
+    /// Validate UTF-8 JSON bytes before decoding, avoiding a second full String
+    /// allocation for large backup preflight.
+    public mutating func validate(_ data: Data) throws {
         var containers: [Int] = [], inString = false, escaped = false, inPrimitive = false, stringBytes = 0, processed = 0
         func startToken() throws {
             guard tokens < maxTokens else { throw ImportFailure.tooLarge }
@@ -407,7 +424,7 @@ public struct JSONResourceBudget: Sendable {
                 containers[index] += 1
             }
         }
-        for byte in text.utf8 {
+        for byte in data {
             processed += 1; if processed % 8192 == 0 { try Task.checkCancellation() }
             if inString {
                 if byte == 34 && !escaped { inString = false; continue }
