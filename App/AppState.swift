@@ -161,16 +161,21 @@ import UserNotifications
         preferences.feedSource = source; selectedFeedSource = source; feedPast = []; feedPosition = -1; current = nil
         await savePreferences(); await next()
     }
-    func open(_ id: String, kind: String = "viewed") async {
+    enum RouteOpenResult: Equatable { case opened, missing, failed }
+    func openRoute(_ id: String, kind: String = "viewed") async -> RouteOpenResult {
         do {
-            guard let value = try await store.entry(id) else { notice = String(localized: "This entry is no longer in your library."); return }
+            guard let value = try await store.entry(id) else { notice = String(localized: "This entry is no longer in your library."); return .missing }
             current = value; feedPast.append(value)
             if feedPast.count > 100 { feedPast.removeFirst() }
             feedPosition = feedPast.count - 1
             preferences.streak.read(on: Date())
             try await store.put("preferences", preferences)
             try await store.record(id, kind: kind); sheet = nil
-        } catch { self.error = error.localizedDescription }
+            return .opened
+        } catch { self.error = error.localizedDescription; return .failed }
+    }
+    @discardableResult func open(_ id: String, kind: String = "viewed") async -> Bool {
+        await openRoute(id, kind: kind) == .opened
     }
     func flag(_ item: EntryValue, _ flag: String, _ value: Bool) async {
         do {

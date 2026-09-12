@@ -15,7 +15,7 @@ import BackgroundTasks
                     FeedView().environment(state)
                         .environment(\.locale, state.preferences.language == "system" ? .current : Locale(identifier: state.preferences.language))
                         .task { delegate.state = state; await state.load(); await delegate.deliverPendingResponses() }
-                        .onOpenURL { url in Task { await route(url, state: state) } }
+                        .onOpenURL { url in Task { await delegate.receive(url: url) } }
                         .onChange(of: phase) { _, next in if next == .active { Task { await state.refreshOnForeground(); await delegate.deliverPendingResponses() } } }
                         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in Task { await state.scheduler.replenish() } }
                         .alert("Something needs attention", isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })) { Button("OK") { state.error = nil } } message: { Text(state.error ?? "") }
@@ -29,19 +29,14 @@ import BackgroundTasks
         do { state = AppState(store: try SharedStore.open()) }
         catch { startupError = error.localizedDescription }
     }
-    private func route(_ url: URL, state: AppState) async {
-        guard url.scheme == Product.scheme else { return }
-        if url.host == "entry", let id = url.pathComponents.last, id.count == 64 { await state.open(id, kind: "opened"); if URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains(where: { $0.name == "share" }) == true { state.sheet = .share } }
-        else if url.host == "library" { state.sheet = .library }
-        await state.scheduler.replenish()
-    }
+
 }
 
 @MainActor final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     static let backgroundRefreshIdentifier = "app.lern.local.notification-refresh"
     weak var state: AppState?
-    private var pendingResponses: [(entryID: String, planID: String)] = []
-    private var deliveringResponse = false
+    private var pendingRoutes = PendingAppRoutes()
+    private var deliveringRoutes = false
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
@@ -71,23 +66,45 @@ import BackgroundTasks
         task.expirationHandler = { work.cancel() }
     }
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard let id = response.notification.request.content.userInfo["entryID"] as? String,
-              id.utf8.count == 64, id.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }),
-              response.notification.request.identifier.hasPrefix("lern.") else { return }
-        let planID = response.notification.request.identifier
-        await receive(entryID: id, planID: planID)
+        let request = response.notification.request
+        guard let route = AppRoute.notification(userInfo: request.content.userInfo, requestID: request.identifier, category: request.content.categoryIdentifier, actionIdentifier: response.actionIdentifier) else { return }
+        await receive(route)
+    }
+    func receive(url: URL) async {
+        guard let route = AppRoute.url(url) else { return }
+        await receive(route)
     }
     func receive(entryID: String, planID: String) async {
-        pendingResponses.append((entryID, planID))
+        guard FavoriteMutation.isEntryID(entryID), planID.hasPrefix("lern.") else { return }
+        await receive(.entry(id: entryID, planID: planID, share: false))
+    }
+    func receive(_ route: AppRoute) async {
+        pendingRoutes.enqueue(route)
         await deliverPendingResponses()
     }
     func deliverPendingResponses() async {
-        guard let state, state.loaded, !deliveringResponse else { return }
-        deliveringResponse = true; defer { deliveringResponse = false }
-        while !pendingResponses.isEmpty {
-            let response = pendingResponses.removeFirst()
-            await state.scheduler.opened(response.planID)
-            await state.open(response.entryID, kind: "opened")
+        guard let state, state.loaded, !deliveringRoutes else { return }
+        deliveringRoutes = true; defer { deliveringRoutes = false }
+        while let route = pendingRoutes.dequeue() {
+            switch route {
+            case let .entry(id, planID, share):
+                switch await state.openRoute(id, kind: "opened") {
+                case .opened:
+                    pendingRoutes.complete(route)
+                    if let planID { await state.scheduler.opened(planID) }
+                    if share { state.sheet = .share }
+                case .missing:
+                    // A deleted entry is terminal; fall back to the normal feed.
+                    pendingRoutes.complete(route)
+                case .failed:
+                    // Preserve the route for a later foreground/ready attempt.
+                    pendingRoutes.retry(route)
+                    return
+                }
+            case .library:
+                pendingRoutes.complete(route)
+                state.sheet = .library
+            }
         }
         await state.scheduler.replenish()
     }

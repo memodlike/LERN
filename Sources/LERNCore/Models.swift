@@ -337,6 +337,25 @@ public struct StreakState: Codable, Equatable, Sendable {
         longest = max(longest, current); lastDay = day
     }
 }
+public enum LogoVariant: String, CaseIterable, Codable, Sendable {
+    case fold, openPages, quoteSpark, bookmarkCut, orbit, portal, prism, flow, stack, focus
+    case loop, northStar, seed, steps, link, openFrame, pulse, facet, window, glyph
+
+    public static let fallback: LogoVariant = .fold
+    public var displayName: String {
+        switch self {
+        case .fold: "Fold"; case .openPages: "Open Pages"; case .quoteSpark: "Quote Spark"; case .bookmarkCut: "Bookmark Cut"; case .orbit: "Orbit"
+        case .portal: "Portal"; case .prism: "Prism"; case .flow: "Flow"; case .stack: "Stack"; case .focus: "Focus"
+        case .loop: "Loop"; case .northStar: "North Star"; case .seed: "Seed"; case .steps: "Steps"; case .link: "Link"
+        case .openFrame: "Open Frame"; case .pulse: "Pulse"; case .facet: "Facet"; case .window: "Window"; case .glyph: "Glyph"
+        }
+    }
+}
+
+public enum GlassAppearance: String, CaseIterable, Codable, Sendable {
+    case automatic, regular, clear, off
+}
+
 public struct Preferences: Codable, Sendable {
     public var name = ""
     public var gender = ""
@@ -360,6 +379,13 @@ public struct Preferences: Codable, Sendable {
     public var themeMixIDs: [String] = []
     public var themeRotation = "fixed"
     public var watermark = false
+    // In-app identity is independent from predeclared Home Screen icon assets.
+    public var logoVariantID = LogoVariant.fallback.rawValue
+    public var logoPrimaryColor = ""
+    public var logoAccentColor = ""
+    public var glassAppearance = GlassAppearance.automatic.rawValue
+    public var glassTintColor = ""
+    public var glassIntensity: Double = 0.35
     public var haptics = true
     public var streakReminder = false
     public var showNotificationPreview = true
@@ -369,7 +395,7 @@ public struct Preferences: Codable, Sendable {
     public init() {}
     private enum CodingKeys: String, CodingKey {
         case name, gender, language, feedSource, feedMode, watchSource, wallpaperSource, wallpaperThemeID, wallpaperUsesAppTheme, wallpaperPhotoName, wallpaperOverlay, wallpaperBlur, wallpaperFocalX, wallpaperFocalY, lockSource, fortuneSource
-        case themeID, themeMixIDs, themeRotation, watermark, haptics, streakReminder, showNotificationPreview
+        case themeID, themeMixIDs, themeRotation, watermark, logoVariantID, logoPrimaryColor, logoAccentColor, glassAppearance, glassTintColor, glassIntensity, haptics, streakReminder, showNotificationPreview
         case onboardingComplete, mutedWords, streak
     }
     public init(from decoder: Decoder) throws {
@@ -395,11 +421,23 @@ public struct Preferences: Codable, Sendable {
         themeMixIDs = try values.decodeIfPresent([String].self, forKey: .themeMixIDs) ?? themeMixIDs
         themeRotation = try values.decodeIfPresent(String.self, forKey: .themeRotation) ?? themeRotation
         watermark = try values.decodeIfPresent(Bool.self, forKey: .watermark) ?? watermark
+        let decodedLogoID = try values.decodeIfPresent(String.self, forKey: .logoVariantID) ?? logoVariantID
+        logoVariantID = LogoVariant(rawValue: decodedLogoID)?.rawValue ?? LogoVariant.fallback.rawValue
+        logoPrimaryColor = Self.validHex(try values.decodeIfPresent(String.self, forKey: .logoPrimaryColor)) ?? ""
+        logoAccentColor = Self.validHex(try values.decodeIfPresent(String.self, forKey: .logoAccentColor)) ?? ""
+        let decodedGlass = try values.decodeIfPresent(String.self, forKey: .glassAppearance) ?? glassAppearance
+        glassAppearance = GlassAppearance(rawValue: decodedGlass)?.rawValue ?? GlassAppearance.automatic.rawValue
+        glassTintColor = Self.validHex(try values.decodeIfPresent(String.self, forKey: .glassTintColor)) ?? ""
+        glassIntensity = min(1, max(0, try values.decodeIfPresent(Double.self, forKey: .glassIntensity) ?? glassIntensity))
         haptics = try values.decodeIfPresent(Bool.self, forKey: .haptics) ?? haptics
         streakReminder = try values.decodeIfPresent(Bool.self, forKey: .streakReminder) ?? streakReminder
         showNotificationPreview = try values.decodeIfPresent(Bool.self, forKey: .showNotificationPreview) ?? showNotificationPreview
         onboardingComplete = try values.decodeIfPresent(Bool.self, forKey: .onboardingComplete) ?? onboardingComplete
         mutedWords = try values.decodeIfPresent([String].self, forKey: .mutedWords) ?? mutedWords
         streak = try values.decodeIfPresent(StreakState.self, forKey: .streak) ?? streak
+    }
+    private static func validHex(_ value: String?) -> String? {
+        guard let value, value.count == 6, value.utf8.allSatisfy({ ($0 >= 48 && $0 <= 57) || ($0 >= 65 && $0 <= 70) || ($0 >= 97 && $0 <= 102) }) else { return nil }
+        return value.uppercased()
     }
 }

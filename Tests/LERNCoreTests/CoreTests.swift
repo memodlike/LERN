@@ -269,3 +269,28 @@ struct StreakTests {
         #expect(try JSONDecoder().decode(WidgetPreset.self, from: JSONEncoder().encode(a)) == a)
     }
 }
+
+struct AppearancePreferencesTests {
+    @Test func logoCatalogHasExactlyTwentyStableVariants() {
+        #expect(LogoVariant.allCases.count == 20)
+        #expect(Set(LogoVariant.allCases.map(\.rawValue)).count == 20)
+    }
+    @Test func legacyAndUnknownAppearanceValuesFallbackSafely() throws {
+        let legacy = try JSONDecoder().decode(Preferences.self, from: Data("{\"name\":\"Ada\"}".utf8))
+        #expect(legacy.logoVariantID == LogoVariant.fallback.rawValue)
+        #expect(legacy.glassAppearance == GlassAppearance.automatic.rawValue)
+        let malformed = try JSONDecoder().decode(Preferences.self, from: Data("{\"logoVariantID\":\"gone\",\"glassAppearance\":\"opaque\",\"logoPrimaryColor\":\"oops\",\"glassIntensity\":2}".utf8))
+        #expect(malformed.logoVariantID == LogoVariant.fallback.rawValue)
+        #expect(malformed.glassAppearance == GlassAppearance.automatic.rawValue)
+        #expect(malformed.logoPrimaryColor.isEmpty)
+        #expect(malformed.glassIntensity == 1)
+    }
+    @Test func appearancePreferencesRoundTrip() throws {
+        var value = Preferences(); value.logoVariantID = LogoVariant.orbit.rawValue; value.logoPrimaryColor = "0A84FF"; value.logoAccentColor = "FFD60A"; value.glassAppearance = GlassAppearance.clear.rawValue; value.glassTintColor = "5E5CE6"; value.glassIntensity = 0.6
+        let decoded = try JSONDecoder().decode(Preferences.self, from: JSONEncoder().encode(value))
+        #expect(decoded.logoVariantID == LogoVariant.orbit.rawValue)
+        #expect(decoded.logoPrimaryColor == "0A84FF")
+        #expect(decoded.glassAppearance == GlassAppearance.clear.rawValue)
+        #expect(decoded.glassIntensity == 0.6)
+    }
+}

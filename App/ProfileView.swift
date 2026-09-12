@@ -33,6 +33,7 @@ struct ProfileView: View {
             }
             Section("Personalize") {
                 NavigationLink("Themes") { ThemesView() }
+                NavigationLink("Logo & Glass") { AppearanceCustomizationView() }
                 NavigationLink("App Icon") { AppIconsView() }
             }
             Section("General") {
@@ -43,7 +44,7 @@ struct ProfileView: View {
                 NavigationLink("About") { Form { Text(Product.name).font(.largeTitle.bold()); Text("Your own words, always close. A private, local reading library."); Label("No account, ads or subscriptions", systemImage: "checkmark.shield"); Text("Version 1.0 · iOS 18+"); Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote) }.navigationTitle("About") }
             }
         }.navigationTitle("Your space")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(notificationImpact: false, reloadWidgets: false); await state.contentChanged(); dismiss() } } } }
+            .toolbar { ToolbarItem(placement: .principal) { LogoGlassChrome() }; ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(notificationImpact: false, reloadWidgets: false); await state.contentChanged(); dismiss() } } } }
     }
 }
 struct EntryListScreen: View {

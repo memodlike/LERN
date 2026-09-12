@@ -194,3 +194,35 @@ import LERNCore
 
     private func XCTUnwrapAsync<T>(_ value: () async throws -> T?) async throws -> T { let result = try await value(); return try XCTUnwrap(result) }
 }
+
+final class AppRouteTests: XCTestCase {
+    func testNotificationRouteAcceptsOnlyExpectedDefaultActionAndMatchingPlan() {
+        let id = String(repeating: "a", count: 64)
+        let valid = AppRoute.notification(userInfo: ["entryID": id, "planID": "lern.rule.1"], requestID: "lern.rule.1", category: "lern.learning", actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier")
+        XCTAssertEqual(valid, .entry(id: id, planID: "lern.rule.1", share: false))
+        XCTAssertNil(AppRoute.notification(userInfo: ["entryID": id, "planID": "different"], requestID: "lern.rule.1", category: "lern.learning", actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"))
+        XCTAssertNil(AppRoute.notification(userInfo: ["entryID": "bad", "planID": "lern.rule.1"], requestID: "lern.rule.1", category: "lern.learning", actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"))
+        XCTAssertNil(AppRoute.notification(userInfo: ["entryID": id, "planID": "lern.rule.1"], requestID: "lern.rule.1", category: "other", actionIdentifier: "com.apple.UNNotificationDefaultActionIdentifier"))
+    }
+    func testRouteQueueIsIdempotentAndSupportsColdStartDelivery() {
+        let id = String(repeating: "b", count: 64)
+        let route = AppRoute.entry(id: id, planID: "lern.rule.2", share: false)
+        var queue = PendingAppRoutes()
+        queue.enqueue(route); queue.enqueue(route)
+        XCTAssertEqual(queue.dequeue(), route)
+        XCTAssertNil(queue.dequeue())
+        queue.complete(route)
+        queue.enqueue(route)
+        XCTAssertNil(queue.dequeue())
+        let retry = AppRoute.entry(id: String(repeating: "c", count: 64), planID: "lern.rule.3", share: false)
+        queue.enqueue(retry)
+        XCTAssertEqual(queue.dequeue(), retry)
+        queue.retry(retry)
+        XCTAssertEqual(queue.dequeue(), retry)
+    }
+    func testURLRoutingRejectsExternalAndMalformedTargets() {
+        XCTAssertEqual(AppRoute.url(URL(string: "lern://library")!), .library)
+        XCTAssertNil(AppRoute.url(URL(string: "https://example.com/entry/anything")!))
+        XCTAssertNil(AppRoute.url(URL(string: "lern://entry/not-an-entry")!))
+    }
+}
