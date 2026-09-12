@@ -111,6 +111,7 @@ struct SettingsView: View {
                 } label: {
                     ProfileNavigationRow(title: "Reminders", subtitle: "Daily schedule and alarms", icon: "bell.fill", iconColor: .red)
                 }
+                .accessibilityIdentifier("Reminders")
                 Toggle("Show thought text in notifications", isOn: $state.preferences.showNotificationPreview)
                 Toggle("Evening streak reminder", isOn: $state.preferences.streakReminder)
             }
@@ -135,6 +136,7 @@ struct SettingsView: View {
                 } label: {
                     ProfileNavigationRow(title: "Wallpapers", subtitle: "Dynamic typographic wallpapers & Shortcuts", icon: "photo.artframe", iconColor: .blue)
                 }
+                .accessibilityIdentifier("Wallpapers")
             }
             Section("Personalize") {
                 NavigationLink {
@@ -142,6 +144,7 @@ struct SettingsView: View {
                 } label: {
                     ProfileNavigationRow(title: "Themes", subtitle: "Atmospheric color & typographic styling", icon: "paintpalette.fill", iconColor: .pink)
                 }
+                .accessibilityIdentifier("Themes")
                 NavigationLink {
                     AppIconsView()
                 } label: {

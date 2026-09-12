@@ -32,8 +32,10 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Remove favorite"].waitForExistence(timeout: 5))
         capture(app, "Reading feed")
         app.buttons["feed.settings"].tap()
-        for _ in 0..<5 { if app.buttons["Themes"].isHittable { break }; app.swipeUp() }
-        app.buttons["Themes"].tap()
+        let themesButton = app.buttons.matching(NSPredicate(format: "identifier == 'Themes' OR label BEGINSWITH 'Themes'")).firstMatch
+        for _ in 0..<5 { if themesButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(themesButton.waitForExistence(timeout: 5))
+        themesButton.tap()
         XCTAssertTrue(app.navigationBars["Themes"].waitForExistence(timeout: 5))
         capture(app, "Themes")
     }
@@ -43,8 +45,10 @@ final class LERNUITests: XCTestCase {
         app.buttons["Try original sample thoughts"].tap()
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 15))
         app.buttons["feed.settings"].tap()
-        for _ in 0..<5 { if app.buttons["Reminders"].isHittable { break }; app.swipeUp() }
-        app.buttons["Reminders"].tap()
+        let remindersButton = app.buttons.matching(NSPredicate(format: "identifier == 'Reminders' OR label BEGINSWITH 'Reminders'")).firstMatch
+        for _ in 0..<5 { if remindersButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(remindersButton.waitForExistence(timeout: 5))
+        remindersButton.tap()
         if app.buttons["Enable notifications"].waitForExistence(timeout: 5) {
             app.buttons["Enable notifications"].tap()
             let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -102,8 +106,10 @@ final class LERNUITests: XCTestCase {
         let app = application()
         XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20)); app.buttons["Try original sample thoughts"].tap()
         XCTAssertTrue(app.buttons["feed.settings"].waitForExistence(timeout: 15)); app.buttons["feed.settings"].tap()
-        for _ in 0..<5 { if app.buttons["Wallpapers"].isHittable { break }; app.swipeUp() }
-        app.buttons["Wallpapers"].tap(); app.buttons["Type of Content"].tap()
+        let wallpapersButton = app.buttons.matching(NSPredicate(format: "identifier == 'Wallpapers' OR label BEGINSWITH 'Wallpapers'")).firstMatch
+        for _ in 0..<5 { if wallpapersButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(wallpapersButton.waitForExistence(timeout: 5))
+        wallpapersButton.tap(); app.buttons["Type of Content"].tap()
         app.buttons["Custom"].tap()
         let own = app.switches["My Content"]; XCTAssertTrue(own.waitForExistence(timeout: 5)); own.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         XCTAssertEqual(own.value as? String, "1")
