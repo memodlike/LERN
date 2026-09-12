@@ -1,6 +1,8 @@
 .DS_Store
 .build/
+.swiftpm/
 DerivedData/
+DerivedData*/
 build/
 *.xcuserstate
 xcuserdata/
@@ -12,3 +14,5 @@ xcuserdata/
 .env*
 !/.env.example
 qa-output/
+*Phone.xcodeproj/
+*iPhone.xcodeproj/
