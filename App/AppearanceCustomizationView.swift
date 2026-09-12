@@ -164,15 +164,75 @@ struct AppearanceCustomizationView: View {
     @State private var showShortcutsGuide = false
     @State private var statusMessage: String?
 
-    private let systemIcons: [(name: String, key: String, preview: String)] = [
-        ("Horizon", "", "IconPreview"),
-        ("Minimal Black", "MinimalBlack", "MinimalBlackPreview"),
-        ("Minimal White", "MinimalWhite", "MinimalWhitePreview"),
-        ("Gradient", "Gradient", "GradientPreview"),
-        ("Quote Mark", "QuoteMark", "QuoteMarkPreview"),
-        ("Warm", "Warm", "WarmPreview"),
-        ("Cool", "Cool", "CoolPreview")
+    enum IconCollectionCategory: String, CaseIterable, Identifiable {
+        case all = "All"
+        case minimal = "Minimal"
+        case cosmic = "Cosmic"
+        case nature = "Nature"
+        case heritage = "Heritage"
+
+        var id: String { rawValue }
+        var localizedTitle: LocalizedStringKey {
+            switch self {
+            case .all: return "All Icons"
+            case .minimal: return "Minimal"
+            case .cosmic: return "Cosmic"
+            case .nature: return "Nature"
+            case .heritage: return "Heritage"
+            }
+        }
+    }
+
+    struct SystemIconItem: Identifiable {
+        let name: LocalizedStringKey
+        let key: String
+        let preview: String
+        let category: IconCollectionCategory
+        var id: String { key }
+    }
+
+    @State private var selectedIconCategory: IconCollectionCategory = .all
+
+    private let systemIcons: [SystemIconItem] = [
+        // Sanctuary Minimal
+        SystemIconItem(name: "Horizon", key: "", preview: "IconPreview", category: .minimal),
+        SystemIconItem(name: "Minimal Black", key: "MinimalBlack", preview: "MinimalBlackPreview", category: .minimal),
+        SystemIconItem(name: "Minimal White", key: "MinimalWhite", preview: "MinimalWhitePreview", category: .minimal),
+        SystemIconItem(name: "Obsidian Gold", key: "ObsidianGold", preview: "ObsidianGoldPreview", category: .minimal),
+        SystemIconItem(name: "Titanium", key: "Titanium", preview: "TitaniumPreview", category: .minimal),
+        SystemIconItem(name: "Graphite Slate", key: "GraphiteSlate", preview: "GraphiteSlatePreview", category: .minimal),
+
+        // Cosmic & Night Sky
+        SystemIconItem(name: "Midnight Aurora", key: "MidnightAurora", preview: "MidnightAuroraPreview", category: .cosmic),
+        SystemIconItem(name: "Deep Space", key: "DeepSpace", preview: "DeepSpacePreview", category: .cosmic),
+        SystemIconItem(name: "Starlight", key: "Starlight", preview: "StarlightPreview", category: .cosmic),
+        SystemIconItem(name: "Solar Flare", key: "SolarFlare", preview: "SolarFlarePreview", category: .cosmic),
+        SystemIconItem(name: "Eclipse", key: "Eclipse", preview: "EclipsePreview", category: .cosmic),
+        SystemIconItem(name: "Cosmic Orbit", key: "CosmicOrbit", preview: "CosmicOrbitPreview", category: .cosmic),
+
+        // Nature & Zen Sanctuary
+        SystemIconItem(name: "Forest Sanctuary", key: "ForestSanctuary", preview: "ForestSanctuaryPreview", category: .nature),
+        SystemIconItem(name: "Warm Terracotta", key: "Warm", preview: "WarmPreview", category: .nature),
+        SystemIconItem(name: "Cool Ocean", key: "Cool", preview: "CoolPreview", category: .nature),
+        SystemIconItem(name: "Desert Dusk", key: "DesertDusk", preview: "DesertDuskPreview", category: .nature),
+        SystemIconItem(name: "Lavender Mist", key: "LavenderMist", preview: "LavenderMistPreview", category: .nature),
+        SystemIconItem(name: "Matcha Zen", key: "MatchaZen", preview: "MatchaZenPreview", category: .nature),
+
+        // Editorial & Literary Heritage
+        SystemIconItem(name: "Quote Mark", key: "QuoteMark", preview: "QuoteMarkPreview", category: .heritage),
+        SystemIconItem(name: "Gradient", key: "Gradient", preview: "GradientPreview", category: .heritage),
+        SystemIconItem(name: "Parchment Ink", key: "ParchmentInk", preview: "ParchmentInkPreview", category: .heritage),
+        SystemIconItem(name: "Crimson Velvet", key: "CrimsonVelvet", preview: "CrimsonVelvetPreview", category: .heritage),
+        SystemIconItem(name: "Emerald Library", key: "EmeraldLibrary", preview: "EmeraldLibraryPreview", category: .heritage),
+        SystemIconItem(name: "Indigo Dye", key: "IndigoDye", preview: "IndigoDyePreview", category: .heritage)
     ]
+
+    private var filteredSystemIcons: [SystemIconItem] {
+        if selectedIconCategory == .all {
+            return systemIcons
+        }
+        return systemIcons.filter { $0.category == selectedIconCategory }
+    }
 
     var body: some View {
         @Bindable var state = state
@@ -384,51 +444,75 @@ struct AppearanceCustomizationView: View {
             Section {
                 // Official alternate icons grid
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Select an official precompiled icon or auto-match with your chosen colors.")
+                    Text("Select from 24 official Apple HIG icons or auto-match with your custom design.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
+                    // Category Filter for Icons
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 14) {
-                            ForEach(systemIcons, id: \.key) { icon in
+                        HStack(spacing: 8) {
+                            ForEach(IconCollectionCategory.allCases) { cat in
                                 Button {
-                                    setAlternateIcon(icon.key)
+                                    selectedIconCategory = cat
                                 } label: {
-                                    VStack(spacing: 6) {
-                                        ZStack(alignment: .topTrailing) {
-                                            if let image = UIImage(named: icon.preview) {
-                                                Image(uiImage: image)
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .frame(width: 60, height: 60)
-                                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                            } else {
-                                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                    .fill(Color.secondary.opacity(0.2))
-                                                    .frame(width: 60, height: 60)
-                                            }
-
-                                            if alternateIconName == icon.key {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .font(.subheadline)
-                                                    .symbolRenderingMode(.palette)
-                                                    .foregroundStyle(.white, .blue)
-                                                    .offset(x: 4, y: -4)
-                                            }
-                                        }
-                                        Text(LocalizedStringKey(icon.name))
-                                            .font(.caption2)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(1)
-                                    }
-                                    .frame(width: 72)
+                                    Text(cat.localizedTitle)
+                                        .font(.caption2.weight(.medium))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(
+                                            selectedIconCategory == cat ? Color.accentColor : Color(uiColor: .tertiarySystemFill),
+                                            in: Capsule()
+                                        )
+                                        .foregroundStyle(selectedIconCategory == cat ? .white : .primary)
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(icon.name + (alternateIconName == icon.key ? ", selected" : ""))
+                                .accessibilityAddTraits(selectedIconCategory == cat ? [.isSelected] : [])
                             }
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 2)
                     }
+
+                    // Icons Grid
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 12)], spacing: 14) {
+                        ForEach(filteredSystemIcons) { icon in
+                            Button {
+                                setAlternateIcon(icon.key)
+                            } label: {
+                                VStack(spacing: 6) {
+                                    ZStack(alignment: .topTrailing) {
+                                        if let image = UIImage(named: icon.preview) {
+                                            Image(uiImage: image)
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 58, height: 58)
+                                                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                                                .shadow(color: Color.black.opacity(0.12), radius: 3, y: 2)
+                                        } else {
+                                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                                .fill(Color.secondary.opacity(0.2))
+                                                .frame(width: 58, height: 58)
+                                        }
+
+                                        if alternateIconName == icon.key {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(.subheadline)
+                                                .symbolRenderingMode(.palette)
+                                                .foregroundStyle(.white, .blue)
+                                                .offset(x: 4, y: -4)
+                                        }
+                                    }
+                                    Text(icon.name)
+                                        .font(.caption2)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityAddTraits(alternateIconName == icon.key ? [.isSelected] : [])
+                        }
+                    }
+                    .padding(.vertical, 4)
 
                     Button {
                         autoMatchSystemIcon()
@@ -595,17 +679,49 @@ struct AppearanceCustomizationView: View {
         let b = Double(value & 255) / 255
         let luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
 
+        let primaryHex = state.preferences.logoPrimaryColor.uppercased()
+        let accentHex = state.preferences.logoAccentColor.uppercased()
+
         let targetKey: String
-        if luminance < 0.20 {
+        // Gold / Amber
+        if primaryHex.contains("F5") || primaryHex.contains("E6") || primaryHex.contains("D4") || accentHex.contains("F5") || accentHex.contains("E6") || accentHex.contains("D4") {
+            targetKey = luminance < 0.25 ? "ObsidianGold" : "EmeraldLibrary"
+        }
+        // Green / Forest / Sage / Matcha
+        else if g > r && g > b && g > 0.25 {
+            targetKey = luminance < 0.20 ? "ForestSanctuary" : "MatchaZen"
+        }
+        // Violet / Purple / Lavender / Deep Space
+        else if (r > 0.35 && b > 0.45) || primaryHex.contains("D1") || primaryHex.contains("9D") || accentHex.contains("C7") {
+            targetKey = luminance < 0.25 ? "DeepSpace" : "LavenderMist"
+        }
+        // Cyan / Teal / Aurora / Starlight
+        else if (b > 0.4 && g > 0.4) || primaryHex.contains("00E") || primaryHex.contains("38E") || accentHex.contains("72E") {
+            targetKey = luminance < 0.20 ? "MidnightAurora" : "CosmicOrbit"
+        }
+        // Crimson / Terracotta / Warm Dusk
+        else if r > 0.45 && r > g && r > b {
+            if luminance < 0.22 {
+                targetKey = "CrimsonVelvet"
+            } else if hex.contains("58") || hex.contains("5C") {
+                targetKey = "DesertDusk"
+            } else {
+                targetKey = "Warm"
+            }
+        }
+        // Neutral Monochromes & Titanium
+        else if luminance < 0.10 {
             targetKey = "MinimalBlack"
-        } else if luminance > 0.85 {
-            targetKey = "MinimalWhite"
-        } else if r > b && (r > 0.4 || hex.contains("6E")) {
-            targetKey = "Warm"
-        } else if b > r && (b > 0.4 || hex.contains("24")) {
-            targetKey = "Cool"
+        } else if luminance < 0.22 {
+            targetKey = "Titanium"
+        } else if luminance < 0.38 {
+            targetKey = "GraphiteSlate"
+        } else if luminance > 0.90 {
+            targetKey = hex.contains("F") ? "ParchmentInk" : "MinimalWhite"
+        } else if b > r && b > g {
+            targetKey = hex.contains("16") ? "IndigoDye" : "Cool"
         } else {
-            targetKey = "Gradient"
+            targetKey = "" // Horizon (default)
         }
 
         setAlternateIcon(targetKey)
