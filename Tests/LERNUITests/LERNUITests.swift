@@ -6,7 +6,9 @@ final class LERNUITests: XCTestCase {
         app.launchEnvironment["LERN_UI_TEST_SESSION"] = UUID().uuidString
         app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language == "ru" ? "ru_RU" : "en_US"]
         if largeText { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
-        app.launch(); return app
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 15)
+        return app
     }
     @MainActor func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
@@ -93,7 +95,11 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.images["share.preview"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Share image"].isEnabled)
         capture(app, "Share image preview")
-        app.terminate(); app.launch()
+        app.terminate()
+        _ = app.wait(for: .notRunning, timeout: 5)
+        Thread.sleep(forTimeInterval: 1)
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 15)
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.staticTexts["feed.quote"].label, "Keep this thought after restarting LERN.")
         app.buttons["feed.library"].tap()
