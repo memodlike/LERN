@@ -31,6 +31,8 @@ final class LERNUITests: XCTestCase {
         app.buttons["feed.favorite"].tap()
         XCTAssertTrue(app.buttons["Remove favorite"].waitForExistence(timeout: 5))
         capture(app, "Reading feed")
+        app.buttons["feed.settings"].tap()
+        for _ in 0..<5 { if app.buttons["Themes"].isHittable { break }; app.swipeUp() }
         app.buttons["Themes"].tap()
         XCTAssertTrue(app.navigationBars["Themes"].waitForExistence(timeout: 5))
         capture(app, "Themes")
@@ -40,6 +42,8 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20))
         app.buttons["Try original sample thoughts"].tap()
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 15))
+        app.buttons["feed.settings"].tap()
+        for _ in 0..<5 { if app.buttons["Reminders"].isHittable { break }; app.swipeUp() }
         app.buttons["Reminders"].tap()
         if app.buttons["Enable notifications"].waitForExistence(timeout: 5) {
             app.buttons["Enable notifications"].tap()
@@ -97,7 +101,7 @@ final class LERNUITests: XCTestCase {
     @MainActor func testIndependentWallpaperSourcePersists() throws {
         let app = application()
         XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20)); app.buttons["Try original sample thoughts"].tap()
-        XCTAssertTrue(app.buttons["Profile"].waitForExistence(timeout: 15)); app.buttons["Profile"].tap()
+        XCTAssertTrue(app.buttons["feed.settings"].waitForExistence(timeout: 15)); app.buttons["feed.settings"].tap()
         for _ in 0..<5 { if app.buttons["Wallpapers"].isHittable { break }; app.swipeUp() }
         app.buttons["Wallpapers"].tap(); app.buttons["Type of Content"].tap()
         app.buttons["Custom"].tap()
