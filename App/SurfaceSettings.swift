@@ -150,29 +150,151 @@ struct WallpaperView: View {
 }
 struct AppIconsView: View {
     @Environment(AppState.self) private var state
-    private let icons = [("Horizon", ""), ("Minimal Black", "MinimalBlack"), ("Minimal White", "MinimalWhite"), ("Gradient", "Gradient"), ("Quote Mark", "QuoteMark"), ("Warm", "Warm"), ("Cool", "Cool")]
-    private let columns = [GridItem(.adaptive(minimum: 120), spacing: 16)]
+    @State private var currentKey: String = UIApplication.shared.alternateIconName ?? ""
+    @State private var selectedCategory: String = "All"
+
+    struct IconEntry: Identifiable {
+        let name: LocalizedStringKey
+        let key: String
+        let preview: String
+        let category: String
+        var id: String { key }
+    }
+
+    private let allIcons: [IconEntry] = [
+        // Sanctuary Minimal
+        IconEntry(name: "Horizon", key: "", preview: "IconPreview", category: "Minimal"),
+        IconEntry(name: "Minimal Black", key: "MinimalBlack", preview: "MinimalBlackPreview", category: "Minimal"),
+        IconEntry(name: "Minimal White", key: "MinimalWhite", preview: "MinimalWhitePreview", category: "Minimal"),
+        IconEntry(name: "Obsidian Gold", key: "ObsidianGold", preview: "ObsidianGoldPreview", category: "Minimal"),
+        IconEntry(name: "Titanium", key: "Titanium", preview: "TitaniumPreview", category: "Minimal"),
+        IconEntry(name: "Graphite Slate", key: "GraphiteSlate", preview: "GraphiteSlatePreview", category: "Minimal"),
+
+        // Cosmic & Flow
+        IconEntry(name: "Midnight Aurora", key: "MidnightAurora", preview: "MidnightAuroraPreview", category: "Cosmic"),
+        IconEntry(name: "Deep Space", key: "DeepSpace", preview: "DeepSpacePreview", category: "Cosmic"),
+        IconEntry(name: "Starlight", key: "Starlight", preview: "StarlightPreview", category: "Cosmic"),
+        IconEntry(name: "Solar Flare", key: "SolarFlare", preview: "SolarFlarePreview", category: "Cosmic"),
+        IconEntry(name: "Eclipse", key: "Eclipse", preview: "EclipsePreview", category: "Cosmic"),
+        IconEntry(name: "Cosmic Orbit", key: "CosmicOrbit", preview: "CosmicOrbitPreview", category: "Cosmic"),
+
+        // Nature & Sanctuary
+        IconEntry(name: "Forest Sanctuary", key: "ForestSanctuary", preview: "ForestSanctuaryPreview", category: "Nature"),
+        IconEntry(name: "Warm Terracotta", key: "Warm", preview: "WarmPreview", category: "Nature"),
+        IconEntry(name: "Cool Ocean", key: "Cool", preview: "CoolPreview", category: "Nature"),
+        IconEntry(name: "Desert Dusk", key: "DesertDusk", preview: "DesertDuskPreview", category: "Nature"),
+        IconEntry(name: "Lavender Mist", key: "LavenderMist", preview: "LavenderMistPreview", category: "Nature"),
+        IconEntry(name: "Matcha Zen", key: "MatchaZen", preview: "MatchaZenPreview", category: "Nature"),
+
+        // Heritage & Editorial
+        IconEntry(name: "Quote Mark", key: "QuoteMark", preview: "QuoteMarkPreview", category: "Heritage"),
+        IconEntry(name: "Gradient", key: "Gradient", preview: "GradientPreview", category: "Heritage"),
+        IconEntry(name: "Parchment Ink", key: "ParchmentInk", preview: "ParchmentInkPreview", category: "Heritage"),
+        IconEntry(name: "Crimson Velvet", key: "CrimsonVelvet", preview: "CrimsonVelvetPreview", category: "Heritage"),
+        IconEntry(name: "Emerald Library", key: "EmeraldLibrary", preview: "EmeraldLibraryPreview", category: "Heritage"),
+        IconEntry(name: "Indigo Dye", key: "IndigoDye", preview: "IndigoDyePreview", category: "Heritage")
+    ]
+
+    private var filteredIcons: [IconEntry] {
+        if selectedCategory == "All" { return allIcons }
+        return allIcons.filter { $0.category == selectedCategory }
+    }
+
+    private let columns = [GridItem(.adaptive(minimum: 88), spacing: 14)]
+
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(icons, id: \.0) { name, key in
-                    Button { select(key) } label: {
-                        VStack(spacing: 9) {
-                            ZStack(alignment: .topTrailing) {
-                                if let image = UIImage(named: key.isEmpty ? "IconPreview" : key + "Preview") { Image(uiImage: image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 18)).accessibilityHidden(true) }
-                                if (UIApplication.shared.alternateIconName ?? "") == key { Image(systemName: "checkmark.circle.fill").font(.title2).symbolRenderingMode(.palette).foregroundStyle(.white, .blue).accessibilityLabel("Selected") }
-                            }.frame(width: 92, height: 92)
-                            Text(LocalizedStringKey(name)).font(.caption.weight(.medium)).multilineTextAlignment(.center)
-                        }.frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).accessibilityLabel(name + ((UIApplication.shared.alternateIconName ?? "") == key ? ", selected" : ""))
+            VStack(spacing: 16) {
+                // Category Filter Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(["All", "Minimal", "Cosmic", "Nature", "Heritage"], id: \.self) { cat in
+                            Button {
+                                selectedCategory = cat
+                            } label: {
+                                Text(LocalizedStringKey(cat))
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        selectedCategory == cat ? Color.accentColor : Color(uiColor: .tertiarySystemFill),
+                                        in: Capsule()
+                                    )
+                                    .foregroundStyle(selectedCategory == cat ? .white : .primary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
                 }
-            }.padding(20)
-            Text("These previews show the installed icon assets. iOS applies its own appearance treatment.").font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 20)
-        }.navigationTitle("App Icon")
+
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(filteredIcons) { icon in
+                        Button {
+                            select(icon.key)
+                        } label: {
+                            VStack(spacing: 8) {
+                                ZStack(alignment: .topTrailing) {
+                                    if let image = UIImage(named: icon.preview) {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 72, height: 72)
+                                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                            .shadow(color: Color.black.opacity(0.12), radius: 4, y: 2)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(Color.secondary.opacity(0.2))
+                                            .frame(width: 72, height: 72)
+                                    }
+
+                                    if currentKey == icon.key {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.title3)
+                                            .symbolRenderingMode(.palette)
+                                            .foregroundStyle(.white, .blue)
+                                            .offset(x: 4, y: -4)
+                                    }
+                                }
+                                Text(icon.name)
+                                    .font(.caption2.weight(.medium))
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 80)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(icon.name))
+                        .accessibilityAddTraits(currentKey == icon.key ? [.isSelected] : [])
+                    }
+                }
+                .padding(.horizontal, 16)
+
+                Text("Tap any icon to apply it immediately to your Home Screen.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+            }
+        }
+        .navigationTitle("App Icon")
     }
+
     private func select(_ key: String) {
+        if state.preferences.haptics {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
         UIApplication.shared.setAlternateIconName(key.isEmpty ? nil : key) { error in
-            if let error { Task { @MainActor in state.error = error.localizedDescription } }
+            Task { @MainActor in
+                if let error {
+                    state.error = error.localizedDescription
+                } else {
+                    currentKey = key
+                }
+            }
         }
     }
 }

@@ -8,15 +8,36 @@ import BackgroundTasks
     @State private var state: AppState?
     @State private var startupError: String?
     @Environment(\.scenePhase) private var phase
+
+    init() {
+        do {
+            let appState = AppState(store: try SharedStore.open())
+            _state = State(initialValue: appState)
+        } catch {
+            _startupError = State(initialValue: error.localizedDescription)
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
                 if let state {
                     FeedView().environment(state)
                         .environment(\.locale, state.preferences.language == "system" ? .current : Locale(identifier: state.preferences.language))
-                        .task { delegate.state = state; await state.load(); await delegate.deliverPendingResponses() }
+                        .task {
+                            delegate.state = state
+                            await state.load(skipInitialNext: delegate.hasPendingRoutes)
+                            await delegate.deliverPendingResponses()
+                        }
                         .onOpenURL { url in Task { await delegate.receive(url: url) } }
-                        .onChange(of: phase) { _, next in if next == .active { Task { await state.refreshOnForeground(); await delegate.deliverPendingResponses() } } }
+                        .onChange(of: phase) { _, next in
+                            if next == .active {
+                                Task {
+                                    await state.refreshOnForeground()
+                                    await delegate.deliverPendingResponses()
+                                }
+                            }
+                        }
                         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in Task { await state.scheduler.replenish() } }
                         .alert("Something needs attention", isPresented: Binding(get: { state.error != nil }, set: { if !$0 { state.error = nil } })) { Button("OK") { state.error = nil } } message: { Text(state.error ?? "") }
                 } else if let startupError {
@@ -26,7 +47,12 @@ import BackgroundTasks
         }
     }
     private func initialize() {
-        do { state = AppState(store: try SharedStore.open()) }
+        do {
+            let appState = AppState(store: try SharedStore.open())
+            delegate.state = appState
+            state = appState
+            startupError = nil
+        }
         catch { startupError = error.localizedDescription }
     }
 
@@ -35,8 +61,16 @@ import BackgroundTasks
 @MainActor final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     static let backgroundRefreshIdentifier = "app.lern.local.notification-refresh"
     weak var state: AppState?
-    private var pendingRoutes = PendingAppRoutes()
+    private let pendingRoutes = PendingRouteQueue()
     private var deliveringRoutes = false
+
+    var hasPendingRoutes: Bool { pendingRoutes.hasPending }
+
+    override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
@@ -65,10 +99,17 @@ import BackgroundTasks
         }
         task.expirationHandler = { work.cancel() }
     }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        defer { completionHandler() }
         let request = response.notification.request
         guard let route = AppRoute.notification(userInfo: request.content.userInfo, requestID: request.identifier, category: request.content.categoryIdentifier, actionIdentifier: response.actionIdentifier) else { return }
-        await receive(route)
+        pendingRoutes.enqueue(route)
+        Task { @MainActor [weak self] in
+            await self?.deliverPendingResponses()
+        }
+    }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler(notification.request.content.categoryIdentifier == "lern.alarm" ? [.banner, .sound, .list] : [.banner, .sound, .list])
     }
     func receive(url: URL) async {
         guard let route = AppRoute.url(url) else { return }
@@ -96,9 +137,11 @@ import BackgroundTasks
                 case .missing:
                     // A deleted entry is terminal; fall back to the normal feed.
                     pendingRoutes.complete(route)
+                    if state.current == nil { await state.next() }
                 case .failed:
                     // Preserve the route for a later foreground/ready attempt.
                     pendingRoutes.retry(route)
+                    if state.current == nil { await state.next() }
                     return
                 }
             case .library:
@@ -106,9 +149,5 @@ import BackgroundTasks
                 state.sheet = .library
             }
         }
-        await state.scheduler.replenish()
-    }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        notification.request.content.categoryIdentifier == "lern.alarm" ? [.banner, .sound, .list] : [.list]
     }
 }

@@ -6,7 +6,9 @@ final class LERNUITests: XCTestCase {
         app.launchEnvironment["LERN_UI_TEST_SESSION"] = UUID().uuidString
         app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language == "ru" ? "ru_RU" : "en_US"]
         if largeText { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
-        app.launch(); return app
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 15)
+        return app
     }
     @MainActor func capture(_ app: XCUIApplication, _ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
@@ -31,7 +33,11 @@ final class LERNUITests: XCTestCase {
         app.buttons["feed.favorite"].tap()
         XCTAssertTrue(app.buttons["Remove favorite"].waitForExistence(timeout: 5))
         capture(app, "Reading feed")
-        app.buttons["Themes"].tap()
+        app.buttons["feed.settings"].tap()
+        let themesButton = app.buttons.matching(NSPredicate(format: "identifier == 'Themes' OR label BEGINSWITH 'Themes'")).firstMatch
+        for _ in 0..<5 { if themesButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(themesButton.waitForExistence(timeout: 5))
+        themesButton.tap()
         XCTAssertTrue(app.navigationBars["Themes"].waitForExistence(timeout: 5))
         capture(app, "Themes")
     }
@@ -40,7 +46,11 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20))
         app.buttons["Try original sample thoughts"].tap()
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 15))
-        app.buttons["Reminders"].tap()
+        app.buttons["feed.settings"].tap()
+        let remindersButton = app.buttons.matching(NSPredicate(format: "identifier == 'Reminders' OR label BEGINSWITH 'Reminders'")).firstMatch
+        for _ in 0..<5 { if remindersButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(remindersButton.waitForExistence(timeout: 5))
+        remindersButton.tap()
         if app.buttons["Enable notifications"].waitForExistence(timeout: 5) {
             app.buttons["Enable notifications"].tap()
             let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -85,7 +95,11 @@ final class LERNUITests: XCTestCase {
         XCTAssertTrue(app.images["share.preview"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Share image"].isEnabled)
         capture(app, "Share image preview")
-        app.terminate(); app.launch()
+        app.terminate()
+        _ = app.wait(for: .notRunning, timeout: 5)
+        Thread.sleep(forTimeInterval: 1)
+        app.launch()
+        _ = app.wait(for: .runningForeground, timeout: 15)
         XCTAssertTrue(app.staticTexts["feed.quote"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.staticTexts["feed.quote"].label, "Keep this thought after restarting LERN.")
         app.buttons["feed.library"].tap()
@@ -97,9 +111,11 @@ final class LERNUITests: XCTestCase {
     @MainActor func testIndependentWallpaperSourcePersists() throws {
         let app = application()
         XCTAssertTrue(app.buttons["Try original sample thoughts"].waitForExistence(timeout: 20)); app.buttons["Try original sample thoughts"].tap()
-        XCTAssertTrue(app.buttons["Profile"].waitForExistence(timeout: 15)); app.buttons["Profile"].tap()
-        for _ in 0..<5 { if app.buttons["Wallpapers"].isHittable { break }; app.swipeUp() }
-        app.buttons["Wallpapers"].tap(); app.buttons["Type of Content"].tap()
+        XCTAssertTrue(app.buttons["feed.settings"].waitForExistence(timeout: 15)); app.buttons["feed.settings"].tap()
+        let wallpapersButton = app.buttons.matching(NSPredicate(format: "identifier == 'Wallpapers' OR label BEGINSWITH 'Wallpapers'")).firstMatch
+        for _ in 0..<5 { if wallpapersButton.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(wallpapersButton.waitForExistence(timeout: 5))
+        wallpapersButton.tap(); app.buttons["Type of Content"].tap()
         app.buttons["Custom"].tap()
         let own = app.switches["My Content"]; XCTAssertTrue(own.waitForExistence(timeout: 5)); own.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         XCTAssertEqual(own.value as? String, "1")

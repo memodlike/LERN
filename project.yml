@@ -31,7 +31,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.lern.local
         TARGETED_DEVICE_FAMILY: '1,2'
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: 'MinimalBlack MinimalWhite Gradient QuoteMark Warm Cool'
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: 'MinimalBlack MinimalWhite ObsidianGold Titanium GraphiteSlate MidnightAurora DeepSpace Starlight SolarFlare Eclipse CosmicOrbit ForestSanctuary Warm Cool DesertDusk LavenderMist MatchaZen QuoteMark Gradient ParchmentInk CrimsonVelvet EmeraldLibrary IndigoDye'
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         CODE_SIGN_ENTITLEMENTS: App/LERN.entitlements
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle

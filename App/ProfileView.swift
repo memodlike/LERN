@@ -8,43 +8,234 @@ struct ProfileView: View {
     var body: some View {
         @Bindable var state = state
         Form {
-            Section("Personal") { TextField("Name", text: $state.preferences.name); TextField("Gender identity (optional)", text: $state.preferences.gender) }
-            Section("Content") {
-                NavigationLink("Content Preferences") { SourcePicker(source: $state.preferences.feedSource) }
-                NavigationLink("My Content") { EntryListScreen(title: "My Content", source: ContentSource(myContentOnly: true)) }
-                NavigationLink("Favorites") { EntryListScreen(title: "Favorites", source: ContentSource(favoritesOnly: true)) }
-                NavigationLink("Collections") { CollectionsView() }
-                NavigationLink("Past Content") { HistoryView() }
-                NavigationLink("Muted Content") { EntryListScreen(title: "Muted Content", review: "muted") }
-                NavigationLink("Disliked content") { EntryListScreen(title: "Disliked content", review: "disliked") }
-                NavigationLink("Muted words") { MutedWordsView() }
-                NavigationLink("Resources / Books") { ResourcesView() }
+            Section("Personal") {
+                TextField("Name", text: $state.preferences.name)
+                TextField("Gender identity (optional)", text: $state.preferences.gender)
+            }
+            Section("Sanctuary Activity") {
+                NavigationLink {
+                    StreakView()
+                } label: {
+                    ProfileNavigationRow(title: "Reading Streak", subtitle: "Daily reading sanctuary progress", icon: "flame.fill", iconColor: .orange, badge: "\(state.preferences.streak.current) days")
+                }
+            }
+            Section("Saved & Curated") {
+                NavigationLink {
+                    EntryListScreen(title: "Favorites", source: ContentSource(favoritesOnly: true))
+                } label: {
+                    ProfileNavigationRow(title: "Favorites", subtitle: "Your starred and cherished thoughts", icon: "heart.fill", iconColor: .pink)
+                }
+                NavigationLink {
+                    EntryListScreen(title: "My Content", source: ContentSource(myContentOnly: true))
+                } label: {
+                    ProfileNavigationRow(title: "My Content", subtitle: "Original thoughts written by you", icon: "pencil.line", iconColor: .blue)
+                }
+                NavigationLink {
+                    CollectionsView()
+                } label: {
+                    ProfileNavigationRow(title: "Collections", subtitle: "Organized thought folders", icon: "folder.fill", iconColor: .indigo, badge: "\(state.topics.filter { $0.kind == "collection" }.count)")
+                }
+                NavigationLink {
+                    HistoryView()
+                } label: {
+                    ProfileNavigationRow(title: "Past Content", subtitle: "Review your recent reading history", icon: "clock.arrow.circlepath", iconColor: .teal)
+                }
+            }
+            Section {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    ProfileNavigationRow(title: "Settings", subtitle: "Preferences, appearance, surfaces and system", icon: "gearshape.fill", iconColor: .gray)
+                }
+            }
+        }
+        .navigationTitle("Your space")
+        .toolbar {
+            ToolbarItem(placement: .principal) { LogoGlassChrome() }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    Task {
+                        await state.savePreferences(notificationImpact: false, reloadWidgets: false)
+                        await state.contentChanged()
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct SettingsView: View {
+    @Environment(AppState.self) private var state
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        @Bindable var state = state
+        Form {
+            Section("Reading Sources") {
+                NavigationLink {
+                    SourcePicker(source: $state.preferences.feedSource)
+                } label: {
+                    ProfileNavigationRow(title: "Feed Source Preferences", subtitle: "Choose active topics, tags, and filters", icon: "slider.horizontal.2.square", iconColor: .purple)
+                }
+                NavigationLink {
+                    ResourcesView()
+                } label: {
+                    ProfileNavigationRow(title: "Resources / Books", subtitle: "Imported literature and catalogs", icon: "books.vertical.fill", iconColor: .orange)
+                }
+                Picker("Feed order", selection: Binding(get: { state.preferences.feedMode }, set: { state.preferences.feedMode = $0; state.feedPast = []; state.feedPosition = -1; Task { await state.savePreferences() } })) {
+                    Text("Shuffle without repeats").tag(SelectionMode.shuffle)
+                    Text("Sequential").tag(SelectionMode.sequential)
+                    Text("Random").tag(SelectionMode.random)
+                }
+            }
+            Section("Muting & Moderation") {
+                NavigationLink {
+                    MutedWordsView()
+                } label: {
+                    ProfileNavigationRow(title: "Muted words", subtitle: "Suppress thoughts matching specific phrases", icon: "text.badge.minus", iconColor: .gray, badge: "\(state.preferences.mutedWords.count)")
+                }
+                NavigationLink {
+                    EntryListScreen(title: "Muted Content", review: "muted")
+                } label: {
+                    ProfileNavigationRow(title: "Muted Content", subtitle: "Thoughts manually hidden from your feed", icon: "speaker.slash.fill", iconColor: .brown)
+                }
+                NavigationLink {
+                    EntryListScreen(title: "Disliked content", review: "disliked")
+                } label: {
+                    ProfileNavigationRow(title: "Disliked content", subtitle: "Thoughts excluded from rotations", icon: "hand.thumbsdown.fill", iconColor: .red)
+                }
             }
             Section("Routine") {
-                NavigationLink("Reminders") { RemindersView() }
+                NavigationLink {
+                    RemindersView()
+                } label: {
+                    ProfileNavigationRow(title: "Reminders", subtitle: "Daily schedule and alarms", icon: "bell.fill", iconColor: .red)
+                }
+                .accessibilityIdentifier("Reminders")
                 Toggle("Show thought text in notifications", isOn: $state.preferences.showNotificationPreview)
-                NavigationLink("Streak") { StreakView() }
+                Toggle("Evening streak reminder", isOn: $state.preferences.streakReminder)
             }
             Section("Surfaces") {
-                NavigationLink("Home Screen Widgets") { WidgetPresetsView() }
-                NavigationLink("Lock Screen Widgets") { SurfaceSettings(surface: "lock") }
-                NavigationLink("Apple Watch") { SurfaceSettings(surface: "watch") }
-                NavigationLink("Wallpapers") { WallpaperView() }
+                NavigationLink {
+                    WidgetPresetsView()
+                } label: {
+                    ProfileNavigationRow(title: "Home Screen Widgets", subtitle: "Custom layouts, sizes, and refresh rates", icon: "rectangle.3.group.fill", iconColor: .cyan, badge: "\(state.presets.count)")
+                }
+                NavigationLink {
+                    SurfaceSettings(surface: "lock")
+                } label: {
+                    ProfileNavigationRow(title: "Lock Screen Widgets", subtitle: "Subtle inline and circular accessories", icon: "lock.iphone", iconColor: .mint)
+                }
+                NavigationLink {
+                    SurfaceSettings(surface: "watch")
+                } label: {
+                    ProfileNavigationRow(title: "Apple Watch", subtitle: "Independent wrist reading sync", icon: "applewatch", iconColor: .green, badge: "\(WatchBridge.shared.syncedCount)")
+                }
+                NavigationLink {
+                    WallpaperView()
+                } label: {
+                    ProfileNavigationRow(title: "Wallpapers", subtitle: "Dynamic typographic wallpapers & Shortcuts", icon: "photo.artframe", iconColor: .blue)
+                }
+                .accessibilityIdentifier("Wallpapers")
             }
             Section("Personalize") {
-                NavigationLink("Themes") { ThemesView() }
-                NavigationLink("Logo & Glass") { AppearanceCustomizationView() }
-                NavigationLink("App Icon") { AppIconsView() }
+                NavigationLink {
+                    ThemesView()
+                } label: {
+                    ProfileNavigationRow(title: "Themes", subtitle: "Atmospheric color & typographic styling", icon: "paintpalette.fill", iconColor: .pink)
+                }
+                .accessibilityIdentifier("Themes")
+                NavigationLink {
+                    AppIconsView()
+                } label: {
+                    ProfileNavigationRow(title: "App Icon", subtitle: "Choose your Home Screen icon", icon: "app.gift.fill", iconColor: .purple)
+                }
+                NavigationLink {
+                    AppearanceCustomizationView()
+                } label: {
+                    ProfileNavigationRow(title: "Glass Effect", subtitle: "iOS 18 translucent glass materials", icon: "sparkles", iconColor: .indigo)
+                }
             }
             Section("General") {
-                Picker("Language", selection: $state.preferences.language) { Text("System").tag("system"); Text("English").tag("en"); Text("Русский").tag("ru") }
+                Picker("Language", selection: $state.preferences.language) {
+                    Text("System").tag("system")
+                    Text("English").tag("en")
+                    Text("Русский").tag("ru")
+                }
                 Toggle("Haptics", isOn: $state.preferences.haptics)
                 NavigationLink("Backup / Restore") { BackupView() }
                 NavigationLink("Diagnostics") { DiagnosticsView() }
-                NavigationLink("About") { Form { Text(Product.name).font(.largeTitle.bold()); Text("Your own words, always close. A private, local reading library."); Label("No account, ads or subscriptions", systemImage: "checkmark.shield"); Text("Version 1.0 · iOS 18+"); Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote) }.navigationTitle("About") }
+                NavigationLink("About") {
+                    Form {
+                        Text(Product.name).font(.largeTitle.bold())
+                        Text("Your own words, always close. A private, local reading library.")
+                        Label("No account, ads or subscriptions", systemImage: "checkmark.shield")
+                        Text("Version 1.0 · iOS 18+")
+                        Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote)
+                    }.navigationTitle("About")
+                }
             }
-        }.navigationTitle("Your space")
-            .toolbar { ToolbarItem(placement: .principal) { LogoGlassChrome() }; ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(notificationImpact: false, reloadWidgets: false); await state.contentChanged(); dismiss() } } } }
+        }
+        .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    Task {
+                        await state.savePreferences(notificationImpact: false, reloadWidgets: false)
+                        await state.contentChanged()
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ProfileNavigationRow: View {
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey?
+    let icon: String
+    let iconColor: Color
+    var badge: String? = nil
+
+    init(title: LocalizedStringKey, subtitle: LocalizedStringKey? = nil, icon: String, iconColor: Color, badge: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.iconColor = iconColor
+        self.badge = badge
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(iconColor.gradient, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            if let badge {
+                Text(badge)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 struct EntryListScreen: View {
@@ -99,13 +290,37 @@ struct MutedWordsView: View {
 }
 struct StreakView: View {
     @Environment(AppState.self) private var state
+    @ScaledMetric(relativeTo: .largeTitle) private var streakSize: CGFloat = 72
     var body: some View {
         @Bindable var state = state
         Form {
-            Section { Text("\(state.preferences.streak.current)").font(.system(size: 72, weight: .light, design: .rounded)); Text("Days of reading"); LabeledContent("Longest streak", value: state.preferences.streak.longest.formatted()); LabeledContent("Available freezes", value: "\(state.preferences.streak.freezes) / 3") }
-            Section { Toggle("Track my streak", isOn: $state.preferences.streak.enabled); Toggle("Evening streak reminder", isOn: $state.preferences.streakReminder) }
-            Section { Text("A day counts when you read a thought in the feed. A freeze automatically covers one missed day. Earn one freeze every seven reading days, up to three. Opening the app twice never counts as two days.") }
-        }.navigationTitle("Streak").onDisappear { Task { await state.savePreferences(); await state.scheduler.replenish() } }
+            Section {
+                VStack(spacing: 8) {
+                    Text("\(state.preferences.streak.current)")
+                        .font(.system(size: streakSize, weight: .light, design: .rounded))
+                    Text("Days of reading")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(state.preferences.streak.current) days of reading")
+
+                LabeledContent("Longest streak", value: state.preferences.streak.longest.formatted())
+                LabeledContent("Available freezes", value: "\(state.preferences.streak.freezes) / 3")
+                    .accessibilityLabel("Available freezes: \(state.preferences.streak.freezes) of 3")
+            }
+            Section {
+                Toggle("Track my streak", isOn: $state.preferences.streak.enabled)
+                Toggle("Evening streak reminder", isOn: $state.preferences.streakReminder)
+            }
+            Section {
+                Text("A day counts when you read a thought in the feed. A freeze automatically covers one missed day. Earn one freeze every seven reading days, up to three. Opening the app twice never counts as two days.")
+            }
+        }
+        .navigationTitle("Streak")
+        .onDisappear { Task { await state.savePreferences(); await state.scheduler.replenish() } }
     }
 }
 struct HistoryView: View {

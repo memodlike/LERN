@@ -47,6 +47,70 @@ import LERNCore
         XCTAssertTrue(history.contains { $0.entryID == target.id && $0.kind == "opened" })
     }
 
+    func testColdNotificationLaunchWithConcurrentActivePhaseDoesNotDeadlockOrCrash() async throws {
+        let store = try library()
+        _ = try await store.addOwn(EntryDraft(text: "Standard feed thought"))
+        let target = try await store.addOwn(EntryDraft(text: "Notification targeted thought"))
+
+        let state = AppState(store: store)
+        let delegate = AppDelegate()
+        delegate.state = state
+
+        // 1. Simulate incoming notification during cold launch before state is loaded
+        await delegate.receive(entryID: target.id, planID: "lern.notification.coldstart")
+        XCTAssertTrue(delegate.hasPendingRoutes)
+        XCTAssertNil(state.current)
+
+        // 2. Concurrently simulate:
+        //    Task A: state.load(skipInitialNext: delegate.hasPendingRoutes) then delegate.deliverPendingResponses()
+        //    Task B: scenePhase changing to .active, triggering state.refreshOnForeground() and delegate.deliverPendingResponses()
+        async let loadAndDeliver: Void = {
+            await state.load(skipInitialNext: delegate.hasPendingRoutes)
+            await delegate.deliverPendingResponses()
+        }()
+
+        async let activeScenePhase: Void = {
+            await state.refreshOnForeground()
+            await delegate.deliverPendingResponses()
+        }()
+
+        _ = await (loadAndDeliver, activeScenePhase)
+
+        // 3. Verify no deadlocks, no errors, and the target notification entry is cleanly opened
+        XCTAssertNil(state.error, "AppState must not contain errors: \(state.error ?? "")")
+        XCTAssertTrue(state.loaded, "AppState must be marked as loaded")
+        XCTAssertEqual(state.current?.id, target.id, "Target notification quote must be the active current entry")
+
+        let history = try await store.history()
+        XCTAssertTrue(history.contains { $0.entryID == target.id && $0.kind == "opened" })
+
+        // Verify route queue is now empty
+        XCTAssertFalse(delegate.hasPendingRoutes)
+    }
+
+    func testColdNotificationLaunchWithMissingEntryDegradesGracefullyToFeed() async throws {
+        let store = try library()
+        let standard = try await store.addOwn(EntryDraft(text: "Standard feed thought"))
+        let missingID = String(repeating: "d", count: 64)
+
+        let state = AppState(store: store)
+        let delegate = AppDelegate()
+        delegate.state = state
+
+        await delegate.receive(entryID: missingID, planID: "lern.notification.missing")
+        XCTAssertTrue(delegate.hasPendingRoutes)
+
+        await state.load(skipInitialNext: delegate.hasPendingRoutes)
+        await delegate.deliverPendingResponses()
+
+        XCTAssertNil(state.error)
+        XCTAssertTrue(state.loaded)
+        // Should have smoothly fallen back to a valid feed entry without crashing
+        XCTAssertNotNil(state.current)
+        XCTAssertEqual(state.current?.id, standard.id)
+        XCTAssertFalse(delegate.hasPendingRoutes)
+    }
+
     func testWallpaperStyleIsIndependentFromFeedTheme() async throws {
         let store = try library()
         var preferences = Preferences()

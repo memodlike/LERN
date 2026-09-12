@@ -35,7 +35,10 @@ import UserNotifications
         self.store = store; self.scheduler = NotificationScheduler(store: store)
         WatchBridge.shared.onFavoriteMutation = { [weak self] in await self?.contentChanged() }
     }
-    func load() async {
+    func load(skipInitialNext: Bool = false) async {
+        guard !busy else { return }
+        busy = true
+        defer { busy = false }
         do {
             preferences = try await store.get("preferences", default: Preferences())
             themes = try await store.get("themes", default: ThemeValue.starters)
@@ -43,11 +46,15 @@ import UserNotifications
             reminders = try await store.get("reminders", default: [])
             selectedFeedSource = preferences.feedSource
             try await refreshLibrary()
-            if current == nil { await next() }
-            loaded = true
+            if current == nil && !skipInitialNext {
+                busy = false
+                await next()
+                busy = true
+            }
             let reconciled = await scheduler.replenish()
             if reconciled { SharedStore.clearNotificationScheduleDirty(); AppDelegate.scheduleBackgroundRefresh() }
             await WatchBridge.shared.update(store: store, source: preferences.watchSource)
+            loaded = true
         } catch { self.error = error.localizedDescription }
     }
     func refreshOnForeground() async {
@@ -210,6 +217,6 @@ import UserNotifications
     }
 }
 
-enum AppSheet: String, Identifiable { case library, themes, profile, reminders, importFiles, compose, share, collections, streak
+enum AppSheet: String, Identifiable { case library, themes, profile, settings, reminders, importFiles, compose, share, collections, streak
     var id: String { rawValue }
 }
