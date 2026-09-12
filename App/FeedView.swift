@@ -56,7 +56,10 @@ struct FeedView: View {
     }
     private var header: some View {
         HStack {
-            Text(Product.name).font(.system(size: 20, weight: .semibold, design: .rounded)).tracking(5).accessibilityLabel(Product.name)
+            HStack(spacing: 8) {
+                LogoMark(variant: LogoVariant(rawValue: state.preferences.logoVariantID) ?? .fallback, primary: Color(hex: state.preferences.logoPrimaryColor.isEmpty ? state.activeTheme.foreground : state.preferences.logoPrimaryColor), accent: Color(hex: state.preferences.logoAccentColor.isEmpty ? state.activeTheme.secondary : state.preferences.logoAccentColor)).frame(width: 24, height: 24).accessibilityHidden(true)
+                Text(Product.name).font(.system(size: 20, weight: .semibold, design: .rounded)).tracking(5)
+            }.accessibilityLabel(Product.name)
             Spacer()
             Button { state.sheet = .streak } label: { Label("\(state.preferences.streak.current)", systemImage: "flame").font(.system(size: 16)).padding(.horizontal, 12).frame(minHeight: 44) }.accessibilityLabel("Streak: \(state.preferences.streak.current) days")
             icon("Profile", "person.crop.circle") { state.sheet = .profile }
