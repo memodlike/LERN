@@ -66,6 +66,11 @@ import BackgroundTasks
 
     var hasPendingRoutes: Bool { pendingRoutes.hasPending }
 
+    override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
@@ -94,13 +99,17 @@ import BackgroundTasks
         }
         task.expirationHandler = { work.cancel() }
     }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        defer { completionHandler() }
         let request = response.notification.request
         guard let route = AppRoute.notification(userInfo: request.content.userInfo, requestID: request.identifier, category: request.content.categoryIdentifier, actionIdentifier: response.actionIdentifier) else { return }
         pendingRoutes.enqueue(route)
         Task { @MainActor [weak self] in
             await self?.deliverPendingResponses()
         }
+    }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler(notification.request.content.categoryIdentifier == "lern.alarm" ? [.banner, .sound, .list] : [.banner, .sound, .list])
     }
     func receive(url: URL) async {
         guard let route = AppRoute.url(url) else { return }
@@ -140,8 +149,5 @@ import BackgroundTasks
                 state.sheet = .library
             }
         }
-    }
-    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        notification.request.content.categoryIdentifier == "lern.alarm" ? [.banner, .sound, .list] : [.list]
     }
 }
