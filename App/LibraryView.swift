@@ -21,11 +21,14 @@ struct LibraryView: View {
         List {
             if search.isEmpty {
                 Section {
+                    ActiveFeedSourceBanner()
+                }
+                Section {
                     NavigationLink { ImportView() } label: { Label("Import files", systemImage: "square.and.arrow.down") }
                     NavigationLink { EntryEditor() } label: { Label("Write a thought", systemImage: "square.and.pencil") }
                 }
                 Section("Feed source") {
-                    Text("Search finds entries below. Choose a source here, then confirm before changing what the Feed reads.").font(.caption).foregroundStyle(.secondary)
+                    Text("Search finds entries below. Choose a source here, or tap Read to immediately switch what the Feed plays.").font(.caption).foregroundStyle(.secondary)
                     sourceRow("All entries", symbol: "square.stack", value: ContentSource())
                     sourceRow("Favorites", symbol: "heart", value: ContentSource(favoritesOnly: true))
                     sourceRow("My Content", symbol: "pencil.line", value: ContentSource(myContentOnly: true))
@@ -47,7 +50,29 @@ struct LibraryView: View {
             Section(search.isEmpty ? "Entries" : "Search results") {
                 ForEach(entries) { entry in
                     Button { Task { await state.open(entry.id); dismiss() } } label: { EntryRow(entry: entry) }.foregroundStyle(.primary)
-                        .swipeActions { Button { Task { await state.flag(entry, "favorite", !entry.favorite); await reload() } } label: { Image(systemName: entry.favorite ? "heart.slash" : "heart") }.tint(.pink) }
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                Task { await state.flag(entry, "favorite", !entry.favorite); await reload() }
+                            } label: {
+                                Label(entry.favorite ? "Unfavorite" : "Favorite", systemImage: entry.favorite ? "heart.slash" : "heart.fill")
+                            }
+                            .tint(.pink)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button {
+                                state.sheet = .share
+                            } label: {
+                                Label("Share", systemImage: "square.and.arrow.up")
+                            }
+                            .tint(.blue)
+
+                            Button {
+                                state.sheet = .collections
+                            } label: {
+                                Label("Collection", systemImage: "folder.badge.plus")
+                            }
+                            .tint(.indigo)
+                        }
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 else if entries.isEmpty { Text("No entries found").foregroundStyle(.secondary) }
@@ -79,7 +104,60 @@ struct LibraryView: View {
         return String(localized: "Custom selection")
     }
     private func sourceRow(_ title: LocalizedStringKey, symbol: String, value: ContentSource) -> some View {
-        Button { source = value } label: { HStack { Label(title, systemImage: symbol); Spacer(); if source == value { Image(systemName: "checkmark") } } }.foregroundStyle(.primary)
+        let isFeedActive = state.preferences.feedSource == value
+        let isSelected = source == value
+
+        return HStack(spacing: 12) {
+            Button {
+                source = value
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 18))
+                        .foregroundStyle(isFeedActive ? Color.green : Color.accentColor)
+                        .frame(width: 24)
+
+                    Text(title)
+                        .font(.body.weight(isSelected ? .semibold : .regular))
+
+                    if isFeedActive {
+                        Text("Active")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green, in: Capsule())
+                    }
+
+                    Spacer()
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(.tint)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+
+            if !isFeedActive {
+                Button {
+                    Task {
+                        await state.changeFeedSource(value)
+                        dismiss()
+                    }
+                } label: {
+                    Text("Read")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Read this source in feed"))
+            }
+        }
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
     private func reload() async { entries = []; hasMore = true; await loadMore() }
     private func loadMore() async {
@@ -89,14 +167,78 @@ struct LibraryView: View {
     }
     private var visibleTopics: [TopicValue] { state.topics.filter { $0.parentTopicID == nil } }
     @ViewBuilder private func topicRow(_ topic: TopicValue) -> some View {
-        HStack {
-            Button { source = ContentSource(topicIDs: [topic.id]); Task { await reload() } } label: {
-                Label { HStack { Text(topic.name); Spacer(); if topic.isPaused { Text("Paused").font(.caption).foregroundStyle(.orange) }; Text(topic.count.formatted()).foregroundStyle(.secondary) } } icon: { Image(systemName: topic.kind == "collection" ? "folder" : (topic.isPaused ? "pause.circle" : "doc.text")) }
-            }.foregroundStyle(.primary)
-            if source.topicIDs.contains(topic.id) { Image(systemName: "checkmark").foregroundStyle(.tint) }
+        let topicSource = ContentSource(topicIDs: [topic.id])
+        let isFeedActive = state.preferences.feedSource == topicSource
+        let isSelected = source.topicIDs.contains(topic.id)
+
+        HStack(spacing: 12) {
+            Button {
+                source = topicSource
+                Task { await reload() }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: topic.kind == "collection" ? "folder.fill" : (topic.isPaused ? "pause.circle.fill" : "doc.text.fill"))
+                        .font(.system(size: 18))
+                        .foregroundStyle(topic.isPaused ? Color(hex: "8A4500") : (isFeedActive ? Color.green : Color.accentColor))
+                        .frame(width: 24)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(topic.name)
+                                .font(.body.weight(isSelected ? .semibold : .regular))
+
+                            if isFeedActive {
+                                Text("Active")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.green, in: Capsule())
+                            }
+                        }
+
+                        if topic.isPaused {
+                            Text("Paused")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(Color(hex: "8A4500"))
+                        }
+                    }
+
+                    Spacer()
+
+                    Text(topic.count.formatted())
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+
+                    if isSelected {
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(.tint)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.primary)
+
+            if !isFeedActive {
+                Button {
+                    Task {
+                        await state.changeFeedSource(topicSource)
+                        dismiss()
+                    }
+                } label: {
+                    Text("Read")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Read \(topic.name) in feed")
+            }
         }
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
         .contextMenu {
-            Button("Read this topic") { Task { await state.changeFeedSource(ContentSource(topicIDs: [topic.id])); dismiss() } }
+            Button("Read this topic") { Task { await state.changeFeedSource(topicSource); dismiss() } }
             if topic.kind == "import" {
                 Button(topic.isPaused ? "Reactivate library" : "Pause library") { Task { await state.setLibraryPaused(id: topic.id, paused: !topic.isPaused) } }
                 Button("Rename library") { renamedTopic = topic.name; topicForRename = topic }
@@ -106,13 +248,94 @@ struct LibraryView: View {
         }
     }
     private func sectionRow(_ section: TopicValue) -> some View {
-        Button { source = ContentSource(topicIDs: [section.id]); Task { await reload() } } label: {
+        let sectionSource = ContentSource(topicIDs: [section.id])
+        let isSelected = source.topicIDs.contains(section.id)
+
+        return Button { source = sectionSource; Task { await reload() } } label: {
             HStack(spacing: 10) {
                 Image(systemName: "arrow.turn.down.right").foregroundStyle(.secondary)
                 Label { HStack { Text(section.name); Spacer(); Text(section.count.formatted()).foregroundStyle(.secondary) } } icon: { Image(systemName: "text.book.closed") }
-                if source.topicIDs.contains(section.id) { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                if isSelected { Image(systemName: "checkmark").foregroundStyle(.tint) }
             }.padding(.leading, 22)
-        }.foregroundStyle(.primary).accessibilityLabel("Section: \(section.name), \(section.count) entries")
+        }
+        .foregroundStyle(.primary)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+        .accessibilityLabel("Section: \(section.name), \(section.count) entries")
+    }
+}
+
+struct ActiveFeedSourceBanner: View {
+    @Environment(AppState.self) private var state
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Label("ACTIVE IN FEED", systemImage: "bolt.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.green.gradient, in: Capsule())
+
+                Spacer()
+
+                Text(selectionModeTitle)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 12) {
+                Image(systemName: activeSourceIcon)
+                    .font(.title2)
+                    .foregroundStyle(Color(hex: state.activeTheme.secondary))
+                    .frame(width: 32)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(activeSourceName)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Text("\(state.total) thoughts in rotation")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+        }
+        .padding(14)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.green.opacity(0.35), lineWidth: 1.5)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Active in feed: \(activeSourceName), \(selectionModeTitle), \(state.total) thoughts in rotation")
+    }
+
+    private var activeSourceName: String {
+        let feedSource = state.preferences.feedSource
+        if feedSource.favoritesOnly { return String(localized: "Favorites") }
+        if feedSource.myContentOnly { return String(localized: "My Content") }
+        if let id = feedSource.topicIDs.first, let topic = state.topics.first(where: { $0.id == id }) {
+            return topic.name
+        }
+        return String(localized: "All entries")
+    }
+
+    private var activeSourceIcon: String {
+        let feedSource = state.preferences.feedSource
+        if feedSource.favoritesOnly { return "heart.fill" }
+        if feedSource.myContentOnly { return "pencil.line" }
+        return "square.stack.3d.up.fill"
+    }
+
+    private var selectionModeTitle: String {
+        switch state.preferences.feedMode {
+        case .shuffle: return String(localized: "Shuffle")
+        case .sequential: return String(localized: "Sequential")
+        case .random: return String(localized: "Random")
+        }
     }
 }
 
@@ -150,12 +373,61 @@ struct LibraryDetailsView: View {
     }
 }
 struct EntryRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let entry: EntryValue
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top) { Text(entry.draft.text).lineLimit(3); if entry.favorite { Image(systemName: "heart.fill").font(.caption).accessibilityLabel("Favorite") } }
-            if !entry.draft.author.isEmpty { Text(entry.draft.author).font(.caption).foregroundStyle(.secondary) }
-        }.padding(.vertical, 6).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .top, spacing: 8) {
+                Text(entry.draft.text)
+                    .font(.body)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 8 : 3)
+                    .lineSpacing(3)
+                Spacer(minLength: 4)
+                if entry.favorite {
+                    Image(systemName: "heart.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.pink)
+                        .accessibilityLabel("Favorite")
+                }
+            }
+
+            if !entry.draft.author.isEmpty || !entry.draft.source.isEmpty {
+                HStack(spacing: 6) {
+                    if !entry.draft.author.isEmpty {
+                        Text(entry.draft.author)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    if !entry.draft.author.isEmpty && !entry.draft.source.isEmpty {
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if !entry.draft.source.isEmpty {
+                        Text(entry.draft.source)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            if !entry.draft.tags.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(entry.draft.tags.prefix(3), id: \.self) { tag in
+                        Text("#\(tag)")
+                            .font(.system(size: 11, weight: .medium))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.12), in: Capsule())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.top, 2)
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
     }
 }
 struct SourcePicker: View {
