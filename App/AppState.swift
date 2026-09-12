@@ -217,6 +217,6 @@ import UserNotifications
     }
 }
 
-enum AppSheet: String, Identifiable { case library, themes, profile, reminders, importFiles, compose, share, collections, streak
+enum AppSheet: String, Identifiable { case library, themes, profile, settings, reminders, importFiles, compose, share, collections, streak
     var id: String { rawValue }
 }

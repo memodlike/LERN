@@ -12,6 +12,13 @@ struct ProfileView: View {
                 TextField("Name", text: $state.preferences.name)
                 TextField("Gender identity (optional)", text: $state.preferences.gender)
             }
+            Section("Sanctuary Activity") {
+                NavigationLink {
+                    StreakView()
+                } label: {
+                    ProfileNavigationRow(title: "Reading Streak", subtitle: "Daily reading sanctuary progress", icon: "flame.fill", iconColor: .orange, badge: "\(state.preferences.streak.current) days")
+                }
+            }
             Section("Saved & Curated") {
                 NavigationLink {
                     EntryListScreen(title: "Favorites", source: ContentSource(favoritesOnly: true))
@@ -34,16 +41,51 @@ struct ProfileView: View {
                     ProfileNavigationRow(title: "Past Content", subtitle: "Review your recent reading history", icon: "clock.arrow.circlepath", iconColor: .teal)
                 }
             }
+            Section {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    ProfileNavigationRow(title: "Settings", subtitle: "Preferences, appearance, surfaces and system", icon: "gearshape.fill", iconColor: .gray)
+                }
+            }
+        }
+        .navigationTitle("Your space")
+        .toolbar {
+            ToolbarItem(placement: .principal) { LogoGlassChrome() }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    Task {
+                        await state.savePreferences(notificationImpact: false, reloadWidgets: false)
+                        await state.contentChanged()
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct SettingsView: View {
+    @Environment(AppState.self) private var state
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        @Bindable var state = state
+        Form {
             Section("Reading Sources") {
                 NavigationLink {
                     SourcePicker(source: $state.preferences.feedSource)
                 } label: {
-                    ProfileNavigationRow(title: "Feed Source Preferences", subtitle: "Choose active topics, tags, and filters", icon: "slider.horizontal.2.square.stack", iconColor: .purple)
+                    ProfileNavigationRow(title: "Feed Source Preferences", subtitle: "Choose active topics, tags, and filters", icon: "slider.horizontal.2.square", iconColor: .purple)
                 }
                 NavigationLink {
                     ResourcesView()
                 } label: {
                     ProfileNavigationRow(title: "Resources / Books", subtitle: "Imported literature and catalogs", icon: "books.vertical.fill", iconColor: .orange)
+                }
+                Picker("Feed order", selection: Binding(get: { state.preferences.feedMode }, set: { state.preferences.feedMode = $0; state.feedPast = []; state.feedPosition = -1; Task { await state.savePreferences() } })) {
+                    Text("Shuffle without repeats").tag(SelectionMode.shuffle)
+                    Text("Sequential").tag(SelectionMode.sequential)
+                    Text("Random").tag(SelectionMode.random)
                 }
             }
             Section("Muting & Moderation") {
@@ -70,11 +112,7 @@ struct ProfileView: View {
                     ProfileNavigationRow(title: "Reminders", subtitle: "Daily schedule and alarms", icon: "bell.fill", iconColor: .red)
                 }
                 Toggle("Show thought text in notifications", isOn: $state.preferences.showNotificationPreview)
-                NavigationLink {
-                    StreakView()
-                } label: {
-                    ProfileNavigationRow(title: "Streak", subtitle: "Daily reading sanctuary streak", icon: "flame.fill", iconColor: .orange, badge: "\(state.preferences.streak.current)")
-                }
+                Toggle("Evening streak reminder", isOn: $state.preferences.streakReminder)
             }
             Section("Surfaces") {
                 NavigationLink {
@@ -105,20 +143,48 @@ struct ProfileView: View {
                     ProfileNavigationRow(title: "Themes", subtitle: "Atmospheric color & typographic styling", icon: "paintpalette.fill", iconColor: .pink)
                 }
                 NavigationLink {
+                    AppIconsView()
+                } label: {
+                    ProfileNavigationRow(title: "App Icon", subtitle: "Choose your Home Screen icon", icon: "app.gift.fill", iconColor: .purple)
+                }
+                NavigationLink {
                     AppearanceCustomizationView()
                 } label: {
-                    ProfileNavigationRow(title: "Logo, Glass & App Icon", subtitle: "Custom mark, iOS glass, and Home Screen icon", icon: "sparkles.square.filled.on.square", iconColor: .indigo)
+                    ProfileNavigationRow(title: "Glass Effect", subtitle: "iOS 18 translucent glass materials", icon: "sparkles", iconColor: .indigo)
                 }
             }
             Section("General") {
-                Picker("Language", selection: $state.preferences.language) { Text("System").tag("system"); Text("English").tag("en"); Text("Русский").tag("ru") }
+                Picker("Language", selection: $state.preferences.language) {
+                    Text("System").tag("system")
+                    Text("English").tag("en")
+                    Text("Русский").tag("ru")
+                }
                 Toggle("Haptics", isOn: $state.preferences.haptics)
                 NavigationLink("Backup / Restore") { BackupView() }
                 NavigationLink("Diagnostics") { DiagnosticsView() }
-                NavigationLink("About") { Form { Text(Product.name).font(.largeTitle.bold()); Text("Your own words, always close. A private, local reading library."); Label("No account, ads or subscriptions", systemImage: "checkmark.shield"); Text("Version 1.0 · iOS 18+"); Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote) }.navigationTitle("About") }
+                NavigationLink("About") {
+                    Form {
+                        Text(Product.name).font(.largeTitle.bold())
+                        Text("Your own words, always close. A private, local reading library.")
+                        Label("No account, ads or subscriptions", systemImage: "checkmark.shield")
+                        Text("Version 1.0 · iOS 18+")
+                        Text("Sample thoughts, icons and sounds are original. This app is not affiliated with Monkey Taps.").font(.footnote)
+                    }.navigationTitle("About")
+                }
             }
-        }.navigationTitle("Your space")
-            .toolbar { ToolbarItem(placement: .principal) { LogoGlassChrome() }; ToolbarItem(placement: .confirmationAction) { Button("Done") { Task { await state.savePreferences(notificationImpact: false, reloadWidgets: false); await state.contentChanged(); dismiss() } } } }
+        }
+        .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") {
+                    Task {
+                        await state.savePreferences(notificationImpact: false, reloadWidgets: false)
+                        await state.contentChanged()
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 

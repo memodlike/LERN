@@ -48,6 +48,7 @@ struct FeedView: View {
                 case .library: LibraryView()
                 case .themes: ThemesView()
                 case .profile: ProfileView()
+                case .settings: SettingsView()
                 case .reminders: RemindersView()
                 case .importFiles: ImportView()
                 case .compose: EntryEditor()
@@ -116,7 +117,7 @@ struct FeedView: View {
                         .contentShape(Circle())
                 }
                 .accessibilityLabel("Profile")
-                .accessibilityHint("Opens your space and settings")
+                .accessibilityHint("Opens your space and profile")
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
@@ -136,19 +137,10 @@ struct FeedView: View {
                         .shadow(color: .black.opacity(state.activeTheme.hasLowContrast ? 0.45 : 0.12), radius: 8, y: 2)
                         .accessibilityIdentifier("feed.quote")
 
-                    if !entry.draft.author.isEmpty || !entry.draft.source.isEmpty {
-                        VStack(spacing: 4) {
-                            if !entry.draft.author.isEmpty {
-                                Text("— " + entry.draft.author)
-                                    .font(.callout.weight(.medium))
-                                    .opacity(0.95)
-                            }
-                            if !entry.draft.source.isEmpty {
-                                Text(entry.draft.source)
-                                    .font(.caption)
-                                    .opacity(0.85)
-                            }
-                        }
+                    if !entry.draft.author.isEmpty {
+                        Text("— " + entry.draft.author)
+                            .font(.callout.weight(.medium))
+                            .opacity(0.95)
                     }
                 }
                 .frame(maxWidth: 680, minHeight: max(0, geometry.size.height - 32))
@@ -222,17 +214,13 @@ struct FeedView: View {
         HStack(alignment: .center, spacing: 12) {
             Button { state.sheet = .library } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "square.stack.3d.up.fill")
-                        .font(.system(size: 13, weight: .semibold))
+                    Image(systemName: "books.vertical.fill")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color(hex: state.activeTheme.secondary))
 
-                    Text(sourceTitle)
+                    Text("Library")
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10, weight: .bold))
-                        .opacity(0.65)
                 }
                 .padding(.horizontal, 16)
                 .frame(minHeight: 44)
@@ -240,41 +228,22 @@ struct FeedView: View {
             }
             .lernGlassCapsule(appearance: glassAppearance, tint: glassTint, intensity: state.preferences.glassIntensity, elevation: .low)
             .accessibilityIdentifier("feed.library")
-            .accessibilityLabel("Current source: \(sourceTitle). Tap to change source.")
+            .accessibilityLabel("Library")
 
             Spacer(minLength: 8)
 
-            HStack(spacing: 2) {
-                Button { state.sheet = .reminders } label: {
-                    Image(systemName: "bell")
-                        .font(.system(size: 18, weight: .medium))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Reminders")
-
-                Divider().frame(height: 16).opacity(0.2)
-
-                Button { state.sheet = .themes } label: {
-                    Image(systemName: "paintpalette")
-                        .font(.system(size: 18, weight: .medium))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel("Themes")
+            Button { state.sheet = .settings } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 2)
             .lernGlassCapsule(appearance: glassAppearance, tint: glassTint, intensity: state.preferences.glassIntensity, elevation: .low)
+            .accessibilityIdentifier("feed.settings")
+            .accessibilityLabel("Settings")
         }
         .padding(.top, 12)
-    }
-
-    private var sourceTitle: String {
-        if state.preferences.feedSource.favoritesOnly { return String(localized: "Favorites") }
-        if state.preferences.feedSource.myContentOnly { return String(localized: "My Content") }
-        if let id = state.preferences.feedSource.topicIDs.first { return state.topics.first { $0.id == id }?.name ?? String(localized: "Topics") }
-        return String(localized: "Your library")
     }
     private var empty: some View {
         let compact = verticalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize
