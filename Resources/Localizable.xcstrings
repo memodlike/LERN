@@ -6625,6 +6625,646 @@
           }
         }
       }
+    },
+    "Logo, Glass & App Icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo, Glass & App Icon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Логотип, стекло и значок"
+          }
+        }
+      }
+    },
+    "Custom mark, iOS glass, and Home Screen icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom mark, iOS glass, and Home Screen icon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Символ, эффект стекла и значок приложения"
+          }
+        }
+      }
+    },
+    "In-App Header": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In-App Header"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Шапка приложения"
+          }
+        }
+      }
+    },
+    "Preview Mode": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview Mode"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Режим предпросмотра"
+          }
+        }
+      }
+    },
+    "Icon Background": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon Background"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фон значка"
+          }
+        }
+      }
+    },
+    "Midnight Dark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midnight Dark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тёмный"
+          }
+        }
+      }
+    },
+    "Pure White": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pure White"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Светлый"
+          }
+        }
+      }
+    },
+    "Custom Color": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свой цвет"
+          }
+        }
+      }
+    },
+    "Custom Background Color": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Background Color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цвет фона значка"
+          }
+        }
+      }
+    },
+    "Mark Size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark Size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Размер символа"
+          }
+        }
+      }
+    },
+    "Icon Canvas & Size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon Canvas & Size"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Холст и размер значка"
+          }
+        }
+      }
+    },
+    "Sort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сортировка"
+          }
+        }
+      }
+    },
+    "Curated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Curated"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подборка"
+          }
+        }
+      }
+    },
+    "A–Z": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A–Z"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "А–Я"
+          }
+        }
+      }
+    },
+    "Cosmic & Flow": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosmic & Flow"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Космос и потоки"
+          }
+        }
+      }
+    },
+    "Reading & Focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reading & Focus"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтение и фокус"
+          }
+        }
+      }
+    },
+    "Organic & Abstract": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organic & Abstract"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Органика и абстракция"
+          }
+        }
+      }
+    },
+    "Geometric": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geometric"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Геометрия"
+          }
+        }
+      }
+    },
+    "All": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Все"
+          }
+        }
+      }
+    },
+    "Select an official precompiled icon or auto-match with your chosen colors.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an official precompiled icon or auto-match with your chosen colors."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите официальный значок или подберите под цвета своего логотипа."
+          }
+        }
+      }
+    },
+    "Auto-Match System Icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-Match System Icon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подобрать системный значок"
+          }
+        }
+      }
+    },
+    "Save Custom Icon to Photos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save Custom Icon to Photos"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить значок в Фото"
+          }
+        }
+      }
+    },
+    "Share Custom Icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Custom Icon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделиться значком"
+          }
+        }
+      }
+    },
+    "How to set on Home Screen via Shortcuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to set on Home Screen via Shortcuts"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как установить на экран «Домой» через Команды"
+          }
+        }
+      }
+    },
+    "iOS allows custom Home Screen icons for any app using the Apple Shortcuts app:": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS allows custom Home Screen icons for any app using the Apple Shortcuts app:"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS позволяет установить любой значок на экран «Домой» через приложение «Команды»:"
+          }
+        }
+      }
+    },
+    "1. Tap **Save Custom Icon to Photos** above.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Tap **Save Custom Icon to Photos** above."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Нажмите **Сохранить значок в Фото** выше."
+          }
+        }
+      }
+    },
+    "2. Open the **Shortcuts** app and tap **+**.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Open the **Shortcuts** app and tap **+**."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Откройте приложение **Команды** и нажмите **+**."
+          }
+        }
+      }
+    },
+    "3. Add the action **Open App** and select **LERN**.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. Add the action **Open App** and select **LERN**."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. Добавьте действие **Открыть приложение** и выберите **LERN**."
+          }
+        }
+      }
+    },
+    "4. Tap Share > **Add to Home Screen**, choose the saved photo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4. Tap Share > **Add to Home Screen**, choose the saved photo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "4. Нажмите Поделиться > **На экран «Домой»** и выберите сохранённое фото."
+          }
+        }
+      }
+    },
+    "Open Apple Shortcuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Apple Shortcuts"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть приложение «Команды»"
+          }
+        }
+      }
+    },
+    "Home Screen App Icon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home Screen App Icon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Значок на экране «Домой»"
+          }
+        }
+      }
+    },
+    "Official icons change your icon immediately. For fully customized artwork, save to Photos and apply via Apple Shortcuts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Official icons change your icon immediately. For fully customized artwork, save to Photos and apply via Apple Shortcuts."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Официальные значки применяются сразу. Любой авторский значок можно сохранить в Фото и применить через «Команды»."
+          }
+        }
+      }
+    },
+    "App icon updated!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App icon updated!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Значок приложения обновлён!"
+          }
+        }
+      }
+    },
+    "Icon saved to Photos!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Icon saved to Photos!"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Значок сохранён в Фото!"
+          }
+        }
+      }
+    },
+    "Allow photo access in Settings to save images.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow photo access in Settings to save images."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Разрешите доступ к Фото в Настройках, чтобы сохранять изображения."
+          }
+        }
+      }
+    },
+    "Failed to render icon.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to render icon."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось сформировать изображение значка."
+          }
+        }
+      }
+    },
+    "Reset colors to theme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reset colors to theme"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сбросить цвета к теме"
+          }
+        }
+      }
+    },
+    "Primary mark color": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Primary mark color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Основной цвет символа"
+          }
+        }
+      }
+    },
+    "Accent mark color": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accent mark color"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Акцентный цвет символа"
+          }
+        }
+      }
+    },
+    "Logo Mark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logo Mark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Символ логотипа"
+          }
+        }
+      }
     }
   }
 }

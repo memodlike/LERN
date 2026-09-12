@@ -107,12 +107,7 @@ struct ProfileView: View {
                 NavigationLink {
                     AppearanceCustomizationView()
                 } label: {
-                    ProfileNavigationRow(title: "Logo & Glass", subtitle: "Custom logo variant & iOS glass effects", icon: "sparkles", iconColor: .indigo)
-                }
-                NavigationLink {
-                    AppIconsView()
-                } label: {
-                    ProfileNavigationRow(title: "App Icon", subtitle: "Alternate Home Screen icons", icon: "app.gift.fill", iconColor: .purple)
+                    ProfileNavigationRow(title: "Logo, Glass & App Icon", subtitle: "Custom mark, iOS glass, and Home Screen icon", icon: "sparkles.square.filled.on.square", iconColor: .indigo)
                 }
             }
             Section("General") {
