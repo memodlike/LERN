@@ -83,8 +83,17 @@ final class NotificationViewController: UIViewController, UNNotificationContentE
         self.entryID = entry.id
         text = entry.draft.text
         author = entry.draft.author
-        source = entry.draft.source
+        source = Self.isReference(entry.draft.source) ? "" : entry.draft.source
         favorite = entry.favorite
+    }
+
+    /// Import provenance (links, file paths) is library metadata, not something to read in a notification.
+    private static func isReference(_ value: String) -> Bool {
+        let text = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if text.contains("://") || text.hasPrefix("www.") { return true }
+        guard !text.contains(" ") else { return false }
+        let fileExtensions = ["pdf", "txt", "md", "csv", "json", "jsonl", "epub", "docx", "html"]
+        return text.contains("/") || fileExtensions.contains((text as NSString).pathExtension)
     }
 
     func toggleFavorite() async {
