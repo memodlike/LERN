@@ -15,10 +15,32 @@ public enum SharedStore {
         #endif
         return URL.applicationSupportDirectory.appendingPathComponent("LERN", isDirectory: true)
     }
+    private static let containerLock = NSLock()
+    private static var cachedContainers: [URL: ModelContainer] = [:]
+
+    public static func container(for url: URL) throws -> ModelContainer {
+        containerLock.lock()
+        defer { containerLock.unlock() }
+        if let existing = cachedContainers[url] {
+            return existing
+        }
+        let container = try StorageFactory.container(url: url)
+        cachedContainers[url] = container
+        return container
+    }
+
+    #if DEBUG
+    public static func resetContainerCache() {
+        containerLock.lock()
+        defer { containerLock.unlock() }
+        cachedContainers.removeAll()
+    }
+    #endif
+
     public static func open() throws -> LibraryStore {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("library.store")
-        return LibraryStore(modelContainer: try StorageFactory.container(url: url))
+        return LibraryStore(modelContainer: try container(for: url))
     }
     public static var photosDirectory: URL { directory.appendingPathComponent("photos", isDirectory: true) }
     public static func photoURL(_ name: String) -> URL? {

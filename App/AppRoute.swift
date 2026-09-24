@@ -42,6 +42,10 @@ struct PendingAppRoutes: Sendable {
     private var queued: [AppRoute] = []
     private var consumed = Set<String>()
 
+    var isEmpty: Bool { queued.isEmpty }
+    var count: Int { queued.count }
+    func peek() -> AppRoute? { queued.first }
+
     mutating func enqueue(_ route: AppRoute) {
         guard !consumed.contains(route.stableID), !queued.contains(where: { $0.stableID == route.stableID }) else { return }
         queued.append(route)
@@ -55,5 +59,48 @@ struct PendingAppRoutes: Sendable {
     mutating func retry(_ route: AppRoute) {
         guard !consumed.contains(route.stableID), !queued.contains(where: { $0.stableID == route.stableID }) else { return }
         queued.insert(route, at: 0)
+    }
+}
+
+/// Thread-safe wrapper around `PendingAppRoutes` protected by an `NSLock`.
+/// Enables nonisolated delegate methods (such as `UNUserNotificationCenterDelegate`)
+/// to enqueue incoming routes instantaneously without blocking or hopping to the main actor.
+final class PendingRouteQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage = PendingAppRoutes()
+
+    var isEmpty: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return storage.isEmpty
+    }
+
+    var hasPending: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return !storage.isEmpty
+    }
+
+    func enqueue(_ route: AppRoute) {
+        lock.lock(); defer { lock.unlock() }
+        storage.enqueue(route)
+    }
+
+    func dequeue() -> AppRoute? {
+        lock.lock(); defer { lock.unlock() }
+        return storage.dequeue()
+    }
+
+    func complete(_ route: AppRoute) {
+        lock.lock(); defer { lock.unlock() }
+        storage.complete(route)
+    }
+
+    func retry(_ route: AppRoute) {
+        lock.lock(); defer { lock.unlock() }
+        storage.retry(route)
+    }
+
+    func peek() -> AppRoute? {
+        lock.lock(); defer { lock.unlock() }
+        return storage.peek()
     }
 }

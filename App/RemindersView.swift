@@ -17,7 +17,7 @@ struct RemindersView: View {
                 else if state.scheduler.settings.scheduledDelivery == "enabled" { Text("Scheduled Summary may delay normal reminders.") }
                 else { Text("Notifications are enabled. Focus and silent mode can still affect delivery.") }
                 Text("Choose what each reminder says and how its topic is presented. Focus, Silent Mode and Scheduled Summary can still affect delivery.").font(.caption).foregroundStyle(.secondary)
-                if let error = state.scheduler.lastError { Text(error).foregroundStyle(.red) }
+                if let error = state.scheduler.lastError { Text(error).foregroundStyle(Color(hex: "C62828")) }
             }
             Section("Delivery diagnostics") {
                 DisclosureGroup("iOS delivery details") {
@@ -32,9 +32,22 @@ struct RemindersView: View {
             Section("Reminder groups") {
                 ForEach(state.reminders) { rule in
                     Button { edit = rule } label: {
-                        HStack { Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : (rule.isAlarm ? "⏰" : "✦")).font(.title3).frame(width: 28); VStack(alignment: .leading, spacing: 5) { Text(topic(rule)); Text(summary(rule)).font(.caption).foregroundStyle(.secondary) }; Spacer(); Text(rule.enabled ? "On" : "Off").font(.caption) }.padding(.vertical, 4)
+                        HStack {
+                            Text(rule.notificationSymbol?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? rule.notificationSymbol! : (rule.isAlarm ? "⏰" : "✦"))
+                                .font(.title3)
+                                .frame(minWidth: 28)
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(topic(rule))
+                                Text(summary(rule)).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(rule.enabled ? "On" : "Off").font(.caption)
+                        }
+                        .padding(.vertical, 4)
                     }
                     .foregroundStyle(.primary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(topic(rule)), \(summary(rule)), \(rule.enabled ? "On" : "Off")")
                     .accessibilityIdentifier("reminders.rule")
                 }.onDelete { indexes in state.reminders.remove(atOffsets: indexes); Task { await state.saveReminders() } }
                 Button("Add reminder group", systemImage: "plus") { edit = ReminderRule() }.accessibilityIdentifier("reminders.add")
@@ -91,7 +104,21 @@ struct ReminderEditor: View {
             }
             Section("Days") {
                 ForEach(1...7, id: \.self) { day in Toggle(Calendar.current.weekdaySymbols[day - 1], isOn: Binding(get: { rule.weekdays.contains(day) }, set: { on in if on { rule.weekdays.append(day) } else { rule.weekdays.removeAll { $0 == day } } })) }
-                HStack { Button("Every day") { rule.weekdays = Array(1...7) }; Spacer(); Button("Weekdays") { rule.weekdays = Array(2...6) }; Spacer(); Button("Weekends") { rule.weekdays = [1, 7] } }.font(.caption).frame(minHeight: 44)
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Button("Every day") { rule.weekdays = Array(1...7) }
+                        Spacer()
+                        Button("Weekdays") { rule.weekdays = Array(2...6) }
+                        Spacer()
+                        Button("Weekends") { rule.weekdays = [1, 7] }
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button("Every day") { rule.weekdays = Array(1...7) }
+                        Button("Weekdays") { rule.weekdays = Array(2...6) }
+                        Button("Weekends") { rule.weekdays = [1, 7] }
+                    }
+                }
+                .font(.caption).frame(minHeight: 44)
             }
             Section("Sound") { NavigationLink { ReminderSoundPicker(selection: $rule.sound) } label: { LabeledContent("Sound", value: ReminderSoundPicker.name(for: rule.sound)) } }
             if rule.isAlarm { Section { Text("This alarm is a local notification. It follows Focus and silent-mode settings and does not behave like a critical system alarm.").font(.footnote) } }
@@ -136,8 +163,7 @@ private struct NotificationPreview: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.separator.opacity(0.6)))
+        .lernGlassCard(cornerRadius: 16, elevation: .low)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Notification content preview")
     }
@@ -169,10 +195,32 @@ private struct ReminderSoundPicker: View {
                 ForEach(sounds, id: \.self) { sound in
                     HStack {
                         Button { selection = sound } label: {
-                            HStack { Text(Self.name(for: sound)); Spacer(); if selection == sound { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Selected") } }
-                        }.buttonStyle(.plain).foregroundStyle(.primary)
-                        if sound != "none" { Button { previewer.play(sound) } label: { Image(systemName: "play.circle").font(.title3) }.buttonStyle(.borderless).accessibilityLabel("Preview \(Self.name(for: sound))") }
-                    }.padding(.vertical, 4)
+                            HStack {
+                                Text(Self.name(for: sound))
+                                Spacer()
+                                if selection == sound {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.primary)
+                        .accessibilityAddTraits(selection == sound ? [.isSelected] : [])
+
+                        if sound != "none" {
+                            Button {
+                                previewer.play(sound)
+                            } label: {
+                                Image(systemName: "play.circle")
+                                    .font(.title3)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Preview \(Self.name(for: sound))")
+                        }
+                    }
+                    .padding(.vertical, 2)
                 }
             } footer: { Text("Previews are played only when you tap Play and mix with other audio.") }
             Section("Haptics") {

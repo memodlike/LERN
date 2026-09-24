@@ -150,29 +150,88 @@ struct WallpaperView: View {
 }
 struct AppIconsView: View {
     @Environment(AppState.self) private var state
-    private let icons = [("Horizon", ""), ("Minimal Black", "MinimalBlack"), ("Minimal White", "MinimalWhite"), ("Gradient", "Gradient"), ("Quote Mark", "QuoteMark"), ("Warm", "Warm"), ("Cool", "Cool")]
-    private let columns = [GridItem(.adaptive(minimum: 120), spacing: 16)]
+    @State private var currentKey: String = UIApplication.shared.alternateIconName ?? ""
+
+    struct IconEntry: Identifiable {
+        let name: LocalizedStringKey
+        let key: String
+        var preview: String { (key.isEmpty ? "AppIcon" : key) + "Preview" }
+        var id: String { key }
+    }
+
+    // Keys match the Icon Composer files in Resources/AppIcons (see scripts/generate_app_icons.py).
+    private let icons: [IconEntry] = [
+        IconEntry(name: "Ink", key: ""),
+        IconEntry(name: "Paper", key: "Paper"),
+        IconEntry(name: "Noir", key: "Noir"),
+        IconEntry(name: "Quote", key: "Quote"),
+        IconEntry(name: "Dawn", key: "Dawn"),
+        IconEntry(name: "Bookmark", key: "Bookmark"),
+        IconEntry(name: "Moon", key: "Moon"),
+        IconEntry(name: "Sprout", key: "Sprout"),
+        IconEntry(name: "Spark", key: "Spark"),
+        IconEntry(name: "Page", key: "Page")
+    ]
+
+    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 16)]
+
     var body: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 20) {
-                ForEach(icons, id: \.0) { name, key in
-                    Button { select(key) } label: {
-                        VStack(spacing: 9) {
-                            ZStack(alignment: .topTrailing) {
-                                if let image = UIImage(named: key.isEmpty ? "IconPreview" : key + "Preview") { Image(uiImage: image).resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 18)).accessibilityHidden(true) }
-                                if (UIApplication.shared.alternateIconName ?? "") == key { Image(systemName: "checkmark.circle.fill").font(.title2).symbolRenderingMode(.palette).foregroundStyle(.white, .blue).accessibilityLabel("Selected") }
-                            }.frame(width: 92, height: 92)
-                            Text(LocalizedStringKey(name)).font(.caption.weight(.medium)).multilineTextAlignment(.center)
-                        }.frame(maxWidth: .infinity)
-                    }.buttonStyle(.plain).accessibilityLabel(name + ((UIApplication.shared.alternateIconName ?? "") == key ? ", selected" : ""))
+            VStack(spacing: 20) {
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(icons) { icon in
+                        Button {
+                            select(icon.key)
+                        } label: {
+                            VStack(spacing: 8) {
+                                Image(icon.preview)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 76, height: 76)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                            .strokeBorder(Color.accentColor, lineWidth: 2.5)
+                                            .padding(-5)
+                                            .opacity(currentKey == icon.key ? 1 : 0)
+                                    }
+                                Text(icon.name)
+                                    .font(.caption.weight(currentKey == icon.key ? .semibold : .regular))
+                                    .foregroundStyle(currentKey == icon.key ? .primary : .secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .animation(.snappy(duration: 0.2), value: currentKey)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(icon.name))
+                        .accessibilityAddTraits(currentKey == icon.key ? [.isSelected] : [])
+                    }
                 }
-            }.padding(20)
-            Text("These previews show the installed icon assets. iOS applies its own appearance treatment.").font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 20)
-        }.navigationTitle("App Icon")
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+
+                Text("Tap any icon to apply it immediately to your Home Screen. Each one adapts to Dark, Tinted and Clear Home Screen styles.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+        }
+        .navigationTitle("App Icon")
     }
+
     private func select(_ key: String) {
+        if state.preferences.haptics {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
         UIApplication.shared.setAlternateIconName(key.isEmpty ? nil : key) { error in
-            if let error { Task { @MainActor in state.error = error.localizedDescription } }
+            Task { @MainActor in
+                if let error {
+                    state.error = error.localizedDescription
+                } else {
+                    currentKey = key
+                }
+            }
         }
     }
 }
