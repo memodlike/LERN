@@ -2,6 +2,214 @@
   "sourceLanguage": "en",
   "version": "1.0",
   "strings": {
+    "Ink": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ink"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чернила"
+          }
+        }
+      }
+    },
+    "Noir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noir"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нуар"
+          }
+        }
+      }
+    },
+    "Quote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quote"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цитата"
+          }
+        }
+      }
+    },
+    "Dawn": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dawn"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рассвет"
+          }
+        }
+      }
+    },
+    "Bookmark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bookmark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Закладка"
+          }
+        }
+      }
+    },
+    "Moon": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moon"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Луна"
+          }
+        }
+      }
+    },
+    "Sprout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprout"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Росток"
+          }
+        }
+      }
+    },
+    "Spark": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spark"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Искра"
+          }
+        }
+      }
+    },
+    "Page": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Page"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Страница"
+          }
+        }
+      }
+    },
+    "Tap any icon to apply it immediately to your Home Screen. Each one adapts to Dark, Tinted and Clear Home Screen styles.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap any icon to apply it immediately to your Home Screen. Each one adapts to Dark, Tinted and Clear Home Screen styles."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите на значок, чтобы сразу применить его на экране «Домой». Каждый подстраивается под тёмный, тонированный и прозрачный стиль."
+          }
+        }
+      }
+    },
+    "In favorites": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In favorites"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В избранном"
+          }
+        }
+      }
+    },
+    "LERN Notifications": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LERN Notifications"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уведомления LERN"
+          }
+        }
+      }
+    },
+    "Open in LERN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open in LERN"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть в LERN"
+          }
+        }
+      }
+    },
     "About": {
       "localizations": {
         "en": {
@@ -3890,70 +4098,6 @@
         }
       }
     },
-    "Minimal Black": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Minimal Black"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Минимальный чёрный"
-          }
-        }
-      }
-    },
-    "Minimal White": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Minimal White"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Минимальный белый"
-          }
-        }
-      }
-    },
-    "Gradient": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gradient"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Градиент"
-          }
-        }
-      }
-    },
-    "Quote Mark": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quote Mark"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Кавычки"
-          }
-        }
-      }
-    },
     "Warm": {
       "localizations": {
         "en": {
@@ -6914,22 +7058,6 @@
         }
       }
     },
-    "All": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Все"
-          }
-        }
-      }
-    },
     "Select an official precompiled icon or auto-match with your chosen colors.": {
       "localizations": {
         "en": {
@@ -7282,70 +7410,6 @@
         }
       }
     },
-    "Minimal": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Minimal"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Минимализм"
-          }
-        }
-      }
-    },
-    "Cosmic": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cosmic"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Космос"
-          }
-        }
-      }
-    },
-    "Nature": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nature"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Природа"
-          }
-        }
-      }
-    },
-    "Heritage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Heritage"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Наследие"
-          }
-        }
-      }
-    },
     "Select from 24 official Apple HIG icons or auto-match with your custom design.": {
       "localizations": {
         "en": {
@@ -7358,310 +7422,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выберите один из 24 официальных значков Apple HIG или подберите под своё оформление."
-          }
-        }
-      }
-    },
-    "Obsidian Gold": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obsidian Gold"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Золотой обсидиан"
-          }
-        }
-      }
-    },
-    "Titanium": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Titanium"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Натуральный титан"
-          }
-        }
-      }
-    },
-    "Graphite Slate": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Graphite Slate"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Графит"
-          }
-        }
-      }
-    },
-    "Midnight Aurora": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Midnight Aurora"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Северное сияние"
-          }
-        }
-      }
-    },
-    "Deep Space": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deep Space"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Глубокий космос"
-          }
-        }
-      }
-    },
-    "Starlight": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Starlight"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Звёздный свет"
-          }
-        }
-      }
-    },
-    "Solar Flare": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Solar Flare"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Солнечная вспышка"
-          }
-        }
-      }
-    },
-    "Eclipse": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eclipse"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Затмение"
-          }
-        }
-      }
-    },
-    "Cosmic Orbit": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cosmic Orbit"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Орбита"
-          }
-        }
-      }
-    },
-    "Forest Sanctuary": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forest Sanctuary"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лесное убежище"
-          }
-        }
-      }
-    },
-    "Warm Terracotta": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Warm Terracotta"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Тёплая глина"
-          }
-        }
-      }
-    },
-    "Cool Ocean": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cool Ocean"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Океан"
-          }
-        }
-      }
-    },
-    "Desert Dusk": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desert Dusk"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пустынный закат"
-          }
-        }
-      }
-    },
-    "Lavender Mist": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lavender Mist"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Лаванда"
-          }
-        }
-      }
-    },
-    "Matcha Zen": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Matcha Zen"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Матча дзен"
-          }
-        }
-      }
-    },
-    "Parchment Ink": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parchment Ink"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пергамент"
-          }
-        }
-      }
-    },
-    "Crimson Velvet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crimson Velvet"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Бархатный рубин"
-          }
-        }
-      }
-    },
-    "Emerald Library": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Emerald Library"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Изумрудная библиотека"
-          }
-        }
-      }
-    },
-    "Indigo Dye": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Indigo Dye"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Индиго"
           }
         }
       }
@@ -7825,23 +7585,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выберите значок для Домашнего экрана"
-          }
-        }
-      }
-    },
-    "Tap any icon to apply it immediately to your Home Screen.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap any icon to apply it immediately to your Home Screen."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нажмите на любой значок, чтобы мгновенно применить его на Домашний экран."
           }
         }
       }

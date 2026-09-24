@@ -6,6 +6,10 @@ options:
     watchOS: '11.0'
   xcodeVersion: '26.0'
   createIntermediateGroups: true
+  fileTypes:
+    icon:
+      file: true
+      buildPhase: resources
 settings:
   base:
     SWIFT_VERSION: '5.0'
@@ -25,13 +29,14 @@ targets:
     dependencies:
       - package: LERNCore
       - target: LERNWidgets
+      - target: LERNNotificationContent
       - target: LERNWatch
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.lern.local
         TARGETED_DEVICE_FAMILY: '1,2'
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: 'MinimalBlack MinimalWhite ObsidianGold Titanium GraphiteSlate MidnightAurora DeepSpace Starlight SolarFlare Eclipse CosmicOrbit ForestSanctuary Warm Cool DesertDusk LavenderMist MatchaZen QuoteMark Gradient ParchmentInk CrimsonVelvet EmeraldLibrary IndigoDye'
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: 'Paper Noir Quote Dawn Bookmark Moon Sprout Spark Page'
         ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
         CODE_SIGN_ENTITLEMENTS: App/LERN.entitlements
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.lifestyle
@@ -71,6 +76,39 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
       path: Widgets/LERNWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.memodlike.lern]
+  LERNNotificationContent:
+    type: app-extension
+    platform: iOS
+    sources:
+      - NotificationContent
+      - path: Shared
+        excludes: [WidgetIntents.swift]
+      - Resources/Localizable.xcstrings
+      - Resources/PrivacyInfo.xcprivacy
+    dependencies:
+      - package: LERNCore
+      - sdk: UserNotificationsUI.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lern.local.notification-content
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_ENTITLEMENTS: NotificationContent/LERNNotificationContent.entitlements
+    info:
+      path: NotificationContent/Info.plist
+      properties:
+        CFBundleDisplayName: LERN Notifications
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.content-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationViewController
+          NSExtensionAttributes:
+            UNNotificationExtensionCategory: [lern.learning, lern.alarm]
+            UNNotificationExtensionInitialContentSizeRatio: 0.9
+            UNNotificationExtensionDefaultContentHidden: true
+            UNNotificationExtensionUserInteractionEnabled: true
+    entitlements:
+      path: NotificationContent/LERNNotificationContent.entitlements
       properties:
         com.apple.security.application-groups: [group.com.memodlike.lern]
   LERNWatch:

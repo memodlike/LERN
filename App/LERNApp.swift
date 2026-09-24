@@ -73,6 +73,10 @@ import BackgroundTasks
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // Categories bind reminders to the LERNNotificationContent expanded view.
+        UNUserNotificationCenter.current().setNotificationCategories(Set(["lern.learning", "lern.alarm"].map {
+            UNNotificationCategory(identifier: $0, actions: [], intentIdentifiers: [])
+        }))
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundRefreshIdentifier, using: nil) { [weak self] task in
             guard let refresh = task as? BGAppRefreshTask else { task.setTaskCompleted(success: false); return }
             self?.runBackgroundRefresh(refresh)

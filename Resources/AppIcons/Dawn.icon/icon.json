@@ -1,0 +1,35 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.96500,0.54500,0.35700,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "sun.svg",
+          "name": "sun"
+        },
+        {
+          "glass": true,
+          "image-name": "water.svg",
+          "name": "water"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

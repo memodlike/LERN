@@ -151,120 +151,56 @@ struct WallpaperView: View {
 struct AppIconsView: View {
     @Environment(AppState.self) private var state
     @State private var currentKey: String = UIApplication.shared.alternateIconName ?? ""
-    @State private var selectedCategory: String = "All"
 
     struct IconEntry: Identifiable {
         let name: LocalizedStringKey
         let key: String
-        let preview: String
-        let category: String
+        var preview: String { (key.isEmpty ? "AppIcon" : key) + "Preview" }
         var id: String { key }
     }
 
-    private let allIcons: [IconEntry] = [
-        // Sanctuary Minimal
-        IconEntry(name: "Horizon", key: "", preview: "IconPreview", category: "Minimal"),
-        IconEntry(name: "Minimal Black", key: "MinimalBlack", preview: "MinimalBlackPreview", category: "Minimal"),
-        IconEntry(name: "Minimal White", key: "MinimalWhite", preview: "MinimalWhitePreview", category: "Minimal"),
-        IconEntry(name: "Obsidian Gold", key: "ObsidianGold", preview: "ObsidianGoldPreview", category: "Minimal"),
-        IconEntry(name: "Titanium", key: "Titanium", preview: "TitaniumPreview", category: "Minimal"),
-        IconEntry(name: "Graphite Slate", key: "GraphiteSlate", preview: "GraphiteSlatePreview", category: "Minimal"),
-
-        // Cosmic & Flow
-        IconEntry(name: "Midnight Aurora", key: "MidnightAurora", preview: "MidnightAuroraPreview", category: "Cosmic"),
-        IconEntry(name: "Deep Space", key: "DeepSpace", preview: "DeepSpacePreview", category: "Cosmic"),
-        IconEntry(name: "Starlight", key: "Starlight", preview: "StarlightPreview", category: "Cosmic"),
-        IconEntry(name: "Solar Flare", key: "SolarFlare", preview: "SolarFlarePreview", category: "Cosmic"),
-        IconEntry(name: "Eclipse", key: "Eclipse", preview: "EclipsePreview", category: "Cosmic"),
-        IconEntry(name: "Cosmic Orbit", key: "CosmicOrbit", preview: "CosmicOrbitPreview", category: "Cosmic"),
-
-        // Nature & Sanctuary
-        IconEntry(name: "Forest Sanctuary", key: "ForestSanctuary", preview: "ForestSanctuaryPreview", category: "Nature"),
-        IconEntry(name: "Warm Terracotta", key: "Warm", preview: "WarmPreview", category: "Nature"),
-        IconEntry(name: "Cool Ocean", key: "Cool", preview: "CoolPreview", category: "Nature"),
-        IconEntry(name: "Desert Dusk", key: "DesertDusk", preview: "DesertDuskPreview", category: "Nature"),
-        IconEntry(name: "Lavender Mist", key: "LavenderMist", preview: "LavenderMistPreview", category: "Nature"),
-        IconEntry(name: "Matcha Zen", key: "MatchaZen", preview: "MatchaZenPreview", category: "Nature"),
-
-        // Heritage & Editorial
-        IconEntry(name: "Quote Mark", key: "QuoteMark", preview: "QuoteMarkPreview", category: "Heritage"),
-        IconEntry(name: "Gradient", key: "Gradient", preview: "GradientPreview", category: "Heritage"),
-        IconEntry(name: "Parchment Ink", key: "ParchmentInk", preview: "ParchmentInkPreview", category: "Heritage"),
-        IconEntry(name: "Crimson Velvet", key: "CrimsonVelvet", preview: "CrimsonVelvetPreview", category: "Heritage"),
-        IconEntry(name: "Emerald Library", key: "EmeraldLibrary", preview: "EmeraldLibraryPreview", category: "Heritage"),
-        IconEntry(name: "Indigo Dye", key: "IndigoDye", preview: "IndigoDyePreview", category: "Heritage")
+    // Keys match the Icon Composer files in Resources/AppIcons (see scripts/generate_app_icons.py).
+    private let icons: [IconEntry] = [
+        IconEntry(name: "Ink", key: ""),
+        IconEntry(name: "Paper", key: "Paper"),
+        IconEntry(name: "Noir", key: "Noir"),
+        IconEntry(name: "Quote", key: "Quote"),
+        IconEntry(name: "Dawn", key: "Dawn"),
+        IconEntry(name: "Bookmark", key: "Bookmark"),
+        IconEntry(name: "Moon", key: "Moon"),
+        IconEntry(name: "Sprout", key: "Sprout"),
+        IconEntry(name: "Spark", key: "Spark"),
+        IconEntry(name: "Page", key: "Page")
     ]
 
-    private var filteredIcons: [IconEntry] {
-        if selectedCategory == "All" { return allIcons }
-        return allIcons.filter { $0.category == selectedCategory }
-    }
-
-    private let columns = [GridItem(.adaptive(minimum: 88), spacing: 14)]
+    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 16)]
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                // Category Filter Chips
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(["All", "Minimal", "Cosmic", "Nature", "Heritage"], id: \.self) { cat in
-                            Button {
-                                selectedCategory = cat
-                            } label: {
-                                Text(LocalizedStringKey(cat))
-                                    .font(.caption.weight(.medium))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        selectedCategory == cat ? Color.accentColor : Color(uiColor: .tertiarySystemFill),
-                                        in: Capsule()
-                                    )
-                                    .foregroundStyle(selectedCategory == cat ? .white : .primary)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                }
-
-                LazyVGrid(columns: columns, spacing: 16) {
-                    ForEach(filteredIcons) { icon in
+            VStack(spacing: 20) {
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(icons) { icon in
                         Button {
                             select(icon.key)
                         } label: {
                             VStack(spacing: 8) {
-                                ZStack(alignment: .topTrailing) {
-                                    if let image = UIImage(named: icon.preview) {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 72, height: 72)
-                                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                            .shadow(color: Color.black.opacity(0.12), radius: 4, y: 2)
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                            .fill(Color.secondary.opacity(0.2))
-                                            .frame(width: 72, height: 72)
+                                Image(icon.preview)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 76, height: 76)
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                            .strokeBorder(Color.accentColor, lineWidth: 2.5)
+                                            .padding(-5)
+                                            .opacity(currentKey == icon.key ? 1 : 0)
                                     }
-
-                                    if currentKey == icon.key {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .font(.title3)
-                                            .symbolRenderingMode(.palette)
-                                            .foregroundStyle(.white, .blue)
-                                            .offset(x: 4, y: -4)
-                                    }
-                                }
                                 Text(icon.name)
-                                    .font(.caption2.weight(.medium))
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: 80)
+                                    .font(.caption.weight(currentKey == icon.key ? .semibold : .regular))
+                                    .foregroundStyle(currentKey == icon.key ? .primary : .secondary)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
+                            .animation(.snappy(duration: 0.2), value: currentKey)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(Text(icon.name))
@@ -272,12 +208,13 @@ struct AppIconsView: View {
                     }
                 }
                 .padding(.horizontal, 16)
+                .padding(.top, 12)
 
-                Text("Tap any icon to apply it immediately to your Home Screen.")
+                Text("Tap any icon to apply it immediately to your Home Screen. Each one adapts to Dark, Tinted and Clear Home Screen styles.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
             }
         }
         .navigationTitle("App Icon")

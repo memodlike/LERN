@@ -1,0 +1,35 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.35700,0.24700,0.85100,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "mini.svg",
+          "name": "mini"
+        },
+        {
+          "glass": true,
+          "image-name": "star.svg",
+          "name": "star"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

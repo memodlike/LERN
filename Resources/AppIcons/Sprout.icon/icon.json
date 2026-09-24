@@ -1,0 +1,35 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.35300,0.52200,0.22700,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "glass": true,
+          "image-name": "leaves.svg",
+          "name": "leaves"
+        },
+        {
+          "glass": true,
+          "image-name": "stem.svg",
+          "name": "stem"
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.4
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
+  }
+}

@@ -25,7 +25,7 @@
   &nbsp;
   <img src="docs/screenshots/share-image.png" width="220" alt="Карточки для соцсетей" />
   &nbsp;
-  <img src="artifacts/targeted-ux-qa/060-app-icon-gallery.png" width="220" alt="24 авторские иконки" />
+  <img src="docs/screenshots/app-icons.png" width="220" alt="10 иконок в стиле Liquid Glass" />
 </p>
 
 ---

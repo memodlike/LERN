@@ -12,19 +12,28 @@
 		05B85584DDB6EBDD8A72EFEF /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */; };
 		066DAD01CCFA9534D14E7A45 /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */; };
 		1035926BEC1FC85791686C94 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B656B70FD606492F6A017F /* SharedStore.swift */; };
+		1E3DB36DB62CDBB4F473FF0F /* Bookmark.icon in Resources */ = {isa = PBXBuildFile; fileRef = 1C8C296C3EF9B64670D665FD /* Bookmark.icon */; };
 		1F1832FA6FF57A5C61B73232 /* chime2.caf in Resources */ = {isa = PBXBuildFile; fileRef = 641501D809F2934FE6F78E7F /* chime2.caf */; };
 		1F587177B853B76EFDA12182 /* chime1.caf in Resources */ = {isa = PBXBuildFile; fileRef = 7B9F4FBF4F66CA5600185BCA /* chime1.caf */; };
+		1FC0FADBFB0C7DCA6103C355 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DC42286B708108388164787B /* Localizable.xcstrings */; };
 		21E0F9B27DDAAEB76EE9DF9D /* LERNApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7AA883BB74035BBD595B28 /* LERNApp.swift */; };
 		25D0192203EE0CFCAC1DFEE1 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F608B96B483B6163764D84B /* WidgetIntents.swift */; };
 		264EFEB22C22854A748B56AF /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 98AF9565391916BDFB1EA637 /* LERNCore */; };
+		2825C50BCDE3960A6D218C5C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */; };
+		2AF4301C3825698CFEAA3FBA /* Noir.icon in Resources */ = {isa = PBXBuildFile; fileRef = D61B690F179F1004C19159CC /* Noir.icon */; };
 		2FAED6A0D9498396222FB5E3 /* SurfaceSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */; };
 		319A2ED713B64429B2165CAF /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0810DB6196ED2EBC83CB14C /* LibraryView.swift */; };
 		356D8068D0A41CD886B58798 /* LERNWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3588CFA453E1F6D1448B01DA /* ResourceBudgetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E64A04A7244A5A67B15316 /* ResourceBudgetTests.swift */; };
 		3A0DBD2BA4171938DDCB5109 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */; };
+		3EE37934416EA3FBA4B98E1D /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998072FA7C41E141FFB533D /* ThemeView.swift */; };
 		3F6A86791949E046F691F8BB /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = FE4F13C40361523142FD82F7 /* LERNCore */; };
+		44E8704F39DA25E8454829E3 /* GlassStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33EB9F968B32B2BAE75E41C /* GlassStyle.swift */; };
+		48B52EFFFB9A9614C3EFB9D7 /* Paper.icon in Resources */ = {isa = PBXBuildFile; fileRef = EF78F065D12D1007BF962A90 /* Paper.icon */; };
 		4F38C450B0D38252CFC0E0B4 /* LERNUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */; };
+		5181004CD66C62CDDE492CF8 /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BC08C47451DBFE0D65B7DF /* NotificationViewController.swift */; };
 		54A671194F9CA19DE366862E /* LERNWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		558570AD3C0A50252D676AEE /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 247E82A06B0AFE9B0942DBD9 /* AppIcon.icon */; };
 		5886E0B5AA3204F0656B04B1 /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5549451C3E07A7E9375BCC12 /* LERNCore */; };
 		5C45D48ADFB8789DE68F8392 /* LERNWatchWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */; };
 		63F8C78FD8475FE75945BEA3 /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B656B70FD606492F6A017F /* SharedStore.swift */; };
@@ -42,14 +51,23 @@
 		8EC4723117FF5A9B06FD4AD1 /* ShareImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A2AB020715848539BC1B81 /* ShareImageView.swift */; };
 		8F41452CCBC35E844D5053D6 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DC42286B708108388164787B /* Localizable.xcstrings */; };
 		8FFCFEA5764240E76A1B92D4 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DC42286B708108388164787B /* Localizable.xcstrings */; };
+		927C313F8746CDF210D63AF8 /* Moon.icon in Resources */ = {isa = PBXBuildFile; fileRef = E506F4C8CD2619A62203777B /* Moon.icon */; };
 		943A66518B6F3D8089EB79D0 /* chime3.caf in Resources */ = {isa = PBXBuildFile; fileRef = 3F9DCF732A7BA575473AD4B4 /* chime3.caf */; };
 		9BB4BB855644E78C5D0AE995 /* WatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E45DADF3801F26B1E7CBA38 /* WatchBridge.swift */; };
+		9C30CF1E0B0573C0A7587745 /* GlassStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33EB9F968B32B2BAE75E41C /* GlassStyle.swift */; };
 		9E4E2FCDDD16F87076FD5962 /* LogoMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9834AE18ED319A0396C91946 /* LogoMark.swift */; };
+		9EFBF1F7F1972C4CAC736D35 /* Dawn.icon in Resources */ = {isa = PBXBuildFile; fileRef = BF6C32FFE51DA07D4C3E7446 /* Dawn.icon */; };
 		9FCD371A5257271F03634B4B /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = E2476E305F737B84A53AFD37 /* LERNCore */; };
+		A1675372947C10363EACF69B /* SharedStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B656B70FD606492F6A017F /* SharedStore.swift */; };
 		A7B78B500BD809A987F84242 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998072FA7C41E141FFB533D /* ThemeView.swift */; };
+		A7CC652257AAB2FAD7342CFE /* Quote.icon in Resources */ = {isa = PBXBuildFile; fileRef = 814AE2B6A2EB80A45EC2F45A /* Quote.icon */; };
 		AADF7ED52A67BC2F8CBEFA87 /* ThemesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18716ECA482B00F50461C6B /* ThemesView.swift */; };
+		AC9EB99A883EBF6171419699 /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20A7D678AF8DE47C52A5CE5 /* UserNotificationsUI.framework */; };
 		ADDFAF96AF92420728903F37 /* ThemeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F998072FA7C41E141FFB533D /* ThemeView.swift */; };
 		B431FBE43E88DC6688599044 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */; };
+		B53D0C9BA9101B03F9950F6A /* LERNNotificationContent.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 29423531882B2BD9B128C68A /* LERNNotificationContent.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B97A870B7A2C2F43D2F0E389 /* Spark.icon in Resources */ = {isa = PBXBuildFile; fileRef = AF25FBCED2A3A6AFDEF67C7C /* Spark.icon */; };
+		C7C3C5D4B3091420A84B4956 /* GlassStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33EB9F968B32B2BAE75E41C /* GlassStyle.swift */; };
 		C82606AF14678E24B96B9BC8 /* AppearanceCustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA90A9B70DFA4CBACA7B22FA /* AppearanceCustomizationView.swift */; };
 		CC9C52148486A752C796614B /* ResourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57A0440524F67678D82A46D /* ResourcesView.swift */; };
 		D2353ECF50DA99904B72A4BB /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F608B96B483B6163764D84B /* WidgetIntents.swift */; };
@@ -57,7 +75,10 @@
 		D80168AA39FAE8DF75FC3351 /* ResourceImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB19DF377CFBEF98EF9030FE /* ResourceImporterTests.swift */; };
 		DCE319C1D5E66C2D28A5AF6F /* LERNWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A9FC1E20A3E47B9DD5DA8E /* LERNWatchApp.swift */; };
 		DDA154856B420B43CAFCE260 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C795FD0C46D65F055D84F7C3 /* BackupView.swift */; };
+		E43D31C72A226A8E2C94DF52 /* Page.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BA9D7776F3E0FD1D0B2B7CF /* Page.icon */; };
+		ECBD27F605E64A6DCE038715 /* Sprout.icon in Resources */ = {isa = PBXBuildFile; fileRef = CAD545198D5322936FBB019F /* Sprout.icon */; };
 		ED81488C5B1D5CF5D21C83EE /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */; };
+		F0D3AF282E2A945B482D42EC /* LERNCore in Frameworks */ = {isa = PBXBuildFile; productRef = 728CCE95081389A23B6583C0 /* LERNCore */; };
 		F2C6839A23A7AE379F31CC5D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */; };
 		F8606757B94982137A2323D3 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DC42286B708108388164787B /* Localizable.xcstrings */; };
 		FB82F1C45764E9FC4C5E178A /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB53D2665DA94499B8736B0 /* ProfileView.swift */; };
@@ -101,6 +122,13 @@
 			remoteGlobalIDString = 39992E3DB29CD09719E33372;
 			remoteInfo = LERNWatchWidgets;
 		};
+		E792354392649B7A0DB2926A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8A7A14813A47AD6FF65DA0C6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1E92B770FB5A39AE029F0AAF;
+			remoteInfo = LERNNotificationContent;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -122,6 +150,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				72B905FAB898DC8537B94647 /* LERNWidgets.appex in Embed Foundation Extensions */,
+				B53D0C9BA9101B03F9950F6A /* LERNNotificationContent.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -147,8 +176,12 @@
 		144DC62411F8D14F343FBA0E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1455ABE90B2F0237AF91FF12 /* LERNAppTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		19007ED841637919D0508452 /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
+		1C8C296C3EF9B64670D665FD /* Bookmark.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Bookmark.icon; sourceTree = "<group>"; };
 		1E7447FE604499B60699AC9A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		1EF3C2476D3A73B66C75AE8F /* WatchFavoriteSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchFavoriteSyncTests.swift; sourceTree = "<group>"; };
+		214B062596C6E7351A0D29A3 /* LERNNotificationContent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNNotificationContent.entitlements; sourceTree = "<group>"; };
+		247E82A06B0AFE9B0942DBD9 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		29423531882B2BD9B128C68A /* LERNNotificationContent.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LERNNotificationContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		346D9D29F7CD168665314823 /* LERNUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		36E64A04A7244A5A67B15316 /* ResourceBudgetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceBudgetTests.swift; sourceTree = "<group>"; };
@@ -156,18 +189,23 @@
 		3F9DCF732A7BA575473AD4B4 /* chime3.caf */ = {isa = PBXFileReference; path = chime3.caf; sourceTree = "<group>"; };
 		46DAB4311BA60CB1CED2BD92 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		48DBDBB190D8A4B3D1ACD80B /* LERNWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWidgets.swift; sourceTree = "<group>"; };
+		4BA9D7776F3E0FD1D0B2B7CF /* Page.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Page.icon; sourceTree = "<group>"; };
 		4D85AD3F2DE3C4C9909EF9AA /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
+		52BC08C47451DBFE0D65B7DF /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
 		559BC34641ED11EEC801EF90 /* SurfaceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceSettings.swift; sourceTree = "<group>"; };
 		560F45AF945FFBE589A3EC67 /* LERNWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWidgets.entitlements; sourceTree = "<group>"; };
 		641501D809F2934FE6F78E7F /* chime2.caf */ = {isa = PBXFileReference; path = chime2.caf; sourceTree = "<group>"; };
 		65A9FC1E20A3E47B9DD5DA8E /* LERNWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWatchApp.swift; sourceTree = "<group>"; };
 		6AEEBCFEF7B77469D794325F /* LERNWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LERNWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B47D9B0BE98FA3D1EE046BB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7B9F4FBF4F66CA5600185BCA /* chime1.caf */ = {isa = PBXFileReference; path = chime1.caf; sourceTree = "<group>"; };
 		7E45DADF3801F26B1E7CBA38 /* WatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchBridge.swift; sourceTree = "<group>"; };
+		814AE2B6A2EB80A45EC2F45A /* Quote.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Quote.icon; sourceTree = "<group>"; };
 		9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LERNWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9834AE18ED319A0396C91946 /* LogoMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogoMark.swift; sourceTree = "<group>"; };
 		9A76C205EF1A68C0649EB402 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		9E97FB00977594597FB5E71A /* LERN - Daily quotes */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "LERN - Daily quotes"; path = .; sourceTree = SOURCE_ROOT; };
+		A20A7D678AF8DE47C52A5CE5 /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
 		A3F0B5F68912A85180AEBA74 /* CoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTests.swift; sourceTree = "<group>"; };
 		A5C3EC3473DCC8C574F5E315 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A8A2AB020715848539BC1B81 /* ShareImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareImageView.swift; sourceTree = "<group>"; };
@@ -175,28 +213,44 @@
 		A98367AE563D1D0DB7C9E3F8 /* LERNWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LERNWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA1B10425498D1E7496C2D9F /* LERNWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWatch.entitlements; sourceTree = "<group>"; };
 		AB19DF377CFBEF98EF9030FE /* ResourceImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceImporterTests.swift; sourceTree = "<group>"; };
+		AF25FBCED2A3A6AFDEF67C7C /* Spark.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Spark.icon; sourceTree = "<group>"; };
 		B0810DB6196ED2EBC83CB14C /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		B291CF7D26A3C534776B0975 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
 		B2E2F795B69E810FB69FBC39 /* StorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageTests.swift; sourceTree = "<group>"; };
 		B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LERNTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF6C32FFE51DA07D4C3E7446 /* Dawn.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Dawn.icon; sourceTree = "<group>"; };
 		C795FD0C46D65F055D84F7C3 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
 		C810ED5D4A639D06DB44E59F /* ImportGuidanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportGuidanceView.swift; sourceTree = "<group>"; };
+		CAD545198D5322936FBB019F /* Sprout.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Sprout.icon; sourceTree = "<group>"; };
 		CAE9FC4BBD5F708829CFF39F /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		CF26DB68D7EBF459572057E4 /* LERNWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERNWatchWidgets.entitlements; sourceTree = "<group>"; };
 		D24305EC3FDBAC6362595303 /* LERNWatchWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNWatchWidgets.swift; sourceTree = "<group>"; };
 		D57A0440524F67678D82A46D /* ResourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourcesView.swift; sourceTree = "<group>"; };
+		D61B690F179F1004C19159CC /* Noir.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Noir.icon; sourceTree = "<group>"; };
 		D72F8E675687DB0BBC0BBC33 /* LERN.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LERN.entitlements; sourceTree = "<group>"; };
 		D9A1B5FBF096687B585BF811 /* LERN.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LERN.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC42286B708108388164787B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		DDF03501140D16CE9371755C /* AppIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIntegrationTests.swift; sourceTree = "<group>"; };
 		E18716ECA482B00F50461C6B /* ThemesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemesView.swift; sourceTree = "<group>"; };
+		E506F4C8CD2619A62203777B /* Moon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Moon.icon; sourceTree = "<group>"; };
 		EA90A9B70DFA4CBACA7B22FA /* AppearanceCustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceCustomizationView.swift; sourceTree = "<group>"; };
+		EF78F065D12D1007BF962A90 /* Paper.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Paper.icon; sourceTree = "<group>"; };
+		F33EB9F968B32B2BAE75E41C /* GlassStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassStyle.swift; sourceTree = "<group>"; };
 		F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LERNUITests.swift; sourceTree = "<group>"; };
 		F998072FA7C41E141FFB533D /* ThemeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeView.swift; sourceTree = "<group>"; };
 		FAB53D2665DA94499B8736B0 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		187D29EB74DDD37D3D2E35B0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0D3AF282E2A945B482D42EC /* LERNCore in Frameworks */,
+				AC9EB99A883EBF6171419699 /* UserNotificationsUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4E825D6135964F43358E0927 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -248,6 +302,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		089D2B194E1B7F8EC05296BE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A20A7D678AF8DE47C52A5CE5 /* UserNotificationsUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2476E69F2FC821BCB7DF693F /* Widgets */ = {
 			isa = PBXGroup;
 			children = (
@@ -285,6 +347,23 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		29A20A82FCBFEF9639C22906 /* AppIcons */ = {
+			isa = PBXGroup;
+			children = (
+				247E82A06B0AFE9B0942DBD9 /* AppIcon.icon */,
+				1C8C296C3EF9B64670D665FD /* Bookmark.icon */,
+				BF6C32FFE51DA07D4C3E7446 /* Dawn.icon */,
+				E506F4C8CD2619A62203777B /* Moon.icon */,
+				D61B690F179F1004C19159CC /* Noir.icon */,
+				4BA9D7776F3E0FD1D0B2B7CF /* Page.icon */,
+				EF78F065D12D1007BF962A90 /* Paper.icon */,
+				814AE2B6A2EB80A45EC2F45A /* Quote.icon */,
+				AF25FBCED2A3A6AFDEF67C7C /* Spark.icon */,
+				CAD545198D5322936FBB019F /* Sprout.icon */,
+			);
+			path = AppIcons;
+			sourceTree = "<group>";
+		};
 		3868F641C0A92E3D0352E23E /* Watch */ = {
 			isa = PBXGroup;
 			children = (
@@ -309,6 +388,7 @@
 			children = (
 				D9A1B5FBF096687B585BF811 /* LERN.app */,
 				1455ABE90B2F0237AF91FF12 /* LERNAppTests.xctest */,
+				29423531882B2BD9B128C68A /* LERNNotificationContent.appex */,
 				B6ACDE195C0028F02EFC2395 /* LERNTests.xctest */,
 				346D9D29F7CD168665314823 /* LERNUITests.xctest */,
 				9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */,
@@ -321,6 +401,7 @@
 		4428E0970B8178C5E26DC510 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				F33EB9F968B32B2BAE75E41C /* GlassStyle.swift */,
 				11B656B70FD606492F6A017F /* SharedStore.swift */,
 				F998072FA7C41E141FFB533D /* ThemeView.swift */,
 				0F608B96B483B6163764D84B /* WidgetIntents.swift */,
@@ -334,6 +415,16 @@
 				F45D9E927AC36ECDA40B52A9 /* LERNUITests.swift */,
 			);
 			path = LERNUITests;
+			sourceTree = "<group>";
+		};
+		8DA187D7ECC936E52E7BE44A /* NotificationContent */ = {
+			isa = PBXGroup;
+			children = (
+				7B47D9B0BE98FA3D1EE046BB /* Info.plist */,
+				214B062596C6E7351A0D29A3 /* LERNNotificationContent.entitlements */,
+				52BC08C47451DBFE0D65B7DF /* NotificationViewController.swift */,
+			);
+			path = NotificationContent;
 			sourceTree = "<group>";
 		};
 		A30A5EB4EF4AB9D85B0D9FB0 /* LERNCoreTests */ = {
@@ -377,6 +468,7 @@
 				3F9DCF732A7BA575473AD4B4 /* chime3.caf */,
 				DC42286B708108388164787B /* Localizable.xcstrings */,
 				35677524708A2F31616BF109 /* PrivacyInfo.xcprivacy */,
+				29A20A82FCBFEF9639C22906 /* AppIcons */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -393,6 +485,7 @@
 			isa = PBXGroup;
 			children = (
 				26562216204C7E427274E711 /* App */,
+				8DA187D7ECC936E52E7BE44A /* NotificationContent */,
 				DB57207114FDB21BD994C7B7 /* Packages */,
 				D3C274C19590E3365C348B25 /* Resources */,
 				4428E0970B8178C5E26DC510 /* Shared */,
@@ -400,6 +493,7 @@
 				3868F641C0A92E3D0352E23E /* Watch */,
 				ACAAFBE91D25C033333D9070 /* WatchWidgets */,
 				2476E69F2FC821BCB7DF693F /* Widgets */,
+				089D2B194E1B7F8EC05296BE /* Frameworks */,
 				428A275AE446D913F2F8FD6D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -428,6 +522,26 @@
 			productName = LERNWatch;
 			productReference = 9245E6D176CB1D8B12CE42F2 /* LERNWatch.app */;
 			productType = "com.apple.product-type.application";
+		};
+		1E92B770FB5A39AE029F0AAF /* LERNNotificationContent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F894EB46814517996A1B499 /* Build configuration list for PBXNativeTarget "LERNNotificationContent" */;
+			buildPhases = (
+				E4C4C3E7097316AA6FDC41B1 /* Sources */,
+				62B8987688B1806FAEEE18DD /* Resources */,
+				187D29EB74DDD37D3D2E35B0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LERNNotificationContent;
+			packageProductDependencies = (
+				728CCE95081389A23B6583C0 /* LERNCore */,
+			);
+			productName = LERNNotificationContent;
+			productReference = 29423531882B2BD9B128C68A /* LERNNotificationContent.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		39992E3DB29CD09719E33372 /* LERNWatchWidgets */ = {
 			isa = PBXNativeTarget;
@@ -502,6 +616,7 @@
 			);
 			dependencies = (
 				558A7227C2F0A8A620552CB4 /* PBXTargetDependency */,
+				9FB5D16F5BCF1B54D1844D6B /* PBXTargetDependency */,
 				893354705588588069E1E8E7 /* PBXTargetDependency */,
 			);
 			name = LERN;
@@ -563,6 +678,10 @@
 						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
 					};
+					1E92B770FB5A39AE029F0AAF = {
+						DevelopmentTeam = SM4Q4TS5TK;
+						ProvisioningStyle = Automatic;
+					};
 					39992E3DB29CD09719E33372 = {
 						DevelopmentTeam = SM4Q4TS5TK;
 						ProvisioningStyle = Automatic;
@@ -610,6 +729,7 @@
 			targets = (
 				CE6662EB3E91CE945C7012E8 /* LERN */,
 				F27DBE255A5578A49096D40F /* LERNWidgets */,
+				1E92B770FB5A39AE029F0AAF /* LERNNotificationContent */,
 				15DC97A06D0664A6F6B89423 /* LERNWatch */,
 				39992E3DB29CD09719E33372 /* LERNWatchWidgets */,
 				46923DADF22CD3A46A4AC048 /* LERNTests */,
@@ -634,12 +754,31 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				558570AD3C0A50252D676AEE /* AppIcon.icon in Resources */,
 				6F446AA63590D41DA7460DB7 /* Assets.xcassets in Resources */,
+				1E3DB36DB62CDBB4F473FF0F /* Bookmark.icon in Resources */,
+				9EFBF1F7F1972C4CAC736D35 /* Dawn.icon in Resources */,
 				F8606757B94982137A2323D3 /* Localizable.xcstrings in Resources */,
+				927C313F8746CDF210D63AF8 /* Moon.icon in Resources */,
+				2AF4301C3825698CFEAA3FBA /* Noir.icon in Resources */,
+				E43D31C72A226A8E2C94DF52 /* Page.icon in Resources */,
+				48B52EFFFB9A9614C3EFB9D7 /* Paper.icon in Resources */,
 				ED81488C5B1D5CF5D21C83EE /* PrivacyInfo.xcprivacy in Resources */,
+				A7CC652257AAB2FAD7342CFE /* Quote.icon in Resources */,
+				B97A870B7A2C2F43D2F0E389 /* Spark.icon in Resources */,
+				ECBD27F605E64A6DCE038715 /* Sprout.icon in Resources */,
 				1F587177B853B76EFDA12182 /* chime1.caf in Resources */,
 				1F1832FA6FF57A5C61B73232 /* chime2.caf in Resources */,
 				943A66518B6F3D8089EB79D0 /* chime3.caf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		62B8987688B1806FAEEE18DD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1FC0FADBFB0C7DCA6103C355 /* Localizable.xcstrings in Resources */,
+				2825C50BCDE3960A6D218C5C /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -697,6 +836,7 @@
 				C82606AF14678E24B96B9BC8 /* AppearanceCustomizationView.swift in Sources */,
 				DDA154856B420B43CAFCE260 /* BackupView.swift in Sources */,
 				89DEBA703E9F42FEE93A3570 /* FeedView.swift in Sources */,
+				C7C3C5D4B3091420A84B4956 /* GlassStyle.swift in Sources */,
 				00C92B1236E2F7268806009E /* ImportGuidanceView.swift in Sources */,
 				81576D30733F3CE2CF44D382 /* ImportView.swift in Sources */,
 				21E0F9B27DDAAEB76EE9DF9D /* LERNApp.swift in Sources */,
@@ -728,10 +868,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				44E8704F39DA25E8454829E3 /* GlassStyle.swift in Sources */,
 				6825415B111D626375AFF8D0 /* LERNWidgets.swift in Sources */,
 				1035926BEC1FC85791686C94 /* SharedStore.swift in Sources */,
 				ADDFAF96AF92420728903F37 /* ThemeView.swift in Sources */,
 				25D0192203EE0CFCAC1DFEE1 /* WidgetIntents.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E4C4C3E7097316AA6FDC41B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C30CF1E0B0573C0A7587745 /* GlassStyle.swift in Sources */,
+				5181004CD66C62CDDE492CF8 /* NotificationViewController.swift in Sources */,
+				A1675372947C10363EACF69B /* SharedStore.swift in Sources */,
+				3EE37934416EA3FBA4B98E1D /* ThemeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -764,6 +916,11 @@
 			isa = PBXTargetDependency;
 			target = 15DC97A06D0664A6F6B89423 /* LERNWatch */;
 			targetProxy = 0EEE3564E41C50EC474CC20F /* PBXContainerItemProxy */;
+		};
+		9FB5D16F5BCF1B54D1844D6B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1E92B770FB5A39AE029F0AAF /* LERNNotificationContent */;
+			targetProxy = E792354392649B7A0DB2926A /* PBXContainerItemProxy */;
 		};
 		9FC0A9FD879DE0FEA36F71E6 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -799,7 +956,7 @@
 		12C661D0C3CE687712F2CD9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "MinimalBlack MinimalWhite ObsidianGold Titanium GraphiteSlate MidnightAurora DeepSpace Starlight SolarFlare Eclipse CosmicOrbit ForestSanctuary Warm Cool DesertDusk LavenderMist MatchaZen QuoteMark Gradient ParchmentInk CrimsonVelvet EmeraldLibrary IndigoDye";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Paper Noir Quote Dawn Bookmark Moon Sprout Spark Page";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/LERN.entitlements;
@@ -893,10 +1050,27 @@
 			};
 			name = Release;
 		};
+		551822D91B1E7D36F193414E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NotificationContent/LERNNotificationContent.entitlements;
+				INFOPLIST_FILE = NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.lern.local.notification-content";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		7744538F57A46AAF0103ECB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "MinimalBlack MinimalWhite ObsidianGold Titanium GraphiteSlate MidnightAurora DeepSpace Starlight SolarFlare Eclipse CosmicOrbit ForestSanctuary Warm Cool DesertDusk LavenderMist MatchaZen QuoteMark Gradient ParchmentInk CrimsonVelvet EmeraldLibrary IndigoDye";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Paper Noir Quote Dawn Bookmark Moon Sprout Spark Page";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = App/LERN.entitlements;
@@ -1145,6 +1319,23 @@
 			};
 			name = Debug;
 		};
+		E6E26A987BB002C164DA01F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NotificationContent/LERNNotificationContent.entitlements;
+				INFOPLIST_FILE = NotificationContent/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "app.lern.local.notification-content";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1171,6 +1362,15 @@
 			buildConfigurations = (
 				862FA2A8187893ECD9076922 /* Debug */,
 				3D7A80D4484125555E63655F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3F894EB46814517996A1B499 /* Build configuration list for PBXNativeTarget "LERNNotificationContent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6E26A987BB002C164DA01F2 /* Debug */,
+				551822D91B1E7D36F193414E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1239,6 +1439,10 @@
 			productName = LERNCore;
 		};
 		64EE82142537D973FA626F2C /* LERNCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LERNCore;
+		};
+		728CCE95081389A23B6583C0 /* LERNCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LERNCore;
 		};
